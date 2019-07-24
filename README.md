@@ -1,4 +1,4 @@
-# Ragesoccer
+# RageSoccer
 html5 soccer game using canvas
 
 Supported platforms:
