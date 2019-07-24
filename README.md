@@ -1,5 +1,5 @@
 # RageSoccer
-html5 soccer game using canvas
+html5 soccer game using canvas element
 
 Supported platforms:
 - PC: Use arrows to control player
