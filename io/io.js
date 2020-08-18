@@ -52,6 +52,12 @@ function checkInput(e) {
     if(window.keyMap[80]) {
         window.game.togglePause();
     }
+    if(window.keyMap[107]) {
+        window.game.config.viewportRatio /= 1.2;
+    }
+    if(window.keyMap[109]) {
+        window.game.config.viewportRatio *= 1.2;
+    }
 }
 
 function startGame() {
