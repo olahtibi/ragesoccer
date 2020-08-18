@@ -85,6 +85,9 @@ function renderNewFrame() {
   window.game.stadium.goalDetector.update();  
   window.game.camera.windowToViewport(window.ctx);
   window.game.stadium.draw(window.ctx);
+  if(window.game.isPaused()) {
+      window.game.ai.draw(window.ctx);
+  }
   window.game.camera.renderOverlay(window.ctx);
   window.requestAnimationFrame(renderNewFrame);
 }

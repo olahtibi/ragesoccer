@@ -1,17 +1,18 @@
 var Ai = function (config, stadium, level) {
 	this.config = config;
 	this.stadium = stadium;
-	this.level = level;
 	this.actionRadius = 20;
 	this.speed = (36 + level * 2);
+	this.sPos = null;
+    this.tPos = null;
 }
 
-Ai.prototype.update = function() {	
+Ai.prototype.update = function() {
 	if(window.game != null && window.game.started == true && !window.game.isPaused()) {
 		var alpha = this.computeAngle();
 		var distance = this.computeDistance();
 		if(alpha < 180 && Math.abs(this.stadium.ball.position.x - this.stadium.playerAway.position.x) < this.actionRadius / 4){
-			this.kick();	
+			this.kick();
 		}
 		else if(distance >= this.actionRadius) {
 			this.chase();
@@ -34,22 +35,36 @@ Ai.prototype.update = function() {
 };
 
 Ai.prototype.chase = function() {
-    this.stadium.playerAway.velocity = MathLib.computeVelocityForTarget(this.stadium.playerAway.position, this.stadium.ball.position, this.speed);
+    this.target(this.stadium.ball.position);
 };
 
 Ai.prototype.positionUp = function() {
-	var target = new Vector2d(this.stadium.ball.position.x, this.stadium.ball.position.y - this.actionRadius / 2);
-    this.stadium.playerAway.velocity = MathLib.computeVelocityForTarget(this.stadium.playerAway.position, target, this.speed);
+    this.target(new Vector2d(this.stadium.ball.position.x, this.stadium.ball.position.y - this.actionRadius / 2));
 };
 
 Ai.prototype.positionLeft = function() {
-    var target = new Vector2d(this.stadium.ball.position.x + this.actionRadius, this.stadium.ball.position.y);
-    this.stadium.playerAway.velocity = MathLib.computeVelocityForTarget(this.stadium.playerAway.position, target, this.speed);
+    this.target(new Vector2d(this.stadium.ball.position.x + this.actionRadius, this.stadium.ball.position.y));
 };
 
 Ai.prototype.positionRight = function() {
-    var target = new Vector2d(this.stadium.ball.position.x - this.actionRadius, this.stadium.ball.position.y);
-    this.stadium.playerAway.velocity = MathLib.computeVelocityForTarget(this.stadium.playerAway.position, target, this.speed);
+    this.target(new Vector2d(this.stadium.ball.position.x - this.actionRadius, this.stadium.ball.position.y));
+};
+
+Ai.prototype.target = function(targetPos) {
+    this.sPos = this.stadium.playerAway.position;
+    this.tPos = targetPos;
+	this.stadium.playerAway.velocity = MathLib.computeVelocityForTarget(this.sPos, this.tPos, this.speed);
+};
+
+Ai.prototype.draw = function(ctx) {
+	if(this.sPos != null && this.tPos != null) {
+        ctx.beginPath();
+        ctx.moveTo(this.sPos.x, this.sPos.y);
+        ctx.lineTo(this.tPos.x, this.tPos.y);
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = 'blue';
+        ctx.stroke();
+	}
 };
 
 Ai.prototype.kick = function() {	

@@ -31,23 +31,26 @@ Camera.prototype.windowToViewport = function(ctx) {
 };
 
 Camera.prototype.renderOverlay = function(ctx) {
-    ctx.font = "30px Arial";
-    ctx.fillStyle = 'white';
-    ctx.fillText(this.stadium.goalDetector.homeScore, 20 - this.position.x, 40 - this.position.y);
-    ctx.fillStyle = 'red';
-    ctx.fillText(this.stadium.goalDetector.homeScore, 21 - this.position.x, 39 - this.position.y);
-    ctx.fillStyle = 'white';
-    ctx.fillText("-", 60 - this.position.x, 40 - this.position.y);
-    ctx.fillStyle = 'black';
-    ctx.fillText("-", 61 - this.position.x, 39 - this.position.y);
-    ctx.fillStyle = 'white';
-    ctx.fillText(this.stadium.goalDetector.awayScore, 80 - this.position.x, 40 - this.position.y);
-    ctx.fillStyle = 'blue';
-    ctx.fillText(this.stadium.goalDetector.awayScore, 81 - this.position.x, 39 - this.position.y);
-    if(this.showStats) {
-        ctx.font = "10px Arial";
+    if(this.config.viewportRatio >= 0.6 && this.config.viewportRatio <= 0.8) {
+        ctx.font = "30px Arial";
         ctx.fillStyle = 'white';
-        ctx.fillText("FPS: " + window.game.physics.fps, 335 - this.position.x, 15 - this.position.y);
+        ctx.fillText(this.stadium.goalDetector.homeScore, 20 - this.position.x, 40 - this.position.y);
+        ctx.fillStyle = 'red';
+        ctx.fillText(this.stadium.goalDetector.homeScore, 21 - this.position.x, 39 - this.position.y);
+        ctx.fillStyle = 'white';
+        ctx.fillText("-", 60 - this.position.x, 40 - this.position.y);
+        ctx.fillStyle = 'black';
+        ctx.fillText("-", 61 - this.position.x, 39 - this.position.y);
+        ctx.fillStyle = 'white';
+        ctx.fillText(this.stadium.goalDetector.awayScore, 80 - this.position.x, 40 - this.position.y);
+        ctx.fillStyle = 'blue';
+        ctx.fillText(this.stadium.goalDetector.awayScore, 81 - this.position.x, 39 - this.position.y);
+        if(this.showStats) {
+            ctx.font = "10px Arial";
+            ctx.fillStyle = 'white';
+            ctx.fillText("FPS: " + window.game.physics.fps, 335 - this.position.x, 15 - this.position.y);
+        }
     }
     ctx.restore();
+
 };
