@@ -7,7 +7,7 @@ var Ai = function (config, stadium, level) {
 }
 
 Ai.prototype.update = function() {	
-	if(window.game != null && window.game.started == true) {
+	if(window.game != null && window.game.started == true && !window.game.isPaused()) {
 		var alpha = this.computeAngle();
 		var distance = this.computeDistance();
 		if(alpha < 180 && Math.abs(this.stadium.ball.position.x - this.stadium.playerAway.position.x) < this.actionRadius / 4){

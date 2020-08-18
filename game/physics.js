@@ -89,7 +89,7 @@ Physics.prototype.updateBallPosition = function() {
 };
 
 Physics.prototype.updateKickedBallVelocity = function(currentTime) {
-    if(this.kickStarted != 0) {        
+    if(this.kickStarted != null) {
         var phaseIndex = Math.floor((currentTime - this.kickStarted) / 500.0);
         if(phaseIndex < this.config.kickVelocity.length) {
             if(this.stadium.ball.kickDirection.x != 0) {

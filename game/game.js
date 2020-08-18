@@ -5,6 +5,42 @@ var Game = function (config, stadium, camera, physics, ai) {
   this.physics = physics;
   this.ai = ai;
   this.started = false;
+  this.resumeState = null
+};
+
+Game.prototype.isPaused = function() {
+    return this.resumeState != null;
+};
+
+Game.prototype.togglePause = function() {
+    if(this.resumeState == null) {
+        // Save state
+        this.resumeState = new GameState(
+            this.stadium.goalDetector.ball.velocity,
+            this.stadium.playerHome.velocity,
+            this.stadium.playerAway.velocity,
+            this.physics.lastUpdated,
+            this.physics.kickStarted
+        );
+        // Freeze velocities
+        this.stadium.goalDetector.ball.velocity = new Vector3d(0, 0, 0);
+        this.stadium.playerHome.velocity = new Vector2d(0, 0);
+        this.stadium.playerAway.velocity = new Vector2d(0, 0);
+        this.physics.kickStarted = null
+    }
+    else {
+        // Restore state
+        this.stadium.goalDetector.ball.velocity = this.resumeState.ballVelocity;
+        this.stadium.playerHome.velocity = this.resumeState.playerHomeVelocity;
+        this.stadium.playerAway.velocity = this.resumeState.playerAwayVelocity;
+        if(this.resumeState.kickStarted != null) {
+            var currentTime = new Date().getTime();
+            var diff = (currentTime - this.resumeState.currentTime);
+            this.physics.lastUpdated = this.resumeState.lastUpdated + diff;
+            this.physics.kickStarted = this.resumeState.kickStarted + diff;
+        }
+        this.resumeState = null;
+    }
 };
 
 function startLoop() {
