@@ -16,8 +16,25 @@ var Configuration = function () {
   this.viewportWidth = window.innerWidth;
   this.viewportHeight = window.innerHeight;
   this.viewportRatio = 0.7;
-  this.kickVelocity = [300, 200, 100, 0, 0];  // Pixels per second, for 500 ms long each step
-  this.kickVelocityZ = [30, -30, 5, -5, 0];   // Pixels per second, for 500 ms long each step
+  this.kickVelocity = [300, 200, 100, 0, 0];  // Legacy (unused by new physics)
+  this.kickVelocityZ = [30, -30, 5, -5, 0];   // Legacy (unused by new physics)
+  // Ball physics tuning (all in pixel units, seconds).
+  this.baseKickBoost = 120;             // Minimum outward impulse on contact.
+  this.playerMomentumTransfer = 1.8;    // How much of player's closing speed becomes ball speed.
+  this.maxKickSpeed = 520;              // Cap on horizontal ball speed.
+  this.baseLoft = 55;                   // Vertical velocity added to every kick (visible small hop).
+  this.kickLoftFactor = 0.35;           // Fraction of the outgoing kick impulse added as vertical lift.
+  this.ballPlayerRestitution = 0.35;    // Bounciness of a passive ball-on-player collision.
+  this.ballFriction = 1.6;              // Exponential rolling-friction rate on the ground.
+  this.ballAirFriction = 0.35;          // Slower decay while airborne.
+  this.gravity = 380;                   // Downward acceleration on z.
+  this.ballGroundRestitution = 0.55;    // Bounce energy retained on ground impact.
+  this.groundImpactDamping = 0.88;      // Horizontal speed retained on ground impact.
+  this.minBounceVelocity = 25;          // vz below which the ball is considered at rest.
+  this.wallRestitution = 0.7;           // Bounce off box walls and goalposts.
+  this.minVelocity = 3;                 // Horizontal speed below which the ball snaps to rest.
+  this.ballContactMaxZ = 3;             // Ball height above which players cannot touch it.
+  this.ballSpinPxPerPhase = 6;          // Pixels of travel per sprite phase change (higher = slower spin).
   this.ballRadius = 2;
   this.playerRadius = 4;
   this.imgPitch = document.getElementById("pitch");

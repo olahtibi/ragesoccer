@@ -2,115 +2,197 @@ var Physics = function (config, stadium) {
   this.config = config;
   this.stadium = stadium;
   this.lastUpdated = new Date().getTime();
+  // Kept only for backward compatibility with Game.togglePause; unused by physics.
   this.kickStarted = null;
   this.fps = 0.0;
   this.deltaArr = [0.0];
   this.frameNumber = 0;
-}
-
-Physics.prototype.update = function() {
-  this.updatePlayerPosition();
-  this.checkBallTouchCollision();
-  this.updateBallPosition();
-  this.updateStats();
 };
 
-Physics.prototype.updateStats = function() {
-  this.frameNumber++;
+Physics.prototype.update = function() {
   var currentTime = new Date().getTime();
+  var dt = (currentTime - this.lastUpdated) / 1000.0;
+  // Clamp dt so a paused/backgrounded tab doesn't teleport bodies on resume.
+  if (dt > 0.1) dt = 0.1;
+  if (dt < 0) dt = 0;
+  this.updatePlayerPosition(dt);
+  this.resolveBallPlayerContacts();
+  this.updateBallPosition(dt);
+  this.updateStats(currentTime);
+};
+
+Physics.prototype.updateStats = function(currentTime) {
+  this.frameNumber++;
   var deltaT = currentTime - this.lastUpdated;
   this.deltaArr[this.frameNumber % 100] = deltaT;
   var avg = 0.0;
-  for(var i = 0; i < this.deltaArr.length; i++) {
+  for (var i = 0; i < this.deltaArr.length; i++) {
     avg += this.deltaArr[i];
   }
   avg /= this.deltaArr.length;
   this.fps = 1000.0 / avg;
-  this.lastUpdated = new Date().getTime();
-}
-
-Physics.prototype.updatePlayerPosition = function() {
-  var currentTime = new Date().getTime();
-  var deltaT = currentTime - this.lastUpdated;
-  for (var i = 0; i < this.stadium.players.length; i++) {
-    if(this.stadium.players[i].velocity.y != 0) {
-      this.stadium.players[i].position.y += (this.stadium.players[i].velocity.y * deltaT / 1000.0);
-    }
-    if(this.stadium.players[i].velocity.x != 0) {
-      this.stadium.players[i].position.x += (this.stadium.players[i].velocity.x * deltaT / 1000.0);
-    }
-  }  
+  this.lastUpdated = currentTime;
 };
 
-Physics.prototype.checkBallTouchCollision = function() {
+Physics.prototype.updatePlayerPosition = function(dt) {
   for (var i = 0; i < this.stadium.players.length; i++) {
-    var dist = this.config.ballRadius + this.config.playerRadius;
-    var a = this.stadium.ball.position.x - this.stadium.players[i].position.x;
-    var b = this.stadium.ball.position.y - this.stadium.players[i].position.y;
-    if(Math.abs(a) < dist && Math.abs(b) < dist) {
-      this.kickStarted = new Date().getTime();
-      var c = Math.sqrt(Math.pow(a, 2) + Math.pow(b, 2));
-      this.stadium.ball.kickDirection.x = a * (1 / c);
-      this.stadium.ball.kickDirection.y = b * (1 / c);
-    }
+    var p = this.stadium.players[i];
+    p.position.x += p.velocity.x * dt;
+    p.position.y += p.velocity.y * dt;
   }
 };
 
-Physics.prototype.updateBallPosition = function() {
-    var currentTime = new Date().getTime();
-    var deltaT = currentTime - this.lastUpdated;
-    this.updateKickedBallVelocity(currentTime);   
-    var moveArray = [0, 0];
-    var moved = false;
-    if(this.stadium.ball.velocity.x != 0) {
-        moveArray[0] = this.stadium.ball.velocity.x * deltaT / 1000.0
-        if(Math.abs(moveArray[0]) >= 1.0) {
-            moved = true;
-        }
+// Circle-circle contact + impulse-based response. Runs once per frame after
+// the players have moved but before the ball has integrated its own velocity.
+Physics.prototype.resolveBallPlayerContacts = function() {
+  var ball = this.stadium.ball;
+  // A high, lofted ball flies over the player and cannot be touched.
+  if (ball.position.z > this.config.ballContactMaxZ) {
+    return;
+  }
+  var contactDist = this.config.ballRadius + this.config.playerRadius;
+  var contactDist2 = contactDist * contactDist;
+
+  for (var i = 0; i < this.stadium.players.length; i++) {
+    var p = this.stadium.players[i];
+    var dx = ball.position.x - p.position.x;
+    var dy = ball.position.y - p.position.y;
+    var d2 = dx * dx + dy * dy;
+    if (d2 >= contactDist2) {
+      continue;
     }
-    if(this.stadium.ball.velocity.y != 0) {
-        moveArray[1] = this.stadium.ball.velocity.y * deltaT / 1000.0;
-        if(Math.abs(moveArray[1]) >= 1.0) {
-            moved = true;
-        }
+    // Contact normal (unit vector from player toward ball).
+    var d = Math.sqrt(d2);
+    var nx, ny;
+    if (d > 0.0001) {
+      nx = dx / d;
+      ny = dy / d;
+    } else {
+      // Degenerate overlap: fall back to the direction the player is facing.
+      var fx = p.facingX || 0;
+      var fy = p.facingY || -1;
+      var flen = Math.sqrt(fx * fx + fy * fy) || 1;
+      nx = fx / flen;
+      ny = fy / flen;
     }
-    this.checkBoxCollision(moveArray);
-    this.checkGoalCollision(moveArray);
-    this.stadium.ball.position.x += moveArray[0];
-    this.stadium.ball.position.y += moveArray[1];
-    if(this.stadium.ball.velocity.z != 0) {
-        moveZ = this.stadium.ball.velocity.z * deltaT / 1000.0
-        this.stadium.ball.position.z += moveZ;
+
+    // Player and ball velocities projected onto the normal.
+    var vpN = p.velocity.x * nx + p.velocity.y * ny;                 // player toward ball (positive = closing in)
+    var vbN = ball.velocity.x * nx + ball.velocity.y * ny;           // ball along +n
+
+    // Relative approach along the normal. Only apply the bounce impulse if
+    // the pair is actually closing; otherwise we'd suck the ball back in.
+    var vRel = vbN - vpN;
+    var restitution = this.config.ballPlayerRestitution;
+    var jBounce = (vRel < 0) ? -(1 + restitution) * vRel : 0;
+
+    // Active kick impulse: a small base "tap" plus a boost from the player's
+    // closing speed. Both are along the outward normal.
+    var approach = Math.max(0, vpN);
+    var jKick = this.config.baseKickBoost + approach * this.config.playerMomentumTransfer;
+
+    var jTotal = jBounce + jKick;
+    // Applied along +n (outward from the player).
+    ball.velocity.x += nx * jTotal;
+    ball.velocity.y += ny * jTotal;
+
+    // Cap the resulting horizontal speed so pathological momentum stacks
+    // never produce absurd velocities.
+    var sp2 = ball.velocity.x * ball.velocity.x + ball.velocity.y * ball.velocity.y;
+    var maxSp = this.config.maxKickSpeed;
+    if (sp2 > maxSp * maxSp) {
+      var sp = Math.sqrt(sp2);
+      ball.velocity.x = ball.velocity.x / sp * maxSp;
+      ball.velocity.y = ball.velocity.y / sp * maxSp;
     }
-    if(moved) {
-        this.stadium.ball.phaseIndex++;
-        this.stadium.ball.phaseIndex %= 4;    
+
+    // Loft: scale with the total outgoing impulse so harder kicks fly higher,
+    // and add a small base lift so even taps show a visible hop.
+    var loft = this.config.baseLoft + jTotal * this.config.kickLoftFactor;
+    if (loft > ball.velocity.z) {
+      ball.velocity.z = loft;
     }
+
+    // Positional correction: push the ball to just outside the contact circle
+    // so the pair doesn't stay overlapping and re-trigger every frame.
+    var eps = 0.01;
+    ball.position.x = p.position.x + nx * (contactDist + eps);
+    ball.position.y = p.position.y + ny * (contactDist + eps);
+  }
 };
 
-Physics.prototype.updateKickedBallVelocity = function(currentTime) {
-    if(this.kickStarted != null) {
-        var phaseIndex = Math.floor((currentTime - this.kickStarted) / 500.0);
-        if(phaseIndex < this.config.kickVelocity.length) {
-            if(this.stadium.ball.kickDirection.x != 0) {
-                this.stadium.ball.velocity.x = (this.stadium.ball.kickDirection.x * this.config.kickVelocity[phaseIndex]);
-            }
-            if(this.stadium.ball.kickDirection.y != 0) {
-                this.stadium.ball.velocity.y = (this.stadium.ball.kickDirection.y * this.config.kickVelocity[phaseIndex]);
-            }
-            this.stadium.ball.velocity.z = this.config.kickVelocityZ[phaseIndex];
+Physics.prototype.updateBallPosition = function(dt) {
+  var ball = this.stadium.ball;
+
+  // Vertical motion: gravity + ground bounce with restitution.
+  if (ball.position.z > 0 || ball.velocity.z > 0) {
+    ball.velocity.z -= this.config.gravity * dt;
+    ball.position.z += ball.velocity.z * dt;
+    if (ball.position.z <= 0) {
+      ball.position.z = 0;
+      if (ball.velocity.z < 0) {
+        ball.velocity.z = -ball.velocity.z * this.config.ballGroundRestitution;
+        if (ball.velocity.z < this.config.minBounceVelocity) {
+          ball.velocity.z = 0;
         }
-        else {
-            this.stadium.ball.velocity.x = 0;
-            this.stadium.ball.velocity.y = 0;
-            this.stadium.ball.kickDirection.x = 0;
-            this.stadium.ball.kickDirection.y = 0;
-            this.kickStarted = null;
-        }
-        if(this.stadium.ball.velocity.x == 0 && this.stadium.ball.velocity.y == 0 && this.stadium.ball.velocity.z == 0) {
-            this.stadium.ball.position.z = 0;
-        }
+        // Landing scrubs a bit of horizontal speed.
+        ball.velocity.x *= this.config.groundImpactDamping;
+        ball.velocity.y *= this.config.groundImpactDamping;
+      }
     }
+  }
+
+  // Horizontal friction: exponential decay. Airborne balls decay slower.
+  var mu = (ball.position.z > 0) ? this.config.ballAirFriction : this.config.ballFriction;
+  var decay = Math.exp(-mu * dt);
+  ball.velocity.x *= decay;
+  ball.velocity.y *= decay;
+
+  // Snap sub-threshold velocities to zero to avoid endless jitter.
+  var speed2 = ball.velocity.x * ball.velocity.x + ball.velocity.y * ball.velocity.y;
+  var minV = this.config.minVelocity;
+  if (speed2 < minV * minV) {
+    ball.velocity.x = 0;
+    ball.velocity.y = 0;
+  }
+
+  var moveArray = [ball.velocity.x * dt, ball.velocity.y * dt];
+
+  this.checkBoxCollision(moveArray);
+  this.checkGoalCollision(moveArray);
+
+  ball.position.x += moveArray[0];
+  ball.position.y += moveArray[1];
+
+  // Sprite rotation: advance one phase for every `ballSpinPxPerPhase` pixels
+  // the ball actually travelled this frame. This ties spin speed to linear
+  // speed, so fast kicks blur and slow rolls show a clearly visible turn.
+  var stepDist = Math.sqrt(moveArray[0] * moveArray[0] + moveArray[1] * moveArray[1]);
+  if (stepDist > 0) {
+    ball.rollDistance += stepDist;
+    var pxPerPhase = this.config.ballSpinPxPerPhase;
+    while (ball.rollDistance >= pxPerPhase) {
+      ball.phaseIndex = (ball.phaseIndex + 1) % 4;
+      ball.rollDistance -= pxPerPhase;
+    }
+  } else {
+    // Ball at rest: keep the sprite from starting mid-phase next time.
+    ball.rollDistance = 0;
+  }
+};
+
+// Reflect the ball off a vertical-normal wall (horizontal surface, ball crossing pY).
+Physics.prototype.reflectY = function(moveArray) {
+  var e = this.config.wallRestitution;
+  moveArray[1] = -moveArray[1] * e;
+  this.stadium.ball.velocity.y = -this.stadium.ball.velocity.y * e;
+};
+
+// Reflect the ball off a horizontal-normal wall (vertical surface, ball crossing pX).
+Physics.prototype.reflectX = function(moveArray) {
+  var e = this.config.wallRestitution;
+  moveArray[0] = -moveArray[0] * e;
+  this.stadium.ball.velocity.x = -this.stadium.ball.velocity.x * e;
 };
 
 Physics.prototype.checkGoalCollision = function (moveArray) {
@@ -122,8 +204,7 @@ Physics.prototype.checkGoalCollision = function (moveArray) {
        this.stadium.ball.position.y,
        moveArray[1]
     )) {
-      moveArray[1] *= -1;
-      this.stadium.ball.kickDirection.y *= -1;
+      this.reflectY(moveArray);
     }
     else if(MathLib.isIntersectedVertically(
        this.config.goalBottomBottomLeft.x,
@@ -133,8 +214,7 @@ Physics.prototype.checkGoalCollision = function (moveArray) {
        this.stadium.ball.position.y,
        moveArray[1]
     )) {
-      moveArray[1] *= -1;
-      this.stadium.ball.kickDirection.y *= -1;
+      this.reflectY(moveArray);
     }
     if(MathLib.isIntersectedHorizontally(
        this.config.goalTopTopLeft.y,
@@ -144,8 +224,7 @@ Physics.prototype.checkGoalCollision = function (moveArray) {
        this.stadium.ball.position.y,
        moveArray[0]
     )) {
-      moveArray[0] *= -1;
-      this.stadium.ball.kickDirection.x *= -1;
+      this.reflectX(moveArray);
     }
     else if(MathLib.isIntersectedHorizontally(
        this.config.goalTopTopRight.y,
@@ -155,8 +234,7 @@ Physics.prototype.checkGoalCollision = function (moveArray) {
        this.stadium.ball.position.y,
        moveArray[0]
     )) {
-      moveArray[0] *= -1;
-      this.stadium.ball.kickDirection.x *= -1;
+      this.reflectX(moveArray);
     }
     else if(MathLib.isIntersectedHorizontally(
        this.config.goalBottomTopLeft.y,
@@ -166,8 +244,7 @@ Physics.prototype.checkGoalCollision = function (moveArray) {
        this.stadium.ball.position.y,
        moveArray[0]
     )) {
-      moveArray[0] *= -1;
-      this.stadium.ball.kickDirection.x *= -1;
+      this.reflectX(moveArray);
     }
     else if(MathLib.isIntersectedHorizontally(
        this.config.goalBottomTopRight.y,
@@ -177,12 +254,11 @@ Physics.prototype.checkGoalCollision = function (moveArray) {
        this.stadium.ball.position.y,
        moveArray[0]
     )) {
-      moveArray[0] *= -1;
-      this.stadium.ball.kickDirection.x *= -1;
+      this.reflectX(moveArray);
     }
 };
 
-Physics.prototype.checkBoxCollision = function (moveArray) {    
+Physics.prototype.checkBoxCollision = function (moveArray) {
     if(MathLib.isIntersectedVertically(
        this.config.boxTopLeft.x,
        this.config.boxTopRight.x,
@@ -191,8 +267,7 @@ Physics.prototype.checkBoxCollision = function (moveArray) {
        this.stadium.ball.position.y,
        moveArray[1]
     )) {
-      moveArray[1] *= -1;
-      this.stadium.ball.kickDirection.y *= -1;
+      this.reflectY(moveArray);
     }
     else if(MathLib.isIntersectedVertically(
        this.config.boxBottomLeft.x,
@@ -202,8 +277,7 @@ Physics.prototype.checkBoxCollision = function (moveArray) {
        this.stadium.ball.position.y,
        moveArray[1]
     )) {
-      moveArray[1] *= -1;
-      this.stadium.ball.kickDirection.y *= -1;
+      this.reflectY(moveArray);
     }
     if(MathLib.isIntersectedHorizontally(
        this.config.boxTopLeft.y,
@@ -213,8 +287,7 @@ Physics.prototype.checkBoxCollision = function (moveArray) {
        this.stadium.ball.position.y,
        moveArray[0]
     )) {
-      moveArray[0] *= -1;
-      this.stadium.ball.kickDirection.x *= -1;
+      this.reflectX(moveArray);
     }
     else if(MathLib.isIntersectedHorizontally(
        this.config.boxTopRight.y,
@@ -224,9 +297,6 @@ Physics.prototype.checkBoxCollision = function (moveArray) {
        this.stadium.ball.position.y,
        moveArray[0]
     )) {
-      moveArray[0] *= -1;
-      this.stadium.ball.kickDirection.x *= -1;
-    }  
+      this.reflectX(moveArray);
+    }
 };
-
-
