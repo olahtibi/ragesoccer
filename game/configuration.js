@@ -33,7 +33,7 @@ var Configuration = function () {
   this.minBounceVelocity = 25;          // vz below which the ball is considered at rest.
   this.wallRestitution = 0.7;           // Bounce off box walls and goalposts.
   this.minVelocity = 3;                 // Horizontal speed below which the ball snaps to rest.
-  this.ballContactMaxZ = 3;             // Ball height above which players cannot touch it.
+  this.ballContactMaxZ = 5;             // Ball height above which players cannot touch it.
   this.ballSpinPxPerPhase = 6;          // Pixels of travel per sprite phase change (higher = slower spin).
   this.ballRadius = 2;
   this.playerRadius = 4;

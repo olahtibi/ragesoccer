@@ -44,7 +44,7 @@ Game.prototype.togglePause = function() {
 };
 
 function startLoop() {
-  var level = 4;
+  var level = 1;
   // Create configuration
   var config = new Configuration();
   // Create players and ball
