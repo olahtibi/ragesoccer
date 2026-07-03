@@ -2,8 +2,6 @@ var Physics = function (config, stadium) {
   this.config = config;
   this.stadium = stadium;
   this.lastUpdated = new Date().getTime();
-  // Kept only for backward compatibility with Game.togglePause; unused by physics.
-  this.kickStarted = null;
   this.fps = 0.0;
   this.deltaArr = [0.0];
   this.frameNumber = 0;
@@ -11,6 +9,14 @@ var Physics = function (config, stadium) {
 
 Physics.prototype.update = function() {
   var currentTime = new Date().getTime();
+  // While the game is paused, freeze the entire simulation. We still refresh
+  // lastUpdated on every frame so that when play resumes, dt starts at a
+  // single-frame value instead of "pause duration ago", which would otherwise
+  // teleport the ball on unpause.
+  if (window.game != null && window.game.isPaused && window.game.isPaused()) {
+    this.lastUpdated = currentTime;
+    return;
+  }
   var dt = (currentTime - this.lastUpdated) / 1000.0;
   // Clamp dt so a paused/backgrounded tab doesn't teleport bodies on resume.
   if (dt > 0.1) dt = 0.1;
@@ -35,10 +41,24 @@ Physics.prototype.updateStats = function(currentTime) {
 };
 
 Physics.prototype.updatePlayerPosition = function(dt) {
+  var pxPerPhase = this.config.playerStepPxPerPhase;
   for (var i = 0; i < this.stadium.players.length; i++) {
     var p = this.stadium.players[i];
-    p.position.x += p.velocity.x * dt;
-    p.position.y += p.velocity.y * dt;
+    var moveX = p.velocity.x * dt;
+    var moveY = p.velocity.y * dt;
+    p.position.x += moveX;
+    p.position.y += moveY;
+    // Walk-cycle: advance one sprite phase for every `playerStepPxPerPhase`
+    // pixels of travel. Ties the animation speed to actual motion, so a
+    // stopped or paused player never steps in place.
+    var stepDist = Math.sqrt(moveX * moveX + moveY * moveY);
+    if (stepDist > 0) {
+      p.stepDistance += stepDist;
+      while (p.stepDistance >= pxPerPhase) {
+        p.phaseIndex = (p.phaseIndex + 1) % 3;
+        p.stepDistance -= pxPerPhase;
+      }
+    }
   }
 };
 

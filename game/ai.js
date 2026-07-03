@@ -15,6 +15,16 @@ var Ai = function (config, stadium, level) {
         (config.goalBottomTopLeft.y + config.goalBottomBottomRight.y) / 2
     );
 
+    // Goalie geometry for the top goal (the one we defend). The "goal line" is
+    // the front edge of the goal box, i.e. the boundary that separates the
+    // pitch from the goal net. Standing on the pitch side of this line means
+    // any contact with the ball sends it away from our own net.
+    this.ownGoalLineY = config.goalTopBottomLeft.y;                              // 113
+    this.ownGoalCenterX = (config.goalTopTopLeft.x + config.goalTopTopRight.x) / 2; // 336
+    this.ownGoalMouthLeftX = config.goalTopTopLeft.x;                            // 300
+    this.ownGoalMouthRightX = config.goalTopTopRight.x;                          // 372
+    this.midlineY = config.stadiumHeight / 2;                                    // 424
+
     this.contactDist = config.ballRadius + config.playerRadius;
     this.guardDistance = 30;          // How far in front of own goal the AI holds its defensive line.
     this.runThroughDistance = 18;     // How far past the ball the AI aims when shooting.
@@ -39,13 +49,24 @@ Ai.prototype.update = function() {
     }
     var me = this.stadium.playerAway;
     var human = this.stadium.playerHome;
+    var ball = this.stadium.ball;
+
+    // Airborne ball: nobody can touch it until it comes down. Run to the
+    // predicted landing point (or drop back to defend if the aerial race is
+    // lost and the ball is landing in our half).
+    if (ball.position.z > 0 || ball.velocity.z > 0) {
+        this.handleAirborneBall(me, human);
+        return;
+    }
 
     var tMe = this.timeToReach(me.position);
     var tHuman = this.timeToReach(human.position);
-    var threat = this.isBallThreateningOwnGoal();
+    var ballInOwnHalf = ball.position.y < this.midlineY;
+    var threat = ballInOwnHalf || this.isBallThreateningOwnGoal();
+    var humanCloser = tHuman < tMe;
 
     var target;
-    if (threat && tHuman + this.raceMargin < tMe) {
+    if (threat && humanCloser) {
         this.state = 'defend';
         target = this.defensePoint();
     } else if (tMe <= tHuman + this.raceMargin) {
@@ -62,6 +83,80 @@ Ai.prototype.update = function() {
     }
 
     this.moveTo(target);
+    this.holdGoaliePose();
+};
+
+// While parked as goalie, look out at the pitch rather than into the net.
+// updateFacing() only recomputes facing from a non-zero velocity, so once the
+// AI's velocity has been snapped to zero on arrival its facing would otherwise
+// stick to whatever direction it happened to arrive from (often north — into
+// the goal — because the AI usually retreats from midfield toward its line).
+Ai.prototype.holdGoaliePose = function() {
+    if (this.state !== 'defend') return;
+    var me = this.stadium.playerAway;
+    if (me.velocity.x === 0 && me.velocity.y === 0) {
+        me.facingX = 0;
+        me.facingY = 1;  // south: toward the pitch, away from our own goal
+    }
+};
+
+// Where the ball will first touch the ground again, in world coordinates.
+// Uses the same gravity constant as the physics, and integrates horizontal
+// motion under air friction (not the ground friction that predictBallPos uses).
+// Returns null if the ball isn't actually airborne.
+Ai.prototype.predictLandingPos = function() {
+    var ball = this.stadium.ball;
+    if (ball.position.z <= 0 && ball.velocity.z <= 0) {
+        return null;
+    }
+    var g = this.config.gravity;
+    var vz = ball.velocity.z;
+    var z = ball.position.z;
+    // Solve z + vz*t - 0.5*g*t² = 0 for the positive root.
+    var disc = vz * vz + 2 * g * z;
+    if (disc < 0) return null;
+    var tLand = (vz + Math.sqrt(disc)) / g;
+    if (!isFinite(tLand) || tLand <= 0) return null;
+
+    var mu = this.config.ballAirFriction;
+    var travel = (1 - Math.exp(-mu * tLand)) / mu;
+    return new Vector2d(
+        ball.position.x + ball.velocity.x * travel,
+        ball.position.y + ball.velocity.y * travel
+    );
+};
+
+// Airborne-ball behavior. Chase the landing point unless the human clearly
+// beats us to it AND the ball is dropping into our half — in which case we
+// abandon the race and reset onto our defensive line.
+Ai.prototype.handleAirborneBall = function(me, human) {
+    this.orbitDir = 0;
+    var landing = this.predictLandingPos();
+    if (landing == null) {
+        // Degenerate airborne state — fall back to just chasing the shadow.
+        this.state = 'receive';
+        this.moveTo(this.stadium.ball.position);
+        return;
+    }
+    var meDx = landing.x - me.position.x;
+    var meDy = landing.y - me.position.y;
+    var dMe = Math.sqrt(meDx * meDx + meDy * meDy);
+    var huDx = landing.x - human.position.x;
+    var huDy = landing.y - human.position.y;
+    var dHuman = Math.sqrt(huDx * huDx + huDy * huDy);
+    // Race margin translated back to distance so we don't need a division.
+    var raceSlack = this.speed * this.raceMargin;
+    var meWinsRace = dMe <= dHuman + raceSlack;
+    var landingGoalward = landing.y < this.midlineY;
+
+    if (!meWinsRace && landingGoalward) {
+        this.state = 'defend';
+        this.moveTo(this.defensePoint());
+        this.holdGoaliePose();
+    } else {
+        this.state = 'receive';
+        this.moveTo(landing);
+    }
 };
 
 Ai.prototype.moveTo = function(target) {
@@ -125,21 +220,47 @@ Ai.prototype.isBallThreateningOwnGoal = function() {
     return false;
 };
 
-// Goalie spot on the line own_goal → ball, at guardDistance from the goal.
-// From this spot any contact sends the ball outward, away from our goal.
+// Goalie spot: on the pitch side of the goal line, blocking the shot from the
+// ball toward the goal mouth. Hardcoded for the top goal (AI is always away).
+//   * X tracks where the shot-line "ball → goal-mouth center" crosses the
+//     defensive line, clamped to the goal mouth width plus a small margin.
+//   * Y sits on the defensive line by default, but steps forward to challenge
+//     the ball when it enters the come-out zone. It NEVER crosses the goal
+//     line back into the net.
 Ai.prototype.defensePoint = function() {
-    var predicted = this.predictBallPos(0.2);
-    var dx = predicted.x - this.ownGoalCenter.x;
-    var dy = predicted.y - this.ownGoalCenter.y;
-    var d = Math.sqrt(dx * dx + dy * dy) || 1;
-    var guard = this.guardDistance;
-    // Never overshoot the ball: cap the guard distance at ball-distance minus a hair.
-    var maxGuard = d - this.contactDist - 1;
-    if (guard > maxGuard) guard = Math.max(5, maxGuard);
-    return new Vector2d(
-        this.ownGoalCenter.x + dx / d * guard,
-        this.ownGoalCenter.y + dy / d * guard
-    );
+    var predicted = this.predictBallPos(0.15);
+    var baseLineY = this.ownGoalLineY + this.guardDistance;   // 113 + 30 = 143
+    var comeOutTriggerY = baseLineY + 20;                     // 163
+
+    // X: intersect the shot line with the defensive line.
+    var dyBall = predicted.y - this.ownGoalLineY;
+    var goalieX;
+    if (dyBall <= 0.5) {
+        // Ball is already at/behind the goal line — cover the middle.
+        goalieX = this.ownGoalCenterX;
+    } else {
+        var t = (baseLineY - this.ownGoalLineY) / dyBall;
+        goalieX = this.ownGoalCenterX + t * (predicted.x - this.ownGoalCenterX);
+    }
+    // Keep goalie in front of the goal mouth (with a small margin for near-post shots).
+    var mouthMargin = 8;
+    var xMin = this.ownGoalMouthLeftX - mouthMargin;
+    var xMax = this.ownGoalMouthRightX + mouthMargin;
+    if (goalieX < xMin) goalieX = xMin;
+    if (goalieX > xMax) goalieX = xMax;
+
+    // Y: hold the defensive line unless the ball has entered the come-out zone,
+    // in which case step forward to meet it — but never cross the goal line.
+    var goalieY;
+    if (predicted.y >= comeOutTriggerY) {
+        goalieY = baseLineY;
+    } else {
+        goalieY = predicted.y - (this.contactDist + 1);
+        var minPitchY = this.ownGoalLineY + 2;   // never inside the box
+        if (goalieY < minPitchY) goalieY = minPitchY;
+    }
+
+    return new Vector2d(goalieX, goalieY);
 };
 
 // Attacking target: either swing around to the "behind ball" side (relative to

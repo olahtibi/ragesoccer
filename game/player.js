@@ -8,6 +8,11 @@ var Player = function (imgPlayer, position, playerSpriteWidth, playerSpriteHeigh
     this.facingX = 0;
     this.facingY = -1;
     this.velocity = new Vector2d(0, 0)
+    // Walk-cycle state advanced by Physics.updatePlayerPosition in step with
+    // distance actually travelled (not wall-clock time), so the animation
+    // naturally freezes when nothing is moving — including during pause.
+    this.phaseIndex = 0;
+    this.stepDistance = 0;
 };
 
 Player.prototype.updateFacing = function() {
@@ -53,16 +58,16 @@ Player.prototype.draw = function(ctx) {
     var img = document.getElementById(this.skin);
     var topLeftX = 0;
     var topLeftY = 0;
-    var ms = new Date().getMilliseconds() % 250;
-    var phaseIndex = 0;
     this.updateFacing();
-    if(this.velocity.x != 0 || this.velocity.y != 0) {
-        if(ms > 83.33 && ms < 166.66) {
-            phaseIndex = 1;
-        }
-        if(ms > 166.66) {
-            phaseIndex = 2;
-        }    
+    // Standing still → hold the neutral (phase 0) pose. Anything moving uses
+    // the distance-driven phaseIndex maintained by the physics step.
+    var phaseIndex;
+    if (this.velocity.x == 0 && this.velocity.y == 0) {
+        this.phaseIndex = 0;
+        this.stepDistance = 0;
+        phaseIndex = 0;
+    } else {
+        phaseIndex = this.phaseIndex;
     }
     if(this.facingY == -1 && this.facingX == 0) {
         // NORTH

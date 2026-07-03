@@ -35,6 +35,7 @@ var Configuration = function () {
   this.minVelocity = 3;                 // Horizontal speed below which the ball snaps to rest.
   this.ballContactMaxZ = 5;             // Ball height above which players cannot touch it.
   this.ballSpinPxPerPhase = 6;          // Pixels of travel per sprite phase change (higher = slower spin).
+  this.playerStepPxPerPhase = 4;        // Pixels of travel per walk-cycle sprite phase change.
   this.ballRadius = 2;
   this.playerRadius = 4;
   this.imgPitch = document.getElementById("pitch");
