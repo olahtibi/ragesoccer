@@ -45,6 +45,7 @@ var Configuration = function () {
   this.aiPressReleaseDistance = 90;
   this.aiKeeperChallengeRadius = 70;
   this.aiTargetDeadband = 2;
+  this.humanSwitchHysteresisDistance = 20;
   this.ballRadius = 2;
   this.playerRadius = 4;
   this.imgPitch = document.getElementById("pitch");

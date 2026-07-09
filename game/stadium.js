@@ -26,9 +26,9 @@ Stadium.prototype.draw = function(ctx) {
 
 Stadium.prototype.drawHumanPlayerMarker = function(ctx, player) {
   ctx.beginPath();
-  ctx.ellipse(player.position.x, player.position.y, 9, 9, 0, 0, 2 * Math.PI);
+  ctx.ellipse(player.position.x, player.position.y, 10, 5, 0, 0, 2 * Math.PI);
   ctx.lineWidth = 1;
-  ctx.strokeStyle = "white";
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.5)";
   ctx.stroke();
 };
 

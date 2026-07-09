@@ -235,16 +235,24 @@ Team.prototype.drawAiDebug = function(ctx) {
 Team.prototype.findClosestPlayerToBall = function(ball) {
   var closest = null;
   var closestDistance = Infinity;
-  var epsilon = 0.0001;
+  var humanDistance = Infinity;
 
   for (var i = 0; i < this.players.length; i++) {
     var player = this.players[i];
     var distance = MathLib.computeDistance(player.position, ball.position);
-    if (Math.abs(distance - closestDistance) <= epsilon && player === this.humanPlayer) {
-      closest = player;
-    } else if (distance < closestDistance - epsilon) {
+    if (player === this.humanPlayer) {
+      humanDistance = distance;
+    }
+    if (distance < closestDistance) {
       closest = player;
       closestDistance = distance;
+    }
+  }
+
+  if (this.humanPlayer != null && closest !== this.humanPlayer) {
+    var hysteresis = this.config.humanSwitchHysteresisDistance || 0;
+    if (humanDistance <= closestDistance + hysteresis) {
+      return this.humanPlayer;
     }
   }
 

@@ -12,8 +12,10 @@ function touchHandler(e) {
     if(window.game.debugLog != null) {
         window.game.debugLog.recordTouchEvent(new Vector2d(targetX, targetY));
     }
+    var target = new Vector2d(targetX, targetY);
     var player = window.game.stadium.homeTeam.selectHumanPlayer(window.game.stadium.ball);
-    player.velocity = MathLib.computeVelocityForTarget(player.position, new Vector2d(targetX, targetY), velocity);
+    window.game.touchTarget = target;
+    player.velocity = MathLib.computeVelocityForTarget(player.position, target, velocity);
     startGame();
 }
 

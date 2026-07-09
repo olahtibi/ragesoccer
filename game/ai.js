@@ -700,7 +700,7 @@ Ai.prototype.draw = function(ctx) {
         ctx.beginPath();
         ctx.moveTo(this.sPos.x, this.sPos.y);
         ctx.lineTo(this.tPos.x, this.tPos.y);
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 1;
         ctx.strokeStyle = 'blue';
         ctx.stroke();
     }

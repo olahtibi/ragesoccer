@@ -47,7 +47,7 @@ test("Keyboard diagonal input normalizes selected player velocity", function() {
 
 test("Touch input controls the home player closest to the ball", function() {
   var fixture = makeFixture({ homeTeamSize: 2, awayTeamSize: 1 });
-  makeInputGame(fixture);
+  var game = makeInputGame(fixture);
   fixture.ball.position.x = fixture.stadium.homePlayers[1].position.x;
   fixture.ball.position.y = fixture.stadium.homePlayers[1].position.y;
   var scaleBy = fixture.config.comnputeScaleBy();
@@ -63,6 +63,8 @@ test("Touch input controls the home player closest to the ball", function() {
 
   assertTrue(fixture.stadium.humanPlayer === fixture.stadium.homePlayers[1]);
   assertTrue(fixture.stadium.homePlayers[1].velocity.y > 0);
+  assertNear(game.touchTarget.x, fixture.stadium.homePlayers[1].position.x, 0.0001);
+  assertNear(game.touchTarget.y, fixture.stadium.homePlayers[1].position.y + 50, 0.0001);
 });
 
 test("Slash does not pause or dump logs when debug is disabled", function() {

@@ -52,6 +52,40 @@ test("Stadium closest-player tie keeps the current human player", function() {
   assertTrue(selected === fixture.stadium.homePlayers[1]);
 });
 
+test("Stadium keeps current human when another player is only slightly closer", function() {
+  var fixture = makeFixture({ homeTeamSize: 2, awayTeamSize: 1 });
+  fixture.config.humanSwitchHysteresisDistance = 20;
+  fixture.stadium.homePlayers[0].position.x = 100;
+  fixture.stadium.homePlayers[0].position.y = 100;
+  fixture.stadium.homePlayers[1].position.x = 112;
+  fixture.stadium.homePlayers[1].position.y = 100;
+  fixture.ball.position.x = 120;
+  fixture.ball.position.y = 100;
+  fixture.stadium.homeTeam.humanPlayer = fixture.stadium.homePlayers[0];
+  fixture.stadium.humanPlayer = fixture.stadium.homePlayers[0];
+
+  var selected = fixture.stadium.findClosestHomePlayerToBall();
+
+  assertTrue(selected === fixture.stadium.homePlayers[0]);
+});
+
+test("Stadium switches human when another player is clearly closer", function() {
+  var fixture = makeFixture({ homeTeamSize: 2, awayTeamSize: 1 });
+  fixture.config.humanSwitchHysteresisDistance = 20;
+  fixture.stadium.homePlayers[0].position.x = 100;
+  fixture.stadium.homePlayers[0].position.y = 100;
+  fixture.stadium.homePlayers[1].position.x = 140;
+  fixture.stadium.homePlayers[1].position.y = 100;
+  fixture.ball.position.x = 140;
+  fixture.ball.position.y = 100;
+  fixture.stadium.homeTeam.humanPlayer = fixture.stadium.homePlayers[0];
+  fixture.stadium.humanPlayer = fixture.stadium.homePlayers[0];
+
+  var selected = fixture.stadium.findClosestHomePlayerToBall();
+
+  assertTrue(selected === fixture.stadium.homePlayers[1]);
+});
+
 test("Stadium selectHumanPlayer clears previous human velocity on switch", function() {
   var fixture = makeFixture({ homeTeamSize: 2, awayTeamSize: 1 });
   fixture.stadium.homeTeam.humanPlayer = fixture.stadium.homePlayers[0];
@@ -102,14 +136,16 @@ test("Stadium draw marks the human controlled player", function() {
     },
     stroke: function() {
       strokes++;
-    }
+    },
+    strokeStyle: null
   };
 
   fixture.stadium.draw(ctx);
 
   assertEqual(ellipseArgs.x, fixture.stadium.humanPlayer.position.x);
   assertEqual(ellipseArgs.y, fixture.stadium.humanPlayer.position.y);
-  assertEqual(ellipseArgs.radiusX, 9);
-  assertEqual(ellipseArgs.radiusY, 9);
+  assertEqual(ellipseArgs.radiusX, 10);
+  assertEqual(ellipseArgs.radiusY, 5);
+  assertEqual(ctx.strokeStyle, "rgba(255, 255, 255, 0.5)");
   assertEqual(strokes, 1);
 });
