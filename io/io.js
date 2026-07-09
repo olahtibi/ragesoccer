@@ -9,7 +9,8 @@ function touchHandler(e) {
     var scaleBy = window.game.config.comnputeScaleBy();
     var targetX = (0 - window.game.camera.position.x) + e.touches[0].clientX / scaleBy;
     var targetY = (0 - window.game.camera.position.y) + e.touches[0].clientY / scaleBy;
-    window.game.stadium.playerHome.velocity = MathLib.computeVelocityForTarget(window.game.stadium.playerHome.position, new Vector2d(targetX, targetY), velocity);
+    var player = window.game.stadium.selectHumanPlayer();
+    player.velocity = MathLib.computeVelocityForTarget(player.position, new Vector2d(targetX, targetY), velocity);
     startGame();
 }
 
@@ -18,32 +19,33 @@ function checkInput(e) {
     if(!window.game.isPaused()) {
         // Pixels per second
         var velocity = window.game.config.playerVelocity;
-        window.game.stadium.playerHome.velocity.x = 0;
-        window.game.stadium.playerHome.velocity.y = 0;
+        var player = window.game.stadium.selectHumanPlayer();
+        player.velocity.x = 0;
+        player.velocity.y = 0;
         // player - home
         if(window.keyMap[38]) {
             // console.log('UP');
-            window.game.stadium.playerHome.velocity.y = 0 - velocity;
+            player.velocity.y = 0 - velocity;
             startGame();
         }
         if(window.keyMap[40]) {
             // console.log('DOWN');
-            window.game.stadium.playerHome.velocity.y = velocity;
+            player.velocity.y = velocity;
             startGame();
         }
         if(window.keyMap[37]) {
             // console.log('LEFT');
-            window.game.stadium.playerHome.velocity.x = 0 - velocity;
+            player.velocity.x = 0 - velocity;
             startGame();
         }
         if(window.keyMap[39]) {
             // console.log('LEFT');
-            window.game.stadium.playerHome.velocity.x = velocity;
+            player.velocity.x = velocity;
             startGame();
         }
-        if(window.game.stadium.playerHome.velocity.x != 0 && window.game.stadium.playerHome.velocity.x != 0) {
-            window.game.stadium.playerHome.velocity.x /= Math.sqrt(2);
-            window.game.stadium.playerHome.velocity.y /= Math.sqrt(2);
+        if(player.velocity.x != 0 && player.velocity.y != 0) {
+            player.velocity.x /= Math.sqrt(2);
+            player.velocity.y /= Math.sqrt(2);
         }
     }
     if(window.keyMap[70]) {

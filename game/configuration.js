@@ -46,6 +46,8 @@ var Configuration = function () {
   this.initialBallPosition = new Vector3d(334, 433, 0);
   this.initialPlayerHomePosition = new Vector2d(332, 480);
   this.initialPlayerAwayPosition = new Vector2d(334, 400);
+  this.homeTeamSize = 1;
+  this.awayTeamSize = 1;
   this.playerVelocity = 50; // Pixels per second
   this.playerSpriteWidth = 10 //10;
   this.playerSpriteHeight = 16 //18;
@@ -60,4 +62,35 @@ Configuration.prototype.comnputeScaleBy = function() {
   else {
     return this.viewportHeight / (this.stadiumHeight * this.viewportRatio);
   }
+};
+
+Configuration.prototype.initialPlayerPositions = function(teamSide) {
+  var positions;
+  if (teamSide == "home") {
+    positions = [
+      this.initialPlayerHomePosition,
+      new Vector2d(250, 560),
+      new Vector2d(420, 560),
+      new Vector2d(250, 650),
+      new Vector2d(420, 650)
+    ];
+  } else {
+    positions = [
+      this.initialPlayerAwayPosition,
+      new Vector2d(250, 320),
+      new Vector2d(420, 320),
+      new Vector2d(250, 230),
+      new Vector2d(420, 230)
+    ];
+  }
+
+  var size = teamSide == "home" ? this.homeTeamSize : this.awayTeamSize;
+  if (size < 1) size = 1;
+  if (size > positions.length) size = positions.length;
+
+  var result = [];
+  for (var i = 0; i < size; i++) {
+    result.push(new Vector2d(positions[i].x, positions[i].y));
+  }
+  return result;
 };

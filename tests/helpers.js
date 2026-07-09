@@ -9,7 +9,10 @@ function setupBrowserStubs() {
   global.window = {
     innerWidth: 640,
     innerHeight: 480,
-    game: null
+    game: null,
+    keyMap: {},
+    addEventListener: function() {},
+    requestAnimationFrame: function() {}
   };
 
   global.document = {
@@ -48,50 +51,50 @@ function loadGameScripts() {
     "game/goalDetector.js",
     "game/stadium.js",
     "game/physics.js",
-    "game/ai.js"
+    "game/ai.js",
+    "game/camera.js",
+    "game/game.js",
+    "io/io.js"
   ].forEach(loadScript);
 
   scriptsLoaded = true;
 }
 
-function makeConfig() {
-  return new Configuration();
+function makeConfig(options) {
+  var config = new Configuration();
+  options = options || {};
+  if (options.homeTeamSize != null) {
+    config.homeTeamSize = options.homeTeamSize;
+  }
+  if (options.awayTeamSize != null) {
+    config.awayTeamSize = options.awayTeamSize;
+  }
+  return config;
 }
 
-function makeFixture() {
-  var config = makeConfig();
+function makeFixture(options) {
+  var config = makeConfig(options);
   var ball = new Ball(config.imgBall, config.ballRadius, new Vector3d(334, 433, 0));
-  var playerHome = new Player(
-    config.imgPlayerHome,
-    new Vector2d(332, 480),
-    config.playerSpriteWidth,
-    config.playerSpriteHeight,
-    config.playerSpriteCenterX,
-    config.playerSpriteCenterY
-  );
-  var playerAway = new Player(
-    config.imgPlayerAway,
-    new Vector2d(334, 400),
-    config.playerSpriteWidth,
-    config.playerSpriteHeight,
-    config.playerSpriteCenterX,
-    config.playerSpriteCenterY
-  );
-  playerAway.facingY = 1;
+  var homePlayers = createTeamPlayers(config, "home");
+  var awayPlayers = createTeamPlayers(config, "away");
 
   var goalDetector = new GoalDetector(config, ball);
-  var stadium = new Stadium(config.imgPitch, ball, playerHome, playerAway, goalDetector);
+  var stadium = new Stadium(config.imgPitch, ball, homePlayers, awayPlayers, goalDetector);
   var physics = new Physics(config, stadium);
-  var ai = new Ai(config, stadium, 1);
+  var aiControllers = createAiControllers(config, stadium, 1);
+  var ai = aiControllers[0] || new Ai(config, stadium, 1);
 
   return {
     config: config,
     ball: ball,
-    playerHome: playerHome,
-    playerAway: playerAway,
+    playerHome: stadium.playerHome,
+    playerAway: stadium.playerAway,
+    homePlayers: homePlayers,
+    awayPlayers: awayPlayers,
     goalDetector: goalDetector,
     stadium: stadium,
     physics: physics,
+    aiControllers: aiControllers,
     ai: ai
   };
 }

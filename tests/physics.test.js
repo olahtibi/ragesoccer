@@ -19,6 +19,21 @@ test("Physics advances player position and walk phase by travelled distance", fu
   assertNear(fixture.playerHome.stepDistance, 2, 0.0001);
 });
 
+test("Physics advances every player in the stadium", function() {
+  var fixture = makeFixture({ homeTeamSize: 2, awayTeamSize: 2 });
+  for (var i = 0; i < fixture.stadium.players.length; i++) {
+    fixture.stadium.players[i].velocity.x = 10;
+    fixture.stadium.players[i].velocity.y = 0;
+  }
+
+  fixture.physics.updatePlayerPosition(1);
+
+  for (var j = 0; j < fixture.stadium.players.length; j++) {
+    assertNear(fixture.stadium.players[j].stepDistance, 2, 0.0001);
+    assertEqual(fixture.stadium.players[j].phaseIndex, 2);
+  }
+});
+
 test("Physics ball friction reduces horizontal velocity", function() {
   var fixture = makeFixture();
   fixture.ball.velocity.x = 100;
