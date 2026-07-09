@@ -1,4 +1,4 @@
-var Ai = function (config, stadium, controlledPlayer, team, opponentTeam, level) {
+var Ai = function (config, stadium, controlledPlayer, team, opponentTeam) {
     this.config = config;
     this.stadium = stadium;
     this.controlledPlayer = controlledPlayer;
@@ -11,9 +11,7 @@ var Ai = function (config, stadium, controlledPlayer, team, opponentTeam, level)
         this.opponentTeam = opponentTeam || (this.team == stadium.homeTeam ? stadium.awayTeam : stadium.homeTeam);
         this.teamSide = this.team.side;
     }
-    this.level = level || 1;
-    // Level 1 → 41 px/s (below human 50). Level 4 → 56 px/s (a bit above).
-    this.speed = 36 + this.level * 5;
+    this.speed = config.teamVelocity(this.teamSide);
 
     if (this.teamSide == "home") {
         this.ownGoalCenter = new Vector2d(

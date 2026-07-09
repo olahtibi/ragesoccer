@@ -13,7 +13,8 @@ var testlib = require("./testlib");
   { name: "Stadium", path: "./stadium.test" },
   { name: "DebugLog", path: "./debugLog.test" },
   { name: "Game", path: "./game.test" },
-  { name: "Input", path: "./io.test" }
+  { name: "Input", path: "./io.test" },
+  { name: "HTML", path: "./html.test" }
 ].forEach(function(entry) {
   testlib.suite(entry.name);
   require(entry.path);

@@ -35,6 +35,10 @@ var Configuration = function () {
   this.ballSpinPxPerPhase = 6;          // Pixels of travel per sprite phase change (higher = slower spin).
   this.playerStepPxPerPhase = 4;        // Pixels of travel per walk-cycle sprite phase change.
   this.teamAiEnabled = true;
+  this.minStrength = 1;
+  this.maxStrength = 10;
+  this.playerStrength = 6;
+  this.opponentStrength = 6;
   this.attackDistance = 120;
   this.attackWidth = 70;
   this.defenderDistance = 85;
@@ -66,6 +70,60 @@ var Configuration = function () {
   this.debug = false;
   this.debugLogSeconds = 3;
   this.debugLogEveryNFrames = 4;
+  this.applyQueryOptions();
+};
+
+Configuration.prototype.applyQueryOptions = function() {
+  var params = this.queryParams();
+  this.playerStrength = this.parseIntOption(params.playerStrength, this.playerStrength, this.minStrength, this.maxStrength);
+  this.opponentStrength = this.parseIntOption(params.opponentStrength, this.opponentStrength, this.minStrength, this.maxStrength);
+  this.homeTeamSize = this.parseIntOption(params.homeTeamSize, this.homeTeamSize, 1, 5);
+  this.awayTeamSize = this.parseIntOption(params.awayTeamSize, this.awayTeamSize, 1, 5);
+  this.playerVelocity = this.teamVelocity("home");
+};
+
+Configuration.prototype.queryParams = function() {
+  var result = {};
+  if (typeof window === "undefined" || window.location == null || !window.location.search) {
+    return result;
+  }
+
+  var search = window.location.search;
+  if (search.charAt(0) === "?") {
+    search = search.substring(1);
+  }
+  if (search.length === 0) {
+    return result;
+  }
+
+  var parts = search.split("&");
+  for (var i = 0; i < parts.length; i++) {
+    var pair = parts[i].split("=");
+    var key = decodeURIComponent(pair[0] || "");
+    if (key.length === 0) continue;
+    result[key] = decodeURIComponent(pair[1] || "");
+  }
+  return result;
+};
+
+Configuration.prototype.parseIntOption = function(paramsValue, defaultValue, minValue, maxValue) {
+  var value = parseInt(paramsValue, 10);
+  if (!isFinite(value)) {
+    value = defaultValue;
+  }
+  if (value < minValue) value = minValue;
+  if (value > maxValue) value = maxValue;
+  return value;
+};
+
+Configuration.prototype.strengthToVelocity = function(strength) {
+  strength = this.parseIntOption(strength, this.playerStrength, this.minStrength, this.maxStrength);
+  return 35 + (strength - this.minStrength) * (30 / (this.maxStrength - this.minStrength));
+};
+
+Configuration.prototype.teamVelocity = function(teamSide) {
+  var strength = teamSide == "away" ? this.opponentStrength : this.playerStrength;
+  return this.strengthToVelocity(strength);
 };
 
 Configuration.prototype.comnputeScaleBy = function() {

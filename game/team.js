@@ -1,7 +1,6 @@
-var Team = function(config, side, level) {
+var Team = function(config, side) {
   this.config = config;
   this.side = side;
-  this.level = level || 1;
   this.players = this.createPlayers();
   this.humanPlayer = side == "home" ? this.players[0] : null;
   this.opponentTeam = null;
@@ -30,7 +29,7 @@ Team.prototype.attach = function(stadium, opponentTeam) {
   this.opponentTeam = opponentTeam;
   this.aiControllers = [];
   for (var i = 0; i < this.players.length; i++) {
-    this.aiControllers.push(new Ai(this.config, stadium, this.players[i], this, opponentTeam, this.level));
+    this.aiControllers.push(new Ai(this.config, stadium, this.players[i], this, opponentTeam));
   }
   this.assignRoles();
 };

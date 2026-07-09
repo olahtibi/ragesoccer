@@ -1,0 +1,25 @@
+<html style="position: relative;">
+	<head>
+		<script type="text/javascript" src="mathlib/vector.js?v=0014"></script>
+		<script type="text/javascript" src="mathlib/mathlib.js?v=0014"></script>
+		<script type="text/javascript" src="game/configuration.js?v=0014"></script>
+		<script type="text/javascript" src="game/debugLog.js?v=0014"></script>
+		<script type="text/javascript" src="game/camera.js?v=0014"></script>
+		<script type="text/javascript" src="game/team.js?v=0014"></script>
+		<script type="text/javascript" src="game/game.js?v=0014"></script>
+		<script type="text/javascript" src="game/stadium.js?v=0014"></script>
+		<script type="text/javascript" src="game/ball.js?v=0014"></script>
+		<script type="text/javascript" src="game/player.js?v=0014"></script>
+		<script type="text/javascript" src="game/physics.js?v=0014"></script>
+		<script type="text/javascript" src="game/ai.js?v=0014"></script>
+		<script type="text/javascript" src="game/goalDetector.js?v=0014"></script>
+		<script type="text/javascript" src="io/io.js?v=0014"></script>
+	</head>
+	<body onload="startLoop();" style="margin: 0px; overflow-x: hidden; position: relative;">
+		<img id="pitch" src="resources/pitch.jpg" style="visibility: hidden; position: absolute; top: -1000px; left: -1000px;">
+		<img id="ball" src="resources/ball.png" style="visibility: hidden; position: absolute; top: -1000px; left: -1000px;">
+		<img id="player-home" src="resources/player-sprite-home.png" style="visibility: hidden; position: absolute; top: -1000px; left: -1000px;">
+		<img id="player-away" src="resources/player-sprite-away.png" style="visibility: hidden; position: absolute; top: -1000px; left: -1000px;">		
+		<canvas id="myCanvas" width="640" height="480" style="border:1px solid #000000;"></canvas>		
+	</body>
+</html>

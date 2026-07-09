@@ -5,7 +5,7 @@ window.addEventListener('keyup', checkInput, false);
 window.addEventListener("touchstart", touchHandler, false);
 
 function touchHandler(e) {
-    var velocity = window.game.config.playerVelocity;
+    var velocity = window.game.config.teamVelocity("home");
     var scaleBy = window.game.config.comnputeScaleBy();
     var targetX = (0 - window.game.camera.position.x) + e.touches[0].clientX / scaleBy;
     var targetY = (0 - window.game.camera.position.y) + e.touches[0].clientY / scaleBy;
@@ -26,7 +26,7 @@ function checkInput(e) {
     window.keyMap[e.keyCode] = e.type == 'keydown';
     if(!window.game.isPaused()) {
         // Pixels per second
-        var velocity = window.game.config.playerVelocity;
+        var velocity = window.game.config.teamVelocity("home");
         var player = window.game.stadium.homeTeam.selectHumanPlayer(window.game.stadium.ball);
         player.velocity.x = 0;
         player.velocity.y = 0;

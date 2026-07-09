@@ -9,6 +9,9 @@ function setupBrowserStubs() {
   global.window = {
     innerWidth: 640,
     innerHeight: 480,
+    location: {
+      search: ""
+    },
     game: null,
     keyMap: {},
     addEventListener: function() {},
@@ -67,14 +70,17 @@ function makeConfig(options) {
   options = options || {};
   config.homeTeamSize = options.homeTeamSize != null ? options.homeTeamSize : 1;
   config.awayTeamSize = options.awayTeamSize != null ? options.awayTeamSize : 1;
+  config.playerStrength = options.playerStrength != null ? options.playerStrength : config.playerStrength;
+  config.opponentStrength = options.opponentStrength != null ? options.opponentStrength : config.opponentStrength;
+  config.playerVelocity = config.teamVelocity("home");
   return config;
 }
 
 function makeFixture(options) {
   var config = makeConfig(options);
   var ball = new Ball(config.imgBall, config.ballRadius, new Vector3d(334, 433, 0));
-  var homeTeam = new Team(config, "home", 1);
-  var awayTeam = new Team(config, "away", 1);
+  var homeTeam = new Team(config, "home");
+  var awayTeam = new Team(config, "away");
 
   var goalDetector = new GoalDetector(config, ball);
   var stadium = new Stadium(config.imgPitch, ball, homeTeam, awayTeam, goalDetector);
@@ -137,7 +143,7 @@ function applyReplayEvent(event, game) {
     player.velocity = MathLib.computeVelocityForTarget(
       player.position,
       new Vector2d(event.target.x, event.target.y),
-      game.config.playerVelocity
+      game.config.teamVelocity("home")
     );
     game.started = true;
   }

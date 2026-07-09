@@ -57,7 +57,7 @@ Game.prototype.updateTouchControl = function() {
     return;
   }
 
-  player.velocity = MathLib.computeVelocityForTarget(player.position, this.touchTarget, this.config.playerVelocity);
+  player.velocity = MathLib.computeVelocityForTarget(player.position, this.touchTarget, this.config.teamVelocity("home"));
 };
 
 Game.prototype.stopPlayer = function(player) {
@@ -77,13 +77,12 @@ Game.prototype.drawAiDebug = function(ctx) {
 };
 
 function startLoop() {
-  var level = 1;
   // Create configuration
   var config = new Configuration();
   // Create players and ball
   var ball = new Ball(config.imgBall, config.ballRadius, config.initialBallPosition);
-  var homeTeam = new Team(config, "home", level);
-  var awayTeam = new Team(config, "away", level);
+  var homeTeam = new Team(config, "home");
+  var awayTeam = new Team(config, "away");
   // Create goal detector
   var goalDetector = new GoalDetector(config, ball);
   // Create stadium

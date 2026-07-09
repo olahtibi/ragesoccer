@@ -19,7 +19,7 @@ function makeInputGame(fixture) {
 }
 
 test("Keyboard input controls the home player closest to the ball", function() {
-  var fixture = makeFixture({ homeTeamSize: 2, awayTeamSize: 1 });
+  var fixture = makeFixture({ homeTeamSize: 2, awayTeamSize: 1, playerStrength: 10 });
   makeInputGame(fixture);
   fixture.ball.position.x = fixture.stadium.homePlayers[1].position.x;
   fixture.ball.position.y = fixture.stadium.homePlayers[1].position.y;
@@ -29,11 +29,11 @@ test("Keyboard input controls the home player closest to the ball", function() {
   assertTrue(fixture.stadium.humanPlayer === fixture.stadium.homePlayers[1]);
   assertEqual(fixture.stadium.homePlayers[0].velocity.x, 0);
   assertEqual(fixture.stadium.homePlayers[0].velocity.y, 0);
-  assertEqual(fixture.stadium.homePlayers[1].velocity.x, fixture.config.playerVelocity);
+  assertEqual(fixture.stadium.homePlayers[1].velocity.x, fixture.config.teamVelocity("home"));
 });
 
 test("Keyboard diagonal input normalizes selected player velocity", function() {
-  var fixture = makeFixture({ homeTeamSize: 2, awayTeamSize: 1 });
+  var fixture = makeFixture({ homeTeamSize: 2, awayTeamSize: 1, playerStrength: 10 });
   makeInputGame(fixture);
   fixture.ball.position.x = fixture.stadium.homePlayers[1].position.x;
   fixture.ball.position.y = fixture.stadium.homePlayers[1].position.y;
@@ -41,12 +41,12 @@ test("Keyboard diagonal input normalizes selected player velocity", function() {
   checkInput({ keyCode: 39, type: "keydown" });
   checkInput({ keyCode: 40, type: "keydown" });
 
-  assertNear(fixture.stadium.homePlayers[1].velocity.x, fixture.config.playerVelocity / Math.sqrt(2), 0.0001);
-  assertNear(fixture.stadium.homePlayers[1].velocity.y, fixture.config.playerVelocity / Math.sqrt(2), 0.0001);
+  assertNear(fixture.stadium.homePlayers[1].velocity.x, fixture.config.teamVelocity("home") / Math.sqrt(2), 0.0001);
+  assertNear(fixture.stadium.homePlayers[1].velocity.y, fixture.config.teamVelocity("home") / Math.sqrt(2), 0.0001);
 });
 
 test("Touch input controls the home player closest to the ball", function() {
-  var fixture = makeFixture({ homeTeamSize: 2, awayTeamSize: 1 });
+  var fixture = makeFixture({ homeTeamSize: 2, awayTeamSize: 1, playerStrength: 10 });
   var game = makeInputGame(fixture);
   fixture.ball.position.x = fixture.stadium.homePlayers[1].position.x;
   fixture.ball.position.y = fixture.stadium.homePlayers[1].position.y;
@@ -62,7 +62,7 @@ test("Touch input controls the home player closest to the ball", function() {
   });
 
   assertTrue(fixture.stadium.humanPlayer === fixture.stadium.homePlayers[1]);
-  assertTrue(fixture.stadium.homePlayers[1].velocity.y > 0);
+  assertNear(fixture.stadium.homePlayers[1].velocity.y, fixture.config.teamVelocity("home"), 0.0001);
   assertNear(game.touchTarget.x, fixture.stadium.homePlayers[1].position.x, 0.0001);
   assertNear(game.touchTarget.y, fixture.stadium.homePlayers[1].position.y + 50, 0.0001);
 });
