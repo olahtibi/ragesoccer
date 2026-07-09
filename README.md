@@ -8,3 +8,8 @@ Supported platforms:
 
 Play:
 https://olahtibi.github.io/ragesoccer/
+
+Tests:
+```
+node tests/run.js
+```
