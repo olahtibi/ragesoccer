@@ -71,6 +71,13 @@ var Ai = function (config, stadium, controlledPlayer, team, opponentTeam, level)
     this.state = 'idle';
     this.sPos = null;
     this.tPos = null;
+    this.role = null;
+    this.roleTarget = null;
+};
+
+Ai.prototype.setRole = function(role, target) {
+    this.role = role;
+    this.roleTarget = target;
 };
 
 Ai.prototype.update = function() {
@@ -80,6 +87,11 @@ Ai.prototype.update = function() {
     var me = this.controlledPlayer;
     var opponent = this.nearestOpponentToBall();
     var ball = this.stadium.ball;
+
+    if (this.role != null) {
+        this.updateRole();
+        return;
+    }
 
     // Airborne ball: nobody can touch it until it comes down. Run to the
     // predicted landing point (or drop back to defend if the aerial race is
@@ -116,13 +128,43 @@ Ai.prototype.update = function() {
     this.holdGoaliePose();
 };
 
+Ai.prototype.updateRole = function() {
+    if (this.role == "chaser") {
+        this.updateIndependent();
+        return;
+    }
+
+    var target = this.roleTarget;
+    if (this.role == "goalie") {
+        this.state = "goalie";
+        target = this.goalieTarget();
+    } else if (this.role == "support") {
+        this.state = "support";
+        target = this.supportTarget();
+    } else if (this.role == "defender") {
+        this.state = "defend";
+        target = this.roleTarget || this.defenderTarget(0, 1);
+    }
+
+    this.roleTarget = target;
+    this.moveTo(target);
+    this.holdGoaliePose();
+};
+
+Ai.prototype.updateIndependent = function() {
+    var savedRole = this.role;
+    this.role = null;
+    this.update();
+    this.role = savedRole;
+};
+
 // While parked as goalie, look out at the pitch rather than into the net.
 // updateFacing() only recomputes facing from a non-zero velocity, so once the
 // AI's velocity has been snapped to zero on arrival its facing would otherwise
 // stick to whatever direction it happened to arrive from (often north — into
 // the goal — because the AI usually retreats from midfield toward its line).
 Ai.prototype.holdGoaliePose = function() {
-    if (this.state !== 'defend') return;
+    if (this.state !== 'defend' && this.state !== 'goalie') return;
     var me = this.controlledPlayer;
     if (me.velocity.x === 0 && me.velocity.y === 0) {
         me.facingX = 0;
@@ -209,6 +251,65 @@ Ai.prototype.moveTo = function(target) {
     var d = Math.sqrt(d2);
     me.velocity.x = dx / d * this.speed;
     me.velocity.y = dy / d * this.speed;
+};
+
+Ai.prototype.goalieTarget = function() {
+    var baseLineY = this.ownGoalLineY + this.defenseDirectionY * this.config.goalieDistance;
+    var x = this.ownGoalCenterX;
+    var ball = this.stadium.ball;
+    var ballGoalward = this.isPointInOwnHalf(ball.position);
+
+    if (ballGoalward || this.isBallThreateningOwnGoal()) {
+        var dyBall = (ball.position.y - this.ownGoalLineY) * this.defenseDirectionY;
+        if (dyBall > 0.5) {
+            var t = Math.abs(baseLineY - this.ownGoalLineY) / dyBall;
+            x = this.ownGoalCenterX + t * (ball.position.x - this.ownGoalCenterX);
+        }
+    }
+
+    var mouthMargin = 8;
+    var xMin = this.ownGoalMouthLeftX - mouthMargin;
+    var xMax = this.ownGoalMouthRightX + mouthMargin;
+    if (x < xMin) x = xMin;
+    if (x > xMax) x = xMax;
+
+    return new Vector2d(x, baseLineY);
+};
+
+Ai.prototype.supportTarget = function() {
+    var ball = this.stadium.ball;
+    var toOwnGoalX = this.ownGoalCenter.x - ball.position.x;
+    var toOwnGoalY = this.ownGoalCenter.y - ball.position.y;
+    var len = Math.sqrt(toOwnGoalX * toOwnGoalX + toOwnGoalY * toOwnGoalY) || 1;
+    var ux = toOwnGoalX / len;
+    var uy = toOwnGoalY / len;
+    var side = this.controlledPlayer.position.x < ball.position.x ? -1 : 1;
+    var perpX = -uy * side;
+    var perpY = ux * side;
+    var distance = this.config.supportDistance;
+
+    return new Vector2d(
+        ball.position.x + ux * distance + perpX * distance * 0.45,
+        ball.position.y + uy * distance + perpY * distance * 0.45
+    );
+};
+
+Ai.prototype.defenderTarget = function(index, count) {
+    var ball = this.stadium.ball;
+    var distance = this.config.defenderDistance;
+    var goalToBallX = ball.position.x - this.ownGoalCenter.x;
+    var goalToBallY = ball.position.y - this.ownGoalCenter.y;
+    var len = Math.sqrt(goalToBallX * goalToBallX + goalToBallY * goalToBallY) || 1;
+    var ux = goalToBallX / len;
+    var uy = goalToBallY / len;
+    var spread = (index - (count - 1) / 2) * 35;
+    var perpX = -uy;
+    var perpY = ux;
+
+    return new Vector2d(
+        this.ownGoalCenter.x + ux * distance + perpX * spread,
+        this.ownGoalCenter.y + uy * distance + perpY * spread
+    );
 };
 
 Ai.prototype.opponents = function() {

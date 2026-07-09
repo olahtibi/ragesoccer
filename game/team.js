@@ -35,11 +35,109 @@ Team.prototype.attach = function(stadium, opponentTeam) {
 };
 
 Team.prototype.updateAi = function() {
+  this.assignRoles();
   for (var i = 0; i < this.aiControllers.length; i++) {
     if (this.aiControllers[i].controlledPlayer !== this.humanPlayer) {
       this.aiControllers[i].update();
     }
   }
+};
+
+Team.prototype.assignRoles = function() {
+  if (!this.config.teamAiEnabled || this.players.length <= 1) {
+    for (var i = 0; i < this.aiControllers.length; i++) {
+      this.aiControllers[i].setRole(null, null);
+    }
+    return;
+  }
+
+  var available = [];
+  for (var j = 0; j < this.aiControllers.length; j++) {
+    var controller = this.aiControllers[j];
+    controller.setRole(null, null);
+    if (controller.controlledPlayer !== this.humanPlayer) {
+      available.push(controller);
+    }
+  }
+  if (available.length === 0) {
+    return;
+  }
+
+  var goalie = null;
+  if (this.players.length >= 3) {
+    goalie = this.closestControllerToOwnGoal(available);
+    goalie.setRole("goalie", goalie.goalieTarget());
+    available = this.withoutController(available, goalie);
+  }
+
+  if (available.length === 0) {
+    return;
+  }
+
+  var chaser = this.fastestControllerToBall(available);
+  chaser.setRole("chaser", null);
+  available = this.withoutController(available, chaser);
+
+  if (available.length === 0) {
+    return;
+  }
+
+  var support = this.closestControllerToBall(available);
+  support.setRole("support", support.supportTarget());
+  available = this.withoutController(available, support);
+
+  for (var k = 0; k < available.length; k++) {
+    available[k].setRole("defender", available[k].defenderTarget(k, available.length));
+  }
+};
+
+Team.prototype.withoutController = function(controllers, removed) {
+  var result = [];
+  for (var i = 0; i < controllers.length; i++) {
+    if (controllers[i] !== removed) {
+      result.push(controllers[i]);
+    }
+  }
+  return result;
+};
+
+Team.prototype.fastestControllerToBall = function(controllers) {
+  var best = controllers[0];
+  var bestTime = best.timeToReach(best.controlledPlayer.position);
+  for (var i = 1; i < controllers.length; i++) {
+    var t = controllers[i].timeToReach(controllers[i].controlledPlayer.position);
+    if (t < bestTime) {
+      best = controllers[i];
+      bestTime = t;
+    }
+  }
+  return best;
+};
+
+Team.prototype.closestControllerToBall = function(controllers) {
+  var best = controllers[0];
+  var bestDistance = MathLib.computeDistance(best.controlledPlayer.position, this.stadium.ball.position);
+  for (var i = 1; i < controllers.length; i++) {
+    var distance = MathLib.computeDistance(controllers[i].controlledPlayer.position, this.stadium.ball.position);
+    if (distance < bestDistance) {
+      best = controllers[i];
+      bestDistance = distance;
+    }
+  }
+  return best;
+};
+
+Team.prototype.closestControllerToOwnGoal = function(controllers) {
+  var best = controllers[0];
+  var bestDistance = MathLib.computeDistance(best.controlledPlayer.position, best.ownGoalCenter);
+  for (var i = 1; i < controllers.length; i++) {
+    var distance = MathLib.computeDistance(controllers[i].controlledPlayer.position, controllers[i].ownGoalCenter);
+    if (distance < bestDistance) {
+      best = controllers[i];
+      bestDistance = distance;
+    }
+  }
+  return best;
 };
 
 Team.prototype.drawAiDebug = function(ctx) {
