@@ -1,12 +1,6 @@
 var Ai = function (config, stadium, controlledPlayer, team, opponentTeam, level) {
     this.config = config;
     this.stadium = stadium;
-    if (typeof controlledPlayer == "number" || controlledPlayer == null) {
-        level = controlledPlayer || 1;
-        controlledPlayer = stadium.playerAway;
-        team = stadium.awayTeam;
-        opponentTeam = stadium.homeTeam;
-    }
     this.controlledPlayer = controlledPlayer;
     if (typeof team == "string") {
         this.teamSide = team;
@@ -138,9 +132,9 @@ Ai.prototype.updateRole = function() {
     if (this.role == "goalie") {
         this.state = "goalie";
         target = this.goalieTarget();
-    } else if (this.role == "support") {
-        this.state = "support";
-        target = this.supportTarget();
+    } else if (this.role == "attack") {
+        this.state = "attack";
+        target = this.attackRoleTarget();
     } else if (this.role == "defender") {
         this.state = "defend";
         target = this.roleTarget || this.defenderTarget(0, 1);
@@ -276,22 +270,25 @@ Ai.prototype.goalieTarget = function() {
     return new Vector2d(x, baseLineY);
 };
 
-Ai.prototype.supportTarget = function() {
+Ai.prototype.attackRoleTarget = function() {
     var ball = this.stadium.ball;
-    var toOwnGoalX = this.ownGoalCenter.x - ball.position.x;
-    var toOwnGoalY = this.ownGoalCenter.y - ball.position.y;
-    var len = Math.sqrt(toOwnGoalX * toOwnGoalX + toOwnGoalY * toOwnGoalY) || 1;
-    var ux = toOwnGoalX / len;
-    var uy = toOwnGoalY / len;
+    var toOppGoalX = this.oppGoalCenter.x - ball.position.x;
+    var toOppGoalY = this.oppGoalCenter.y - ball.position.y;
+    var len = Math.sqrt(toOppGoalX * toOppGoalX + toOppGoalY * toOppGoalY) || 1;
+    var ux = toOppGoalX / len;
+    var uy = toOppGoalY / len;
     var side = this.controlledPlayer.position.x < ball.position.x ? -1 : 1;
     var perpX = -uy * side;
     var perpY = ux * side;
-    var distance = this.config.supportDistance;
+    var x = ball.position.x + ux * this.config.attackDistance + perpX * this.config.attackWidth;
+    var y = ball.position.y + uy * this.config.attackDistance + perpY * this.config.attackWidth;
 
-    return new Vector2d(
-        ball.position.x + ux * distance + perpX * distance * 0.45,
-        ball.position.y + uy * distance + perpY * distance * 0.45
-    );
+    if (x < this.config.boxTopLeft.x) x = this.config.boxTopLeft.x;
+    if (x > this.config.boxTopRight.x) x = this.config.boxTopRight.x;
+    if (y < this.config.boxTopLeft.y) y = this.config.boxTopLeft.y;
+    if (y > this.config.boxBottomLeft.y) y = this.config.boxBottomLeft.y;
+
+    return new Vector2d(x, y);
 };
 
 Ai.prototype.defenderTarget = function(index, count) {

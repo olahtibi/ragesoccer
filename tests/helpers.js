@@ -79,13 +79,13 @@ function makeFixture(options) {
   var stadium = new Stadium(config.imgPitch, ball, homeTeam, awayTeam, goalDetector);
   var physics = new Physics(config, stadium);
   var aiControllers = stadium.homeTeam.aiControllers.concat(stadium.awayTeam.aiControllers);
-  var ai = stadium.awayTeam.aiControllers[0] || new Ai(config, stadium, 1);
+  var ai = stadium.awayTeam.aiControllers[0];
 
   return {
     config: config,
     ball: ball,
-    playerHome: stadium.playerHome,
-    playerAway: stadium.playerAway,
+    playerHome: homeTeam.players[0],
+    playerAway: awayTeam.players[0],
     homeTeam: homeTeam,
     awayTeam: awayTeam,
     homePlayers: homeTeam.players,

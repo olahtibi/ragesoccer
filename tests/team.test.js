@@ -82,7 +82,7 @@ test("Team AI assigns only one chaser in 2v2", function() {
   assertEqual(chasers, 1);
 });
 
-test("Team AI assigns goalie chaser and support in 3v3", function() {
+test("Team AI assigns goalie chaser and attack in 3v3", function() {
   var fixture = makeFixture({ homeTeamSize: 3, awayTeamSize: 3 });
 
   fixture.awayTeam.assignRoles();
@@ -94,7 +94,7 @@ test("Team AI assigns goalie chaser and support in 3v3", function() {
 
   assertTrue(roles.goalie);
   assertTrue(roles.chaser);
-  assertTrue(roles.support);
+  assertTrue(roles.attack);
 });
 
 test("Team AI does not assign an executable role to the human player", function() {
@@ -134,14 +134,57 @@ test("Team AI assigns closest-to-own-goal player as goalie", function() {
   assertEqual(fixture.awayTeam.aiControllers[0].role, "goalie");
 });
 
-test("Support target is not the ball position", function() {
+test("Attack target is not near the ball", function() {
   var fixture = makeFixture({ homeTeamSize: 1, awayTeamSize: 2 });
 
   fixture.awayTeam.assignRoles();
-  var support = fixture.awayTeam.aiControllers[0].role == "support" ? fixture.awayTeam.aiControllers[0] : fixture.awayTeam.aiControllers[1];
+  var attacker = fixture.awayTeam.aiControllers[0].role == "attack" ? fixture.awayTeam.aiControllers[0] : fixture.awayTeam.aiControllers[1];
 
-  assertTrue(support.roleTarget !== null);
-  assertTrue(MathLib.computeDistance(support.roleTarget, fixture.ball.position) > 1);
+  assertTrue(attacker.roleTarget !== null);
+  assertTrue(MathLib.computeDistance(attacker.roleTarget, fixture.ball.position) > 50);
+});
+
+test("Away attack target moves toward bottom goal", function() {
+  var fixture = makeFixture({ homeTeamSize: 1, awayTeamSize: 2 });
+  fixture.ball.position.x = 336;
+  fixture.ball.position.y = 433;
+
+  fixture.awayTeam.assignRoles();
+  var attacker = fixture.awayTeam.aiControllers[0].role == "attack" ? fixture.awayTeam.aiControllers[0] : fixture.awayTeam.aiControllers[1];
+
+  assertTrue(attacker.roleTarget.y > fixture.ball.position.y);
+});
+
+test("Home attack target moves toward top goal", function() {
+  var fixture = makeFixture({ homeTeamSize: 4, awayTeamSize: 1 });
+  fixture.homeTeam.humanPlayer = fixture.homeTeam.players[0];
+  fixture.ball.position.x = 336;
+  fixture.ball.position.y = 433;
+
+  fixture.homeTeam.assignRoles();
+  var attacker = null;
+  for (var i = 0; i < fixture.homeTeam.aiControllers.length; i++) {
+    if (fixture.homeTeam.aiControllers[i].role == "attack") {
+      attacker = fixture.homeTeam.aiControllers[i];
+    }
+  }
+
+  assertTrue(attacker !== null);
+  assertTrue(attacker.roleTarget.y < fixture.ball.position.y);
+});
+
+test("Attack target stays inside field bounds", function() {
+  var fixture = makeFixture({ homeTeamSize: 1, awayTeamSize: 2 });
+  fixture.ball.position.x = 610;
+  fixture.ball.position.y = 760;
+
+  fixture.awayTeam.assignRoles();
+  var attacker = fixture.awayTeam.aiControllers[0].role == "attack" ? fixture.awayTeam.aiControllers[0] : fixture.awayTeam.aiControllers[1];
+
+  assertTrue(attacker.roleTarget.x >= fixture.config.boxTopLeft.x);
+  assertTrue(attacker.roleTarget.x <= fixture.config.boxTopRight.x);
+  assertTrue(attacker.roleTarget.y >= fixture.config.boxTopLeft.y);
+  assertTrue(attacker.roleTarget.y <= fixture.config.boxBottomLeft.y);
 });
 
 test("Defender target stays between ball and own goal", function() {

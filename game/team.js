@@ -82,9 +82,9 @@ Team.prototype.assignRoles = function() {
     return;
   }
 
-  var support = this.closestControllerToBall(available);
-  support.setRole("support", support.supportTarget());
-  available = this.withoutController(available, support);
+  var attacker = this.closestControllerToBall(available);
+  attacker.setRole("attack", attacker.attackRoleTarget());
+  available = this.withoutController(available, attacker);
 
   for (var k = 0; k < available.length; k++) {
     available[k].setRole("defender", available[k].defenderTarget(k, available.length));
@@ -178,7 +178,6 @@ Team.prototype.selectHumanPlayer = function(ball) {
   this.humanPlayer = selected;
   if (this.stadium != null) {
     this.stadium.humanPlayer = selected;
-    this.stadium.playerHome = selected;
   }
   return selected;
 };

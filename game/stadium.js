@@ -9,8 +9,6 @@ var Stadium = function (imgStadium, ball, homeTeam, awayTeam, goalDetector) {
   this.homePlayers = this.homeTeam.players;
   this.awayPlayers = this.awayTeam.players;
   this.players = this.homePlayers.concat(this.awayPlayers);
-  this.playerHome = this.homePlayers[0];
-  this.playerAway = this.awayPlayers[0];
   this.humanPlayer = this.homeTeam.humanPlayer;
   this.goalDetector = goalDetector;
 };
@@ -19,8 +17,19 @@ Stadium.prototype.draw = function(ctx) {
   ctx.drawImage(this.imgStadium, 0, 0);
   this.ball.draw(ctx);
   for (var i = 0; i < this.players.length; i++) {
+    if (this.players[i] === this.humanPlayer) {
+      this.drawHumanPlayerMarker(ctx, this.players[i]);
+    }
     this.players[i].draw(ctx);
   }
+};
+
+Stadium.prototype.drawHumanPlayerMarker = function(ctx, player) {
+  ctx.beginPath();
+  ctx.ellipse(player.position.x, player.position.y, 9, 9, 0, 0, 2 * Math.PI);
+  ctx.lineWidth = 1;
+  ctx.strokeStyle = "white";
+  ctx.stroke();
 };
 
 Stadium.prototype.findClosestHomePlayerToBall = function() {
