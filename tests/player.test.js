@@ -40,3 +40,35 @@ test("Player updateFacing preserves facing at zero velocity", function() {
   assertEqual(player.facingX, 1);
   assertEqual(player.facingY, 0);
 });
+
+test("Player spriteFrame uses neutral phase while standing without resetting walk state", function() {
+  var fixture = makeFixture();
+  var player = fixture.playerHome;
+  player.velocity.x = 0;
+  player.velocity.y = 0;
+  player.phaseIndex = 2;
+  player.stepDistance = 3;
+
+  var sprite = player.spriteFrame();
+
+  assertEqual(sprite.phaseIndex, 0);
+  assertEqual(player.phaseIndex, 2);
+  assertEqual(player.stepDistance, 3);
+});
+
+test("Player draw does not reset walk state when velocity is momentarily zero", function() {
+  var fixture = makeFixture();
+  var player = fixture.playerHome;
+  player.velocity.x = 0;
+  player.velocity.y = 0;
+  player.phaseIndex = 1;
+  player.stepDistance = 2;
+  var ctx = {
+    drawImage: function() {}
+  };
+
+  player.draw(ctx);
+
+  assertEqual(player.phaseIndex, 1);
+  assertEqual(player.stepDistance, 2);
+});

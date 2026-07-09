@@ -57,18 +57,21 @@ Player.prototype.updateFacing = function() {
 Player.prototype.draw = function(ctx) {
     var img = document.getElementById(this.skin);
     var topLeftX = 0;
-    var topLeftY = 0;
+    var sprite = this.spriteFrame();
+    ctx.drawImage(
+        this.imgPlayer, 
+        topLeftX, sprite.topLeftY, 
+        this.playerSpriteWidth, this.playerSpriteHeight, 
+        this.position.x - this.playerSpriteCenterX,
+        this.position.y - this.playerSpriteCenterY,
+        this.playerSpriteWidth, this.playerSpriteHeight
+    );
+};
+
+Player.prototype.spriteFrame = function() {
     this.updateFacing();
-    // Standing still → hold the neutral (phase 0) pose. Anything moving uses
-    // the distance-driven phaseIndex maintained by the physics step.
-    var phaseIndex;
-    if (this.velocity.x == 0 && this.velocity.y == 0) {
-        this.phaseIndex = 0;
-        this.stepDistance = 0;
-        phaseIndex = 0;
-    } else {
-        phaseIndex = this.phaseIndex;
-    }
+    var phaseIndex = (this.velocity.x == 0 && this.velocity.y == 0) ? 0 : this.phaseIndex;
+    var topLeftY = 0;
     if(this.facingY == -1 && this.facingX == 0) {
         // NORTH
         topLeftY = (6 * 3 + phaseIndex) * 18;
@@ -101,12 +104,8 @@ Player.prototype.draw = function(ctx) {
         // SW
         topLeftY = (2 * 3 + phaseIndex) * 18;
     }
-    ctx.drawImage(
-        this.imgPlayer, 
-        topLeftX, topLeftY, 
-        this.playerSpriteWidth, this.playerSpriteHeight, 
-        this.position.x - this.playerSpriteCenterX,
-        this.position.y - this.playerSpriteCenterY,
-        this.playerSpriteWidth, this.playerSpriteHeight
-    );
-}
+    return {
+        phaseIndex: phaseIndex,
+        topLeftY: topLeftY
+    };
+};
