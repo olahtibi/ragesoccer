@@ -1,7 +1,31 @@
 var tests = [];
+var currentSuite = "Tests";
+
+var symbols = {
+  pass: "\u2713",
+  fail: "\u2717"
+};
+
+var colors = {
+  green: "\u001b[32m",
+  red: "\u001b[31m",
+  bold: "\u001b[1m",
+  reset: "\u001b[0m"
+};
+
+function colorize(color, text) {
+  if (!process.stdout.isTTY) {
+    return text;
+  }
+  return colors[color] + text + colors.reset;
+}
+
+function suite(name) {
+  currentSuite = name;
+}
 
 function test(name, fn) {
-  tests.push({ name: name, fn: fn });
+  tests.push({ suite: currentSuite, name: name, fn: fn });
 }
 
 function fail(message) {
@@ -28,24 +52,38 @@ function assertNear(actual, expected, epsilon, message) {
 
 function runTests() {
   var passed = 0;
+  var currentPrintedSuite = null;
 
   for (var i = 0; i < tests.length; i++) {
     var entry = tests[i];
+    if (entry.suite !== currentPrintedSuite) {
+      currentPrintedSuite = entry.suite;
+      console.log("");
+      console.log(colorize("bold", currentPrintedSuite));
+    }
+
     try {
       entry.fn();
       passed++;
-      console.log("PASS " + entry.name);
+      console.log("  " + colorize("green", symbols.pass) + " " + entry.name);
     } catch (err) {
-      console.log("FAIL " + entry.name);
-      console.log("  " + err.message);
+      console.log("  " + colorize("red", symbols.fail) + " " + entry.name);
+      console.log("    " + colorize("red", err.message));
       if (err.stack) {
-        console.log(err.stack.split("\n").slice(1).join("\n"));
+        console.log(err.stack.split("\n").slice(1).map(function(line) {
+          return "    " + line;
+        }).join("\n"));
       }
     }
   }
 
   console.log("");
-  console.log(passed + "/" + tests.length + " tests passed");
+  var summary = passed + "/" + tests.length + " tests passed";
+  if (passed === tests.length) {
+    console.log(colorize("green", symbols.pass + " " + summary));
+  } else {
+    console.log(colorize("red", symbols.fail + " " + summary));
+  }
 
   if (passed !== tests.length) {
     process.exitCode = 1;
@@ -53,6 +91,7 @@ function runTests() {
 }
 
 module.exports = {
+  suite: suite,
   test: test,
   assertTrue: assertTrue,
   assertEqual: assertEqual,

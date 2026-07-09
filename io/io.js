@@ -9,12 +9,18 @@ function touchHandler(e) {
     var scaleBy = window.game.config.comnputeScaleBy();
     var targetX = (0 - window.game.camera.position.x) + e.touches[0].clientX / scaleBy;
     var targetY = (0 - window.game.camera.position.y) + e.touches[0].clientY / scaleBy;
+    if(window.game.debugLog != null) {
+        window.game.debugLog.recordTouchEvent(new Vector2d(targetX, targetY));
+    }
     var player = window.game.stadium.homeTeam.selectHumanPlayer(window.game.stadium.ball);
     player.velocity = MathLib.computeVelocityForTarget(player.position, new Vector2d(targetX, targetY), velocity);
     startGame();
 }
 
 function checkInput(e) {
+    if(window.game.debugLog != null) {
+        window.game.debugLog.recordKeyEvent(e);
+    }
     window.keyMap[e.keyCode] = e.type == 'keydown';
     if(!window.game.isPaused()) {
         // Pixels per second
@@ -52,8 +58,8 @@ function checkInput(e) {
         window.game.camera.showStats = !window.game.camera.showStats;
     }
     if(window.keyMap[80]) {
-        window.game.togglePause();
         if(window.game.config.debug == true) {
+            window.game.togglePause();
             window.game.debugLog.dump();
         }
     }

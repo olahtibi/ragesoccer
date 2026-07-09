@@ -1,6 +1,7 @@
 var DebugLog = function(config) {
   this.config = config;
   this.snapshots = [];
+  this.events = [];
   this.frame = 0;
   this.startTimeMs = null;
 };
@@ -18,14 +19,39 @@ DebugLog.prototype.record = function(game) {
     return;
   }
 
-  var now = this.nowMs();
-  if (this.startTimeMs == null) {
-    this.startTimeMs = now;
-  }
-
-  var snapshot = this.snapshot(game, frame, (now - this.startTimeMs) / 1000);
+  var snapshot = this.snapshot(game, frame, this.currentTimeSeconds());
   this.snapshots.push(snapshot);
   this.trim(snapshot.time);
+};
+
+DebugLog.prototype.recordKeyEvent = function(e) {
+  if (!this.config.debug) {
+    return;
+  }
+
+  var event = {
+    time: this.round(this.currentTimeSeconds()),
+    frame: this.frame,
+    type: e.type,
+    keyCode: e.keyCode
+  };
+  this.events.push(event);
+  this.trim(event.time);
+};
+
+DebugLog.prototype.recordTouchEvent = function(target) {
+  if (!this.config.debug) {
+    return;
+  }
+
+  var event = {
+    time: this.round(this.currentTimeSeconds()),
+    frame: this.frame,
+    type: "touch",
+    target: this.vectorSnapshot(target)
+  };
+  this.events.push(event);
+  this.trim(event.time);
 };
 
 DebugLog.prototype.dump = function() {
@@ -35,7 +61,8 @@ DebugLog.prototype.dump = function() {
 
   console.log(JSON.stringify({
     type: "debugLog",
-    frames: this.snapshots
+    frames: this.snapshots,
+    events: this.events
   }));
 };
 
@@ -49,12 +76,16 @@ DebugLog.prototype.trim = function(currentTime) {
   while (this.snapshots.length > 0 && this.snapshots[0].time < minTime) {
     this.snapshots.shift();
   }
+  while (this.events.length > 0 && this.events[0].time < minTime) {
+    this.events.shift();
+  }
 };
 
 DebugLog.prototype.snapshot = function(game, frame, time) {
   return {
     frame: frame,
     time: this.round(time),
+    dt: this.round(game.physics && game.physics.lastDt != null ? game.physics.lastDt : 0),
     paused: game.paused,
     started: game.started,
     ball: this.ballSnapshot(game.stadium.ball),
@@ -137,4 +168,12 @@ DebugLog.prototype.nowMs = function() {
     return performance.now();
   }
   return Date.now();
+};
+
+DebugLog.prototype.currentTimeSeconds = function() {
+  var now = this.nowMs();
+  if (this.startTimeMs == null) {
+    this.startTimeMs = now;
+  }
+  return (now - this.startTimeMs) / 1000;
 };

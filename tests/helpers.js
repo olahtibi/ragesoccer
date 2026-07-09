@@ -99,8 +99,62 @@ function makeFixture(options) {
   };
 }
 
+function replayDebugLog(payload, fixture) {
+  var game = new Game(fixture.config, fixture.stadium, {}, fixture.physics);
+  game.camera = {
+    position: new Vector2d(0, 0),
+    showStats: false
+  };
+  window.game = game;
+  window.keyMap = {};
+
+  var events = (payload.events || []).slice();
+  var eventIndex = 0;
+  var frames = payload.frames || [];
+  for (var i = 0; i < frames.length; i++) {
+    var frame = frames[i];
+    while (eventIndex < events.length && events[eventIndex].frame <= frame.frame) {
+      applyReplayEvent(events[eventIndex], game);
+      eventIndex++;
+    }
+    advanceReplayFrame(game, frame.dt || 0);
+  }
+
+  return game;
+}
+
+function applyReplayEvent(event, game) {
+  if (event.type === "keydown" || event.type === "keyup") {
+    checkInput({
+      type: event.type,
+      keyCode: event.keyCode
+    });
+    return;
+  }
+
+  if (event.type === "touch") {
+    var player = game.stadium.homeTeam.selectHumanPlayer(game.stadium.ball);
+    player.velocity = MathLib.computeVelocityForTarget(
+      player.position,
+      new Vector2d(event.target.x, event.target.y),
+      game.config.playerVelocity
+    );
+    game.started = true;
+  }
+}
+
+function advanceReplayFrame(game, dt) {
+  game.updateAi();
+  game.physics.lastDt = dt;
+  game.physics.updatePlayerPosition(dt);
+  game.physics.resolveBallPlayerContacts();
+  game.physics.updateBallPosition(dt);
+  game.stadium.goalDetector.update();
+}
+
 module.exports = {
   loadGameScripts: loadGameScripts,
   makeConfig: makeConfig,
-  makeFixture: makeFixture
+  makeFixture: makeFixture,
+  replayDebugLog: replayDebugLog
 };

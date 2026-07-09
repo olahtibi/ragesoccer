@@ -5,6 +5,7 @@ var Physics = function (config, stadium) {
   this.fps = 0.0;
   this.deltaArr = [0.0];
   this.frameNumber = 0;
+  this.lastDt = 0;
 };
 
 Physics.prototype.update = function() {
@@ -15,12 +16,14 @@ Physics.prototype.update = function() {
   // teleport the ball on unpause.
   if (window.game != null && window.game.isPaused && window.game.isPaused()) {
     this.lastUpdated = currentTime;
+    this.lastDt = 0;
     return;
   }
   var dt = (currentTime - this.lastUpdated) / 1000.0;
   // Clamp dt so a paused/backgrounded tab doesn't teleport bodies on resume.
   if (dt > 0.1) dt = 0.1;
   if (dt < 0) dt = 0;
+  this.lastDt = dt;
   this.updatePlayerPosition(dt);
   this.resolveBallPlayerContacts();
   this.updateBallPosition(dt);

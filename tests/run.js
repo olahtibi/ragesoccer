@@ -1,17 +1,22 @@
 require("./helpers").loadGameScripts();
 
-[
-  "./configuration.test",
-  "./mathlib.test",
-  "./goalDetector.test",
-  "./player.test",
-  "./physics.test",
-  "./ai.test",
-  "./team.test",
-  "./stadium.test",
-  "./debugLog.test",
-  "./game.test",
-  "./io.test"
-].forEach(require);
+var testlib = require("./testlib");
 
-require("./testlib").runTests();
+[
+  { name: "Configuration", path: "./configuration.test" },
+  { name: "MathLib", path: "./mathlib.test" },
+  { name: "GoalDetector", path: "./goalDetector.test" },
+  { name: "Player", path: "./player.test" },
+  { name: "Physics", path: "./physics.test" },
+  { name: "AI", path: "./ai.test" },
+  { name: "Team", path: "./team.test" },
+  { name: "Stadium", path: "./stadium.test" },
+  { name: "DebugLog", path: "./debugLog.test" },
+  { name: "Game", path: "./game.test" },
+  { name: "Input", path: "./io.test" }
+].forEach(function(entry) {
+  testlib.suite(entry.name);
+  require(entry.path);
+});
+
+testlib.runTests();
