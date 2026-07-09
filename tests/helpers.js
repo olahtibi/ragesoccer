@@ -64,12 +64,8 @@ function loadGameScripts() {
 function makeConfig(options) {
   var config = new Configuration();
   options = options || {};
-  if (options.homeTeamSize != null) {
-    config.homeTeamSize = options.homeTeamSize;
-  }
-  if (options.awayTeamSize != null) {
-    config.awayTeamSize = options.awayTeamSize;
-  }
+  config.homeTeamSize = options.homeTeamSize != null ? options.homeTeamSize : 1;
+  config.awayTeamSize = options.awayTeamSize != null ? options.awayTeamSize : 1;
   return config;
 }
 
