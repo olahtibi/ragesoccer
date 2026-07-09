@@ -67,7 +67,7 @@ var Configuration = function () {
   this.playerSpriteHeight = 16 //18;
   this.playerSpriteCenterX = 6;
   this.playerSpriteCenterY = 13;
-  this.debug = false;
+  this.debug = true;
   this.debugLogSeconds = 3;
   this.debugLogEveryNFrames = 4;
   this.applyQueryOptions();

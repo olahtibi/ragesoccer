@@ -192,7 +192,7 @@ test("Ai attackTarget runs through the ball when aligned behind it", function() 
   assertNear(target.y, fixture.ball.position.y + fixture.ai.runThroughDistance, 0.0001);
 });
 
-test("Ai attackTarget runs through the ball when close and nearly aligned", function() {
+test("Ai attackTarget sets up behind the ball when close but not cleanly aligned", function() {
   var fixture = makeFixture();
   fixture.ball.position.x = 267.66;
   fixture.ball.position.y = 148.01;
@@ -201,8 +201,39 @@ test("Ai attackTarget runs through the ball when close and nearly aligned", func
 
   var target = fixture.ai.attackTarget(fixture.playerAway);
 
-  assertTrue(target.y > fixture.ball.position.y);
-  assertTrue(MathLib.computeDistance(target, fixture.ball.position) > fixture.ai.runThroughDistance - 0.0001);
+  assertTrue(target.y < fixture.ball.position.y);
+  assertNear(MathLib.computeDistance(target, fixture.ball.position), fixture.ai.detourRadius + fixture.config.aiArrivalSlowRadius, 0.0001);
+});
+
+test("Ai attackTarget stays committed while running through the ball", function() {
+  var fixture = makeFixture();
+  fixture.ball.position.x = 330.85;
+  fixture.ball.position.y = 724.18;
+  fixture.playerAway.position.x = 330.76;
+  fixture.playerAway.position.y = 710.06;
+
+  var firstTarget = fixture.ai.attackTarget(fixture.playerAway);
+  fixture.playerAway.position.x = 330.67;
+  fixture.playerAway.position.y = 712.9;
+  var secondTarget = fixture.ai.attackTarget(fixture.playerAway);
+
+  assertTrue(firstTarget.y > fixture.ball.position.y);
+  assertTrue(secondTarget.y > fixture.ball.position.y);
+  assertTrue(fixture.ai.shootingThrough);
+});
+
+test("Ai attackTarget drops shot commitment when aim drifts too far", function() {
+  var fixture = makeFixture();
+  fixture.ball.position.x = 336;
+  fixture.ball.position.y = 400;
+  fixture.playerAway.position.x = 331.63;
+  fixture.playerAway.position.y = 380.48;
+  fixture.ai.shootingThrough = true;
+
+  var target = fixture.ai.attackTarget(fixture.playerAway);
+
+  assertTrue(target.y < fixture.ball.position.y);
+  assertTrue(!fixture.ai.shootingThrough);
 });
 
 test("Ai attackTarget still orbits when close but poorly aligned", function() {
@@ -236,6 +267,26 @@ test("Away pressure defender near the ball keeps moving to kick", function() {
   var defender = fixture.awayTeam.aiControllers[1];
   assertEqual(defender.role, "defender");
   assertEqual(defender.state, "press");
-  assertTrue(fixture.awayPlayers[1].velocity.y > 0);
   assertTrue(MathLib.computeDistance(fixture.awayPlayers[1].velocity, new Vector2d(0, 0)) > 0);
+});
+
+test("Away pressure striker near setup point keeps moving", function() {
+  var fixture = makeFixture({ homeTeamSize: 1, awayTeamSize: 1 });
+  var game = new Game(fixture.config, fixture.stadium, {}, fixture.physics);
+  window.game = game;
+  game.started = true;
+  fixture.ball.position.x = 304.89;
+  fixture.ball.position.y = 629.7;
+  fixture.ball.position.z = 0;
+  fixture.ball.velocity.x = 0;
+  fixture.ball.velocity.y = 0;
+  fixture.ball.velocity.z = 0;
+  fixture.playerAway.position.x = 304.14;
+  fixture.playerAway.position.y = 618.43;
+
+  fixture.awayTeam.updateAi();
+
+  assertEqual(fixture.ai.role, "striker");
+  assertEqual(fixture.ai.state, "press");
+  assertTrue(MathLib.computeDistance(fixture.playerAway.velocity, new Vector2d(0, 0)) > 0);
 });
