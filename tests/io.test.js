@@ -63,3 +63,32 @@ test("Touch input controls the home player closest to the ball", function() {
   assertTrue(fixture.stadium.humanPlayer === fixture.stadium.homePlayers[1]);
   assertTrue(fixture.stadium.homePlayers[1].velocity.y > 0);
 });
+
+test("P toggles pause without dumping logs when debug is disabled", function() {
+  var fixture = makeFixture();
+  var game = makeInputGame(fixture);
+  var dumped = false;
+  game.debugLog.dump = function() {
+    dumped = true;
+  };
+
+  checkInput({ keyCode: 80, type: "keydown" });
+
+  assertTrue(game.isPaused());
+  assertEqual(dumped, false);
+});
+
+test("P toggles pause and dumps logs when debug is enabled", function() {
+  var fixture = makeFixture();
+  var game = makeInputGame(fixture);
+  var dumped = false;
+  fixture.config.debug = true;
+  game.debugLog.dump = function() {
+    dumped = true;
+  };
+
+  checkInput({ keyCode: 80, type: "keydown" });
+
+  assertTrue(game.isPaused());
+  assertEqual(dumped, true);
+});

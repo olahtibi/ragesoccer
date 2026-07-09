@@ -9,6 +9,7 @@ require("./helpers").loadGameScripts();
   "./ai.test",
   "./team.test",
   "./stadium.test",
+  "./debugLog.test",
   "./game.test",
   "./io.test"
 ].forEach(require);

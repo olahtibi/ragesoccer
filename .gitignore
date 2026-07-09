@@ -10,5 +10,6 @@ yarn-error.log*
 coverage/
 dist/
 build/
+logs/
 
 *.log

@@ -46,6 +46,7 @@ function loadGameScripts() {
     "mathlib/vector.js",
     "mathlib/mathlib.js",
     "game/configuration.js",
+    "game/debugLog.js",
     "game/ball.js",
     "game/player.js",
     "game/goalDetector.js",

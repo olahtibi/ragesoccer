@@ -39,6 +39,12 @@ var Configuration = function () {
   this.attackWidth = 70;
   this.defenderDistance = 85;
   this.goalieDistance = 30;
+  this.aiArrivalSlowRadius = 8;
+  this.aiMinBallSpacing = 72;
+  this.aiMinTeammateSpacing = 36;
+  this.aiPressReleaseDistance = 90;
+  this.aiKeeperChallengeRadius = 70;
+  this.aiTargetDeadband = 2;
   this.ballRadius = 2;
   this.playerRadius = 4;
   this.imgPitch = document.getElementById("pitch");
@@ -56,6 +62,9 @@ var Configuration = function () {
   this.playerSpriteHeight = 16 //18;
   this.playerSpriteCenterX = 6;
   this.playerSpriteCenterY = 13;
+  this.debug = false;
+  this.debugLogSeconds = 3;
+  this.debugLogEveryNFrames = 4;
 };
 
 Configuration.prototype.comnputeScaleBy = function() {

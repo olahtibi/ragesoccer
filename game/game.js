@@ -5,6 +5,7 @@ var Game = function (config, stadium, camera, physics) {
   this.physics = physics;
   this.started = false;
   this.paused = false;
+  this.debugLog = new DebugLog(config);
 };
 
 Game.prototype.isPaused = function() {
@@ -61,7 +62,10 @@ function createContext() {
 function renderNewFrame() {    
   window.game.updateAi();
   window.game.physics.update();
-  window.game.stadium.goalDetector.update();  
+  window.game.stadium.goalDetector.update();
+  if (window.game.config.debug == true) {
+    window.game.debugLog.record(window.game);
+  }
   window.game.camera.windowToViewport(window.ctx);
   window.game.stadium.draw(window.ctx);
   if(window.game.isPaused()) {

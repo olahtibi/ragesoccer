@@ -74,7 +74,7 @@ Ai.prototype.setRole = function(role, target) {
     this.roleTarget = target;
 };
 
-Ai.prototype.update = function() {
+Ai.prototype.update = function(context) {
     if (!(window.game != null && window.game.started == true && !window.game.isPaused())) {
         return;
     }
@@ -83,7 +83,7 @@ Ai.prototype.update = function() {
     var ball = this.stadium.ball;
 
     if (this.role != null) {
-        this.updateRole();
+        this.updateRole(context);
         return;
     }
 
@@ -122,34 +122,245 @@ Ai.prototype.update = function() {
     this.holdGoaliePose();
 };
 
-Ai.prototype.updateRole = function() {
-    if (this.role == "chaser") {
-        this.updateIndependent();
-        return;
-    }
-
-    var target = this.roleTarget;
+Ai.prototype.updateRole = function(context) {
+    var target = null;
     if (this.role == "goalie") {
-        this.state = "goalie";
-        target = this.goalieTarget();
-    } else if (this.role == "attack") {
-        this.state = "attack";
-        target = this.attackRoleTarget();
+        target = this.goalieSlotTarget(context);
     } else if (this.role == "defender") {
-        this.state = "defend";
-        target = this.roleTarget || this.defenderTarget(0, 1);
+        target = this.defenderSlotTarget(context);
+    } else if (this.role == "support") {
+        target = this.supportSlotTarget(context);
+    } else if (this.role == "striker") {
+        target = this.strikerSlotTarget(context);
     }
 
-    this.roleTarget = target;
-    this.moveTo(target);
+    if (target == null) {
+        this.state = "hold";
+        target = this.controlledPlayer.position;
+    }
+
+    this.moveToRoleTarget(target, context);
     this.holdGoaliePose();
 };
 
-Ai.prototype.updateIndependent = function() {
-    var savedRole = this.role;
-    this.role = null;
-    this.update();
-    this.role = savedRole;
+Ai.prototype.goalieSlotTarget = function(context) {
+    if (context != null && context.keeperChallenge) {
+        this.state = "press";
+        return this.pressureTarget(context);
+    }
+
+    this.state = "hold";
+    return this.goalieTarget();
+};
+
+Ai.prototype.defenderSlotTarget = function(context) {
+    if (context != null && context.pressureController === this) {
+        this.state = "press";
+        return this.pressureTarget(context);
+    }
+
+    this.state = "hold";
+    return this.applyOffBallSpacing(this.defenderShapeTarget(context), context);
+};
+
+Ai.prototype.supportSlotTarget = function(context) {
+    this.state = "support";
+    return this.applyOffBallSpacing(this.supportShapeTarget(context), context);
+};
+
+Ai.prototype.strikerSlotTarget = function(context) {
+    if (context == null || context.pressureController === this) {
+        this.state = "press";
+        return this.pressureTarget(context);
+    }
+
+    this.state = "hold";
+    return this.applyOffBallSpacing(this.strikerOutletTarget(context), context);
+};
+
+Ai.prototype.pressureTarget = function(context) {
+    var ball = context != null ? context.ball : this.stadium.ball;
+    if (ball.position.z > 0 || ball.velocity.z > 0) {
+        this.state = "receive";
+        this.orbitDir = 0;
+        return this.clampToField(this.predictLandingPos() || new Vector2d(ball.position.x, ball.position.y));
+    }
+
+    return this.clampToField(this.attackTarget(this.controlledPlayer));
+};
+
+Ai.prototype.defenderShapeTarget = function(context) {
+    var ball = context != null ? context.ball : this.stadium.ball;
+    if (context != null && context.ballInOwnHalf) {
+        return this.defenderTarget(this.slotIndex || 0, this.slotCount || 1);
+    }
+
+    var lineDistance = this.config.defenderDistance + 65 + (this.slotIndex || 0) * 25;
+    var lane = this.slotLaneForShape();
+    var centerX = this.config.stadiumWidth / 2;
+    return this.clampToField(new Vector2d(
+        centerX + lane * this.config.attackWidth + (ball.position.x - centerX) * 0.2,
+        this.ownGoalCenter.y + this.defenseDirectionY * lineDistance
+    ));
+};
+
+Ai.prototype.supportShapeTarget = function(context) {
+    var ball = context != null ? context.ball : this.stadium.ball;
+    var lane = this.slotLaneForShape();
+    return this.clampToField(new Vector2d(
+        ball.position.x + lane * this.config.attackWidth,
+        ball.position.y + this.defenseDirectionY * this.config.attackDistance
+    ));
+};
+
+Ai.prototype.strikerOutletTarget = function(context) {
+    var ball = context != null ? context.ball : this.stadium.ball;
+    var lane = this.slotLane || 0;
+    return this.clampToField(new Vector2d(
+        ball.position.x + lane * this.config.attackWidth * 0.7,
+        ball.position.y - this.defenseDirectionY * this.config.attackDistance
+    ));
+};
+
+Ai.prototype.slotLaneForShape = function() {
+    if (this.slotLane !== 0) {
+        return this.slotLane;
+    }
+    return ((this.slotIndex || 0) % 2 === 0) ? -1 : 1;
+};
+
+Ai.prototype.applyOffBallSpacing = function(target, context) {
+    if (context == null) {
+        return this.clampToField(target);
+    }
+
+    var spaced = this.keepAwayFromPoint(
+        target,
+        context.ball.position,
+        this.config.aiMinBallSpacing,
+        this.slotLaneForShape(),
+        this.defenseDirectionY
+    );
+
+    for (var i = 0; i < context.teammates.length; i++) {
+        var teammate = context.teammates[i];
+        if (teammate === this.controlledPlayer) continue;
+        spaced = this.keepAwayFromPoint(
+            spaced,
+            teammate.position,
+            this.config.aiMinTeammateSpacing,
+            this.slotLaneForShape(),
+            this.defenseDirectionY
+        );
+    }
+
+    spaced = this.keepAwayFromPoint(
+        spaced,
+        context.ball.position,
+        this.config.aiMinBallSpacing,
+        this.slotLaneForShape(),
+        this.defenseDirectionY
+    );
+    spaced = this.clampToField(spaced);
+    if (MathLib.computeDistance(spaced, context.ball.position) < this.config.aiMinBallSpacing) {
+        spaced = this.inFieldSpacingTarget(
+            context.ball.position,
+            this.config.aiMinBallSpacing,
+            this.slotLaneForShape(),
+            this.defenseDirectionY
+        );
+    }
+    return spaced;
+};
+
+Ai.prototype.keepAwayFromPoint = function(target, point, minDistance, fallbackX, fallbackY) {
+    var dx = target.x - point.x;
+    var dy = target.y - point.y;
+    var d = Math.sqrt(dx * dx + dy * dy);
+    if (d >= minDistance) {
+        return target;
+    }
+
+    if (d < 0.0001) {
+        dx = fallbackX || 1;
+        dy = fallbackY || 0;
+        d = Math.sqrt(dx * dx + dy * dy) || 1;
+    }
+
+    return new Vector2d(
+        point.x + dx / d * minDistance,
+        point.y + dy / d * minDistance
+    );
+};
+
+Ai.prototype.inFieldSpacingTarget = function(point, minDistance, fallbackX, fallbackY) {
+    var directions = [
+        [fallbackX, fallbackY],
+        [fallbackX, 0],
+        [0, fallbackY],
+        [-fallbackX, fallbackY],
+        [1, fallbackY],
+        [-1, fallbackY]
+    ];
+    var best = null;
+    var bestDistance = -1;
+
+    for (var i = 0; i < directions.length; i++) {
+        var dx = directions[i][0];
+        var dy = directions[i][1];
+        var len = Math.sqrt(dx * dx + dy * dy);
+        if (len < 0.0001) continue;
+        var candidate = this.clampToField(new Vector2d(
+            point.x + dx / len * minDistance,
+            point.y + dy / len * minDistance
+        ));
+        var distance = MathLib.computeDistance(candidate, point);
+        if (distance > bestDistance) {
+            best = candidate;
+            bestDistance = distance;
+        }
+        if (distance >= minDistance - 0.0001) {
+            return candidate;
+        }
+    }
+
+    return best || this.clampToField(point);
+};
+
+Ai.prototype.moveToRoleTarget = function(target, context) {
+    target = this.applyTargetDeadband(target);
+    if (
+        context != null &&
+        this.role != "goalie" &&
+        this !== context.pressureController &&
+        MathLib.computeDistance(target, context.ball.position) < this.config.aiMinBallSpacing
+    ) {
+        target = this.applyOffBallSpacing(target, context);
+    }
+    this.roleTarget = target;
+    this.moveTo(target);
+};
+
+Ai.prototype.applyTargetDeadband = function(target) {
+    var deadband = this.config.aiTargetDeadband || 0;
+    if (deadband <= 0 || this.tPos == null) {
+        return target;
+    }
+
+    if (MathLib.computeDistance(target, this.tPos) < deadband) {
+        return this.tPos;
+    }
+    return target;
+};
+
+Ai.prototype.clampToField = function(target) {
+    var x = target.x;
+    var y = target.y;
+    if (x < this.config.boxTopLeft.x) x = this.config.boxTopLeft.x;
+    if (x > this.config.boxTopRight.x) x = this.config.boxTopRight.x;
+    if (y < this.config.boxTopLeft.y) y = this.config.boxTopLeft.y;
+    if (y > this.config.boxBottomLeft.y) y = this.config.boxBottomLeft.y;
+    return new Vector2d(x, y);
 };
 
 // While parked as goalie, look out at the pitch rather than into the net.
@@ -158,7 +369,7 @@ Ai.prototype.updateIndependent = function() {
 // stick to whatever direction it happened to arrive from (often north — into
 // the goal — because the AI usually retreats from midfield toward its line).
 Ai.prototype.holdGoaliePose = function() {
-    if (this.state !== 'defend' && this.state !== 'goalie') return;
+    if (this.role !== 'goalie' && this.state !== 'defend' && this.state !== 'goalie') return;
     var me = this.controlledPlayer;
     if (me.velocity.x === 0 && me.velocity.y === 0) {
         me.facingX = 0;
@@ -243,8 +454,13 @@ Ai.prototype.moveTo = function(target) {
         return;
     }
     var d = Math.sqrt(d2);
-    me.velocity.x = dx / d * this.speed;
-    me.velocity.y = dy / d * this.speed;
+    var slowRadius = this.config.aiArrivalSlowRadius || 0;
+    var speed = this.speed;
+    if (slowRadius > 0 && d < slowRadius) {
+        speed *= d / slowRadius;
+    }
+    me.velocity.x = dx / d * speed;
+    me.velocity.y = dy / d * speed;
 };
 
 Ai.prototype.goalieTarget = function() {
@@ -268,27 +484,6 @@ Ai.prototype.goalieTarget = function() {
     if (x > xMax) x = xMax;
 
     return new Vector2d(x, baseLineY);
-};
-
-Ai.prototype.attackRoleTarget = function() {
-    var ball = this.stadium.ball;
-    var toOppGoalX = this.oppGoalCenter.x - ball.position.x;
-    var toOppGoalY = this.oppGoalCenter.y - ball.position.y;
-    var len = Math.sqrt(toOppGoalX * toOppGoalX + toOppGoalY * toOppGoalY) || 1;
-    var ux = toOppGoalX / len;
-    var uy = toOppGoalY / len;
-    var side = this.controlledPlayer.position.x < ball.position.x ? -1 : 1;
-    var perpX = -uy * side;
-    var perpY = ux * side;
-    var x = ball.position.x + ux * this.config.attackDistance + perpX * this.config.attackWidth;
-    var y = ball.position.y + uy * this.config.attackDistance + perpY * this.config.attackWidth;
-
-    if (x < this.config.boxTopLeft.x) x = this.config.boxTopLeft.x;
-    if (x > this.config.boxTopRight.x) x = this.config.boxTopRight.x;
-    if (y < this.config.boxTopLeft.y) y = this.config.boxTopLeft.y;
-    if (y > this.config.boxBottomLeft.y) y = this.config.boxBottomLeft.y;
-
-    return new Vector2d(x, y);
 };
 
 Ai.prototype.defenderTarget = function(index, count) {
@@ -335,6 +530,13 @@ Ai.prototype.isPointInOwnHalf = function(point) {
         return point.y > this.midlineY;
     }
     return point.y < this.midlineY;
+};
+
+Ai.prototype.defensiveDepth = function(point) {
+    if (this.teamSide == "home") {
+        return point.y - this.midlineY;
+    }
+    return this.midlineY - point.y;
 };
 
 // Ball position `t` seconds from now, assuming only exponential rolling friction.

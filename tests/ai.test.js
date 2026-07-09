@@ -144,6 +144,17 @@ test("Ai moveTo snaps velocity to zero when already at target", function() {
   assertEqual(fixture.playerAway.velocity.y, 0);
 });
 
+test("Ai moveTo slows down near target", function() {
+  var fixture = makeFixture();
+  fixture.playerAway.position.x = 10;
+  fixture.playerAway.position.y = 10;
+
+  fixture.ai.moveTo(new Vector2d(14, 10));
+
+  assertNear(fixture.playerAway.velocity.x, fixture.ai.speed / 2, 0.0001);
+  assertNear(fixture.playerAway.velocity.y, 0, 0.0001);
+});
+
 test("Ai holdGoaliePose faces the pitch while defending at rest", function() {
   var fixture = makeFixture();
   fixture.ai.state = "defend";
