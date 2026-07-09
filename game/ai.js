@@ -658,6 +658,15 @@ Ai.prototype.attackTarget = function(me) {
         );
     }
 
+    var meBallDistance = Math.sqrt(meBallX * meBallX + meBallY * meBallY);
+    if (meBallDistance <= this.detourRadius + 3 && absDelta <= 0.25) {
+        this.orbitDir = 0;
+        return new Vector2d(
+            ball.position.x + ux * this.runThroughDistance,
+            ball.position.y + uy * this.runThroughDistance
+        );
+    }
+
     // Otherwise: arc around the ball on an escort circle. Two things matter
     // to avoid the jitter/clipping you saw:
     //   (1) The waypoint is placed at radius R / cos(step). This is the exact

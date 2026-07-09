@@ -182,3 +182,51 @@ test("Ai attackTarget runs through the ball when aligned behind it", function() 
   assertTrue(target.y > fixture.ball.position.y);
   assertNear(target.y, fixture.ball.position.y + fixture.ai.runThroughDistance, 0.0001);
 });
+
+test("Ai attackTarget runs through the ball when close and nearly aligned", function() {
+  var fixture = makeFixture();
+  fixture.ball.position.x = 267.66;
+  fixture.ball.position.y = 148.01;
+  fixture.playerAway.position.x = 268.29;
+  fixture.playerAway.position.y = 136.71;
+
+  var target = fixture.ai.attackTarget(fixture.playerAway);
+
+  assertTrue(target.y > fixture.ball.position.y);
+  assertTrue(MathLib.computeDistance(target, fixture.ball.position) > fixture.ai.runThroughDistance - 0.0001);
+});
+
+test("Ai attackTarget still orbits when close but poorly aligned", function() {
+  var fixture = makeFixture();
+  fixture.ball.position.x = 336;
+  fixture.ball.position.y = 400;
+  fixture.playerAway.position.x = 346;
+  fixture.playerAway.position.y = 400;
+
+  var target = fixture.ai.attackTarget(fixture.playerAway);
+
+  assertTrue(target.y < fixture.ball.position.y + fixture.ai.runThroughDistance - 1);
+});
+
+test("Away pressure defender near the ball keeps moving to kick", function() {
+  var fixture = makeFixture({ homeTeamSize: 4, awayTeamSize: 4 });
+  var game = new Game(fixture.config, fixture.stadium, {}, fixture.physics);
+  window.game = game;
+  game.started = true;
+  fixture.ball.position.x = 267.66;
+  fixture.ball.position.y = 148.01;
+  fixture.ball.position.z = 0;
+  fixture.ball.velocity.x = 0;
+  fixture.ball.velocity.y = 0;
+  fixture.ball.velocity.z = 0;
+  fixture.awayPlayers[1].position.x = 268.29;
+  fixture.awayPlayers[1].position.y = 136.71;
+
+  fixture.awayTeam.updateAi();
+
+  var defender = fixture.awayTeam.aiControllers[1];
+  assertEqual(defender.role, "defender");
+  assertEqual(defender.state, "press");
+  assertTrue(fixture.awayPlayers[1].velocity.y > 0);
+  assertTrue(MathLib.computeDistance(fixture.awayPlayers[1].velocity, new Vector2d(0, 0)) > 0);
+});

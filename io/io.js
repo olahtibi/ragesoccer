@@ -57,7 +57,7 @@ function checkInput(e) {
     if(window.keyMap[70]) {
         window.game.camera.showStats = !window.game.camera.showStats;
     }
-    if(window.keyMap[80]) {
+    if(window.keyMap[191]) {
         if(window.game.config.debug == true) {
             window.game.togglePause();
             window.game.debugLog.dump();

@@ -65,7 +65,7 @@ test("Touch input controls the home player closest to the ball", function() {
   assertTrue(fixture.stadium.homePlayers[1].velocity.y > 0);
 });
 
-test("P does not pause or dump logs when debug is disabled", function() {
+test("Slash does not pause or dump logs when debug is disabled", function() {
   var fixture = makeFixture();
   var game = makeInputGame(fixture);
   var dumped = false;
@@ -74,13 +74,13 @@ test("P does not pause or dump logs when debug is disabled", function() {
     dumped = true;
   };
 
-  checkInput({ keyCode: 80, type: "keydown" });
+  checkInput({ keyCode: 191, type: "keydown" });
 
   assertEqual(game.isPaused(), false);
   assertEqual(dumped, false);
 });
 
-test("P toggles pause and dumps logs when debug is enabled", function() {
+test("Slash toggles pause and dumps logs when debug is enabled", function() {
   var fixture = makeFixture();
   var game = makeInputGame(fixture);
   var dumped = false;
@@ -89,7 +89,7 @@ test("P toggles pause and dumps logs when debug is enabled", function() {
     dumped = true;
   };
 
-  checkInput({ keyCode: 80, type: "keydown" });
+  checkInput({ keyCode: 191, type: "keydown" });
 
   assertTrue(game.isPaused());
   assertEqual(dumped, true);
