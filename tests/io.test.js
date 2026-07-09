@@ -7,7 +7,7 @@ var assertEqual = testlib.assertEqual;
 var assertNear = testlib.assertNear;
 
 function makeInputGame(fixture) {
-  var game = new Game(fixture.config, fixture.stadium, {}, fixture.physics, fixture.aiControllers);
+  var game = new Game(fixture.config, fixture.stadium, {}, fixture.physics);
   game.camera = {
     position: new Vector2d(0, 0),
     showStats: false

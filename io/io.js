@@ -9,7 +9,7 @@ function touchHandler(e) {
     var scaleBy = window.game.config.comnputeScaleBy();
     var targetX = (0 - window.game.camera.position.x) + e.touches[0].clientX / scaleBy;
     var targetY = (0 - window.game.camera.position.y) + e.touches[0].clientY / scaleBy;
-    var player = window.game.stadium.selectHumanPlayer();
+    var player = window.game.stadium.homeTeam.selectHumanPlayer(window.game.stadium.ball);
     player.velocity = MathLib.computeVelocityForTarget(player.position, new Vector2d(targetX, targetY), velocity);
     startGame();
 }
@@ -19,7 +19,7 @@ function checkInput(e) {
     if(!window.game.isPaused()) {
         // Pixels per second
         var velocity = window.game.config.playerVelocity;
-        var player = window.game.stadium.selectHumanPlayer();
+        var player = window.game.stadium.homeTeam.selectHumanPlayer(window.game.stadium.ball);
         player.velocity.x = 0;
         player.velocity.y = 0;
         // player - home

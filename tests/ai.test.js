@@ -90,7 +90,7 @@ test("Ai defensePoint stays in front of the own goal and clamps near the mouth",
 
 test("Ai home controller defends bottom goal and attacks top goal", function() {
   var fixture = makeFixture({ homeTeamSize: 2, awayTeamSize: 1 });
-  var homeAi = new Ai(fixture.config, fixture.stadium, fixture.stadium.homePlayers[1], "home", 1);
+  var homeAi = new Ai(fixture.config, fixture.stadium, fixture.stadium.homePlayers[1], fixture.homeTeam, fixture.awayTeam, 1);
 
   assertTrue(homeAi.ownGoalCenter.y > homeAi.midlineY);
   assertTrue(homeAi.oppGoalCenter.y < homeAi.midlineY);
@@ -99,7 +99,7 @@ test("Ai home controller defends bottom goal and attacks top goal", function() {
 
 test("Ai away controller defends top goal and attacks bottom goal", function() {
   var fixture = makeFixture({ homeTeamSize: 1, awayTeamSize: 2 });
-  var awayAi = new Ai(fixture.config, fixture.stadium, fixture.stadium.awayPlayers[1], "away", 1);
+  var awayAi = new Ai(fixture.config, fixture.stadium, fixture.stadium.awayPlayers[1], fixture.awayTeam, fixture.homeTeam, 1);
 
   assertTrue(awayAi.ownGoalCenter.y < awayAi.midlineY);
   assertTrue(awayAi.oppGoalCenter.y > awayAi.midlineY);

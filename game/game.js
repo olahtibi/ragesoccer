@@ -1,10 +1,8 @@
-var Game = function (config, stadium, camera, physics, aiControllers) {
+var Game = function (config, stadium, camera, physics) {
   this.config = config;
   this.stadium = stadium;
   this.camera = camera;
   this.physics = physics;
-  this.aiControllers = aiControllers || [];
-  this.ai = this.aiControllers[0] || null;
   this.started = false;
   this.paused = false;
 };
@@ -20,43 +18,12 @@ Game.prototype.togglePause = function() {
 };
 
 Game.prototype.updateAi = function() {
-  for (var i = 0; i < this.aiControllers.length; i++) {
-    if (this.aiControllers[i].controlledPlayer !== this.stadium.humanPlayer) {
-      this.aiControllers[i].update();
-    }
-  }
+  this.stadium.updateAi();
 };
 
 Game.prototype.drawAiDebug = function(ctx) {
-  for (var i = 0; i < this.aiControllers.length; i++) {
-    this.aiControllers[i].draw(ctx);
-  }
+  this.stadium.drawAiDebug(ctx);
 };
-
-function createTeamPlayers(config, teamSide) {
-  var positions = config.initialPlayerPositions(teamSide);
-  var players = [];
-  var img = teamSide == "home" ? config.imgPlayerHome : config.imgPlayerAway;
-  for (var i = 0; i < positions.length; i++) {
-    var player = new Player(img, positions[i], config.playerSpriteWidth, config.playerSpriteHeight, config.playerSpriteCenterX, config.playerSpriteCenterY);
-    if (teamSide == "away") {
-      player.facingY = 1;
-    }
-    players.push(player);
-  }
-  return players;
-}
-
-function createAiControllers(config, stadium, level) {
-  var controllers = [];
-  for (var i = 0; i < stadium.awayPlayers.length; i++) {
-    controllers.push(new Ai(config, stadium, stadium.awayPlayers[i], "away", level));
-  }
-  for (var j = 0; j < stadium.homePlayers.length; j++) {
-    controllers.push(new Ai(config, stadium, stadium.homePlayers[j], "home", level));
-  }
-  return controllers;
-}
 
 function startLoop() {
   var level = 1;
@@ -64,18 +31,16 @@ function startLoop() {
   var config = new Configuration();
   // Create players and ball
   var ball = new Ball(config.imgBall, config.ballRadius, config.initialBallPosition);
-  var homePlayers = createTeamPlayers(config, "home");
-  var awayPlayers = createTeamPlayers(config, "away");
+  var homeTeam = new Team(config, "home", level);
+  var awayTeam = new Team(config, "away", level);
   // Create goal detector
   var goalDetector = new GoalDetector(config, ball);
   // Create stadium
-  var stadium = new Stadium(config.imgPitch, ball, homePlayers, awayPlayers, goalDetector);
+  var stadium = new Stadium(config.imgPitch, ball, homeTeam, awayTeam, goalDetector);
   var camera = new Camera(config, stadium);
-  // Create phisics
+  // Create physics
   var physics = new Physics(config, stadium);
-  // Create AI
-  var aiControllers = createAiControllers(config, stadium, level);
-  window.game = new Game(config, stadium, camera, physics, aiControllers);
+  window.game = new Game(config, stadium, camera, physics);
   window.ctx = createContext();
   window.requestAnimationFrame(renderNewFrame);
 }

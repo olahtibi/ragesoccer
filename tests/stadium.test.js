@@ -44,6 +44,7 @@ test("Stadium closest-player tie keeps the current human player", function() {
   fixture.stadium.homePlayers[1].position.y = 100;
   fixture.ball.position.x = 200;
   fixture.ball.position.y = 100;
+  fixture.stadium.homeTeam.humanPlayer = fixture.stadium.homePlayers[1];
   fixture.stadium.humanPlayer = fixture.stadium.homePlayers[1];
 
   var selected = fixture.stadium.findClosestHomePlayerToBall();
@@ -53,6 +54,7 @@ test("Stadium closest-player tie keeps the current human player", function() {
 
 test("Stadium selectHumanPlayer clears previous human velocity on switch", function() {
   var fixture = makeFixture({ homeTeamSize: 2, awayTeamSize: 1 });
+  fixture.stadium.homeTeam.humanPlayer = fixture.stadium.homePlayers[0];
   fixture.stadium.humanPlayer = fixture.stadium.homePlayers[0];
   fixture.stadium.homePlayers[0].velocity.x = 10;
   fixture.stadium.homePlayers[0].velocity.y = -10;

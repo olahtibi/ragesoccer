@@ -49,6 +49,7 @@ function loadGameScripts() {
     "game/ball.js",
     "game/player.js",
     "game/goalDetector.js",
+    "game/team.js",
     "game/stadium.js",
     "game/physics.js",
     "game/ai.js",
@@ -75,22 +76,24 @@ function makeConfig(options) {
 function makeFixture(options) {
   var config = makeConfig(options);
   var ball = new Ball(config.imgBall, config.ballRadius, new Vector3d(334, 433, 0));
-  var homePlayers = createTeamPlayers(config, "home");
-  var awayPlayers = createTeamPlayers(config, "away");
+  var homeTeam = new Team(config, "home", 1);
+  var awayTeam = new Team(config, "away", 1);
 
   var goalDetector = new GoalDetector(config, ball);
-  var stadium = new Stadium(config.imgPitch, ball, homePlayers, awayPlayers, goalDetector);
+  var stadium = new Stadium(config.imgPitch, ball, homeTeam, awayTeam, goalDetector);
   var physics = new Physics(config, stadium);
-  var aiControllers = createAiControllers(config, stadium, 1);
-  var ai = aiControllers[0] || new Ai(config, stadium, 1);
+  var aiControllers = stadium.homeTeam.aiControllers.concat(stadium.awayTeam.aiControllers);
+  var ai = stadium.awayTeam.aiControllers[0] || new Ai(config, stadium, 1);
 
   return {
     config: config,
     ball: ball,
     playerHome: stadium.playerHome,
     playerAway: stadium.playerAway,
-    homePlayers: homePlayers,
-    awayPlayers: awayPlayers,
+    homeTeam: homeTeam,
+    awayTeam: awayTeam,
+    homePlayers: homeTeam.players,
+    awayPlayers: awayTeam.players,
     goalDetector: goalDetector,
     stadium: stadium,
     physics: physics,

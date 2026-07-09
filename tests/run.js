@@ -7,6 +7,7 @@ require("./helpers").loadGameScripts();
   "./player.test",
   "./physics.test",
   "./ai.test",
+  "./team.test",
   "./stadium.test",
   "./game.test",
   "./io.test"
