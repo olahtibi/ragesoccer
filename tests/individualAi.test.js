@@ -36,38 +36,90 @@ test("IndividualAi moveToPosition stops at target", function() {
   assertEqual(ai.commandState, "stopped");
 });
 
-test("IndividualAi attackBall sets velocity toward ball", function() {
+test("IndividualAi attackBall shoots through ball when aligned behind it", function() {
   var fixture = makeFixture();
   var ai = new IndividualAi(fixture.config, fixture.awayTeam, fixture.playerAway);
-  fixture.playerAway.position.x = 10;
-  fixture.playerAway.position.y = 10;
-  fixture.ball.position.x = 20;
-  fixture.ball.position.y = 10;
+  fixture.playerAway.position.x = 336;
+  fixture.playerAway.position.y = 380;
+  fixture.ball.position.x = 336;
+  fixture.ball.position.y = 400;
+  fixture.ball.velocity.x = 0;
+  fixture.ball.velocity.y = 0;
 
   ai.setCommand("attackBall", null);
   ai.update({ ball: fixture.ball });
 
-  assertNear(fixture.playerAway.velocity.x, fixture.config.teamVelocity("away"), 0.0001);
-  assertNear(fixture.playerAway.velocity.y, 0, 0.0001);
-  assertEqual(ai.commandState, "moving");
+  assertEqual(ai.commandState, "shoot");
+  assertNear(ai.tPos.x, 336, 0.0001);
+  assertTrue(ai.tPos.y > fixture.ball.position.y);
+  assertNear(fixture.ball.velocity.x, 0, 0.0001);
+  assertNear(fixture.ball.velocity.y, 0, 0.0001);
 });
 
-test("IndividualAi attackBall stops at ball target", function() {
+test("IndividualAi attackBall approaches behind-ball setup point when far and not aligned", function() {
   var fixture = makeFixture();
   var ai = new IndividualAi(fixture.config, fixture.awayTeam, fixture.playerAway);
-  fixture.playerAway.position.x = 10;
-  fixture.playerAway.position.y = 10;
-  fixture.ball.position.x = 10;
-  fixture.ball.position.y = 10;
-  fixture.playerAway.velocity.x = 2;
-  fixture.playerAway.velocity.y = 3;
+  fixture.playerAway.position.x = 300;
+  fixture.playerAway.position.y = 400;
+  fixture.ball.position.x = 336;
+  fixture.ball.position.y = 400;
 
   ai.setCommand("attackBall", null);
   ai.update({ ball: fixture.ball });
 
-  assertEqual(fixture.playerAway.velocity.x, 0);
-  assertEqual(fixture.playerAway.velocity.y, 0);
-  assertEqual(ai.commandState, "stopped");
+  assertEqual(ai.commandState, "approach");
+  assertNear(ai.tPos.x, 336, 0.0001);
+  assertTrue(ai.tPos.y < fixture.ball.position.y);
+});
+
+test("IndividualAi attackBall detours around ball when close and not aligned", function() {
+  var fixture = makeFixture();
+  var ai = new IndividualAi(fixture.config, fixture.awayTeam, fixture.playerAway);
+  fixture.playerAway.position.x = 346;
+  fixture.playerAway.position.y = 400;
+  fixture.ball.position.x = 336;
+  fixture.ball.position.y = 400;
+
+  ai.setCommand("attackBall", null);
+  ai.update({ ball: fixture.ball });
+
+  assertEqual(ai.commandState, "detour");
+  assertNear(MathLib.computeDistance(ai.tPos, fixture.ball.position), fixture.config.aiAttackDetourRadius, 0.0001);
+  assertTrue(ai.attackOrbitDir !== 0);
+});
+
+test("IndividualAi attackBall keeps detour direction across updates", function() {
+  var fixture = makeFixture();
+  var ai = new IndividualAi(fixture.config, fixture.awayTeam, fixture.playerAway);
+  fixture.playerAway.position.x = 346;
+  fixture.playerAway.position.y = 400;
+  fixture.ball.position.x = 336;
+  fixture.ball.position.y = 400;
+
+  ai.setCommand("attackBall", null);
+  ai.update({ ball: fixture.ball });
+  var orbitDir = ai.attackOrbitDir;
+  ai.update({ ball: fixture.ball });
+
+  assertEqual(ai.commandState, "detour");
+  assertEqual(ai.attackOrbitDir, orbitDir);
+});
+
+test("IndividualAi attackBall resets detour memory when command changes", function() {
+  var fixture = makeFixture();
+  var ai = new IndividualAi(fixture.config, fixture.awayTeam, fixture.playerAway);
+  fixture.playerAway.position.x = 346;
+  fixture.playerAway.position.y = 400;
+  fixture.ball.position.x = 336;
+  fixture.ball.position.y = 400;
+
+  ai.setCommand("attackBall", null);
+  ai.update({ ball: fixture.ball });
+  assertTrue(ai.attackOrbitDir !== 0);
+
+  ai.setCommand("moveToPosition", new Vector2d(400, 400));
+
+  assertEqual(ai.attackOrbitDir, 0);
 });
 
 test("IndividualAi inactive leaves velocity unchanged", function() {

@@ -96,7 +96,11 @@ test("DebugLog snapshot includes ball, players, and AI commands states and targe
   assertEqual(snapshot.ai[3].team, "away");
   assertEqual(snapshot.ai[3].i, 0);
   assertEqual(snapshot.ai[3].command, "attackBall");
-  assertEqual(snapshot.ai[3].state, "moving");
+  assertTrue(
+    snapshot.ai[3].state == "approach" ||
+    snapshot.ai[3].state == "detour" ||
+    snapshot.ai[3].state == "shoot"
+  );
   assertTrue(snapshot.ai[3].target !== null);
 });
 

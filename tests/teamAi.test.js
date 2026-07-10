@@ -118,8 +118,7 @@ test("TeamAi away ball attacker ignores human hysteresis", function() {
 
   fixture.awayTeam.updateAi();
 
-  assertTrue(fixture.awayPlayers[1].velocity.x === 0 && fixture.awayPlayers[1].velocity.y === 0);
-  assertTrue(fixture.awayPlayers[0].velocity.x !== 0 || fixture.awayPlayers[0].velocity.y !== 0);
+  assertEqual(attackBallIndex(fixture.awayTeam), 1);
 });
 
 function attackBallIndex(team) {
@@ -194,8 +193,7 @@ test("TeamAi assigns attackBall to closest away player", function() {
 
   fixture.awayTeam.updateAi();
 
-  assertTrue(fixture.awayPlayers[1].velocity.x > 0);
-  assertEqual(fixture.awayPlayers[1].velocity.y, 0);
+  assertEqual(attackBallIndex(fixture.awayTeam), 1);
 });
 
 test("TeamAi moves non-closest away players to formation", function() {
