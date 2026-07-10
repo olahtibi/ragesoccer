@@ -8,7 +8,7 @@ Replace the current hybrid per-player AI with a smaller formation-based AI built
 - individual command execution in `game/individualAi.js`
 - formation target generation in `game/formation.js`
 
-Phase 1.0 should be intentionally simple. It should create the architecture for later phases without carrying over aiming, detours, position swapping, advanced goalie behavior, aerial prediction, or command hysteresis.
+Phase 1.0 should be intentionally simple. It should create the architecture for later phases without carrying over aiming, detours, position swapping, advanced goalie behavior, aerial prediction, or role-based tactical pressure.
 
 ## Constants
 
@@ -17,10 +17,14 @@ Add explicit phase 1.0 constants to `Configuration`:
 - `aiKickoffSpotRadius = 5`
 - `aiTargetReachedRadius = 1`
 - `aiCenterY = config.initialBallPosition.y`
+- `humanSwitchHysteresisDistance = 20`
+- `aiAttackerSwitchHysteresisDistance = 20`
 
 Do not use `config.stadiumHeight / 2` for AI half detection. The pitch image is not symmetric; the center line for AI state decisions should come from the initial ball position.
 
 Phase 1.0 should not use an arrival slow radius. Commands either move at team speed toward the target or stop when the target is reached.
+
+`Ball` must copy `config.initialBallPosition` into its own `Vector3d`; it must not keep the configuration vector by reference. The kickoff state and formation center depend on `config.initialBallPosition` staying immutable after game start.
 
 ## Phase 1.0 Behavior
 
@@ -88,13 +92,13 @@ When the ball is exactly on `config.aiCenterY`, keep the current `attack` or `de
 
 1. Updating its own state.
 2. Requesting formation positions for the current state, side, and team size.
-3. Selecting the teammate closest to the ball.
+3. Selecting the home human player or away ball attacker.
 4. Assigning one command to each `IndividualAi`.
 5. Updating each `IndividualAi`.
 
 For the human-controlled team:
 
-- The closest home player becomes `team.humanPlayer`.
+- The selected home player becomes `team.humanPlayer`.
 - Stadium-level human-player access returns `homeTeam.humanPlayer`; do not maintain a separate mutable `stadium.humanPlayer` value.
 - That player's command is `inactive`.
 - That player's velocity is set to zero immediately when the AI update selects them.
@@ -102,12 +106,23 @@ For the human-controlled team:
 
 If keyboard or touch control is currently active, `TeamAi` still owns human-player selection but should not zero the selected player's velocity. `io/io.js` applies input to the already-selected `stadium.humanPlayer` after `TeamAi` updates. Off-ball teammates should still receive `moveToPosition`.
 
+Home human selection uses hysteresis:
+
+- choose the closest home player by default
+- keep the current `team.humanPlayer` when it is within `config.humanSwitchHysteresisDistance` of the closest player's distance to the ball
+- switch only when another player is clearly closer beyond that hysteresis band
+
 For the opponent team:
 
-- The closest away player receives `attackBall`.
+- The selected away ball attacker receives `attackBall`.
 - All other away players receive `moveToPosition`.
 
-There is no hysteresis or stickiness in phase 1.0. Closest-player selection is recalculated each update.
+Away ball-attacker selection uses separate hysteresis:
+
+- choose the closest away player by default
+- keep the current `TeamAi.ballAttacker` when it is within `config.aiAttackerSwitchHysteresisDistance` of the closest player's distance to the ball
+- switch only when another away player is clearly closer beyond that hysteresis band
+- this is only command-selection stability; it is not role-based tactical pressure
 
 ### Individual Commands
 
@@ -198,6 +213,7 @@ Responsibilities:
 - Provide kickoff positions used by `Team.createPlayers()` for initial player placement.
 - Clamp targets to the playable field if needed.
 - Keep the module mostly pure: no mutation of players, ball, or teams.
+- Keep formation X positions static. Formation X must not depend on current ball position or camera position.
 
 Suggested public API:
 
@@ -242,9 +258,11 @@ Responsibilities:
 
 - Own the team state machine.
 - Internally own the team's `IndividualAi` instances without exposing them as public API.
-- Select closest teammate to ball.
+- Select the home human player with hysteresis.
+- Select the away ball attacker with separate hysteresis.
 - Assign commands to individuals.
 - Update `team.humanPlayer` for the home team.
+- Track the current away `ballAttacker`.
 - Preserve the existing AI debug feature by delegating debug drawing internally.
 
 Suggested public API:
@@ -271,11 +289,12 @@ Responsibilities after the rewrite:
 - Attach to stadium and opponent team.
 - Own a single `teamAi` instance.
 - Delegate AI update/draw to `teamAi`.
-- Keep `findClosestPlayerToBall` or move equivalent logic into `TeamAi`.
 
 Remove role assignment methods once `TeamAi` owns command assignment.
 
 Do not keep `Team.selectHumanPlayer()` or `Stadium.selectHumanPlayer()`. Human-player selection belongs to `TeamAi` only.
+
+Do not keep `Team.findClosestPlayerToBall()` or `Stadium.findClosestHomePlayerToBall()` as public convenience wrappers. Closest-player selection belongs inside `TeamAi`.
 
 ### `io/io.js`
 
@@ -293,6 +312,11 @@ Responsibilities after the rewrite:
 - Orchestrate frame order only.
 - Run AI before human input so `TeamAi` selects `team.humanPlayer`, then `io` applies input to that selected player, then physics advances.
 - Do not contain human-player selection or touch-control logic.
+
+Keyboard zoom controls:
+
+- `Q` zooms in
+- `W` zooms out
 
 ### `game/ai.js`
 
@@ -335,6 +359,10 @@ Cover:
 - state uses `config.aiCenterY` for half detection
 - home team assigns `inactive` to closest player
 - home team sets the selected human player's velocity to zero
+- home human selection keeps current player inside `humanSwitchHysteresisDistance`
+- home human selection switches when another player is clearly closer
+- away ball-attacker selection keeps current attacker inside `aiAttackerSwitchHysteresisDistance`
+- away ball-attacker selection switches when another player is clearly closer
 - home team assigns `moveToPosition` to other players
 - away team assigns `attackBall` to closest player
 - away team assigns `moveToPosition` to other players
@@ -349,6 +377,8 @@ Cover:
 - `tests/team.test.js`: keep only player creation, attach, and delegation tests that still apply.
 - `tests/stadium.test.js` and `tests/game.test.js`: update only if they reference old AI controller fields.
 - remove tests that depend on `team.aiControllers`, role assignment, or `game/ai.js`.
+- remove tests that depend on `Team.selectHumanPlayer()`, `Stadium.selectHumanPlayer()`, `Team.findClosestPlayerToBall()`, or `Stadium.findClosestHomePlayerToBall()`.
+- add regression coverage that moving the ball does not mutate `config.initialBallPosition`.
 
 ## Browser Script Order
 
@@ -371,11 +401,11 @@ Mirror the same order in `tests/helpers.js`.
 - detouring around the ball
 - orbiting / behind-ball alignment
 - position swapping
-- closest-player hysteresis
 - special goalie challenge behavior
 - aerial ball prediction
 - off-ball spacing from ball or teammates
 - advanced attack/defense state transitions
+- role-based pressure selection
 - set pieces other than the simple kickoff formation state
 - public access to `TeamAi`'s internal `IndividualAi` objects
 

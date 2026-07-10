@@ -122,6 +122,58 @@ test("TeamAi away ball attacker ignores human hysteresis", function() {
   assertTrue(fixture.awayPlayers[0].velocity.x !== 0 || fixture.awayPlayers[0].velocity.y !== 0);
 });
 
+function attackBallIndex(team) {
+  var snapshots = team.teamAi.debugSnapshot();
+  for (var i = 0; i < snapshots.length; i++) {
+    if (snapshots[i].command == "attackBall") {
+      return i;
+    }
+  }
+  return -1;
+}
+
+test("TeamAi keeps away ball attacker when another player is only slightly closer", function() {
+  var fixture = makeFixture({ homeTeamSize: 1, awayTeamSize: 2 });
+  startedGame(fixture);
+  fixture.config.aiAttackerSwitchHysteresisDistance = 20;
+  fixture.awayPlayers[0].position.x = 100;
+  fixture.awayPlayers[0].position.y = 100;
+  fixture.awayPlayers[1].position.x = 140;
+  fixture.awayPlayers[1].position.y = 100;
+  fixture.ball.position.x = 100;
+  fixture.ball.position.y = 100;
+
+  fixture.awayTeam.updateAi();
+  assertEqual(attackBallIndex(fixture.awayTeam), 0);
+
+  fixture.ball.position.x = 126;
+  fixture.ball.position.y = 100;
+  fixture.awayTeam.updateAi();
+
+  assertEqual(attackBallIndex(fixture.awayTeam), 0);
+});
+
+test("TeamAi switches away ball attacker when another player is clearly closer", function() {
+  var fixture = makeFixture({ homeTeamSize: 1, awayTeamSize: 2 });
+  startedGame(fixture);
+  fixture.config.aiAttackerSwitchHysteresisDistance = 20;
+  fixture.awayPlayers[0].position.x = 100;
+  fixture.awayPlayers[0].position.y = 100;
+  fixture.awayPlayers[1].position.x = 160;
+  fixture.awayPlayers[1].position.y = 100;
+  fixture.ball.position.x = 100;
+  fixture.ball.position.y = 100;
+
+  fixture.awayTeam.updateAi();
+  assertEqual(attackBallIndex(fixture.awayTeam), 0);
+
+  fixture.ball.position.x = 160;
+  fixture.ball.position.y = 100;
+  fixture.awayTeam.updateAi();
+
+  assertEqual(attackBallIndex(fixture.awayTeam), 1);
+});
+
 test("TeamAi moves non-human home players to formation", function() {
   var fixture = makeFixture({ homeTeamSize: 2, awayTeamSize: 1 });
   startedGame(fixture);

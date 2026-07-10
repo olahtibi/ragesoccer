@@ -5,6 +5,7 @@ var TeamAi = function(config, stadium, team, opponentTeam) {
   this.opponentTeam = opponentTeam;
   this.formation = new Formation(config);
   this.state = "kickoff";
+  this.ballAttacker = null;
   this._individualAis = [];
 
   for (var i = 0; i < team.players.length; i++) {
@@ -19,7 +20,7 @@ TeamAi.prototype.update = function() {
 
   this.state = this.nextState();
   var targets = this.formation.positions(this.state, this.team.side, this.team.players.length);
-  var closest = this.team.side == "home" ? this.selectedHumanPlayer() : this.closestPlayerToBall();
+  var closest = this.team.side == "home" ? this.selectedHumanPlayer() : this.selectedBallAttacker();
   var activeHumanControl = this.team.side == "home" && this.hasActiveHumanControl();
   var context = {
     ball: this.stadium.ball,
@@ -129,6 +130,20 @@ TeamAi.prototype.selectedHumanPlayer = function() {
       return current;
     }
   }
+  return closest;
+};
+
+TeamAi.prototype.selectedBallAttacker = function() {
+  var closest = this.closestPlayerToBall();
+  if (this.ballAttacker != null && closest !== this.ballAttacker) {
+    var currentDistance = MathLib.computeDistance(this.ballAttacker.position, this.stadium.ball.position);
+    var closestDistance = MathLib.computeDistance(closest.position, this.stadium.ball.position);
+    var hysteresis = this.config.aiAttackerSwitchHysteresisDistance || 0;
+    if (currentDistance <= closestDistance + hysteresis) {
+      return this.ballAttacker;
+    }
+  }
+  this.ballAttacker = closest;
   return closest;
 };
 

@@ -51,6 +51,7 @@ var Configuration = function () {
   this.aiTargetDeadband = 2;
   this.aiKickoffSpotRadius = 5;
   this.aiTargetReachedRadius = 1;
+  this.aiAttackerSwitchHysteresisDistance = 20;
   this.humanSwitchHysteresisDistance = 20;
   this.ballRadius = 2;
   this.playerRadius = 4;
