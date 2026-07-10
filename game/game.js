@@ -19,55 +19,6 @@ Game.prototype.togglePause = function() {
     this.paused = !this.paused;
 };
 
-Game.prototype.updateHumanControl = function() {
-  if (this.isPaused()) {
-    return;
-  }
-
-  if (this.hasMovementInput()) {
-    this.touchTarget = null;
-    return;
-  }
-
-  if (this.touchTarget != null) {
-    this.updateTouchControl();
-    return;
-  }
-
-  var player = this.stadium.selectHumanPlayer();
-  this.stopPlayer(player);
-};
-
-Game.prototype.hasMovementInput = function() {
-  var keys = window.keyMap || {};
-  return keys[37] || keys[38] || keys[39] || keys[40];
-};
-
-Game.prototype.updateTouchControl = function() {
-  var player = this.stadium.humanPlayer;
-  if (player == null) {
-    this.touchTarget = null;
-    return;
-  }
-
-  var threshold = this.config.aiTargetDeadband || 2;
-  if (MathLib.computeDistance(player.position, this.touchTarget) <= threshold) {
-    this.touchTarget = null;
-    this.stopPlayer(player);
-    return;
-  }
-
-  player.velocity = MathLib.computeVelocityForTarget(player.position, this.touchTarget, this.config.teamVelocity("home"));
-};
-
-Game.prototype.stopPlayer = function(player) {
-  if (player == null) {
-    return;
-  }
-  player.velocity.x = 0;
-  player.velocity.y = 0;
-};
-
 Game.prototype.updateAi = function() {
   this.stadium.updateAi();
 };
@@ -109,8 +60,8 @@ function createContext() {
 }
 
 function renderNewFrame() {    
-  window.game.updateHumanControl();
   window.game.updateAi();
+  updateHumanInput(window.game);
   window.game.physics.update();
   window.game.stadium.goalDetector.update();
   if (window.game.config.debug == true) {

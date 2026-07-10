@@ -1,7 +1,7 @@
 var Ball = function (imgBall, ballRadius, position) {
   this.imgBall = imgBall;
   this.ballRadius = ballRadius;
-  this.position = position;
+  this.position = new Vector3d(position.x, position.y, position.z || 0);
   this.velocity = new Vector3d(0, 0, 0)
   this.kickDirection = new Vector2d(0, 0)
   this.phaseIndex = 0;

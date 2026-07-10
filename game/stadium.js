@@ -9,9 +9,14 @@ var Stadium = function (imgStadium, ball, homeTeam, awayTeam, goalDetector) {
   this.homePlayers = this.homeTeam.players;
   this.awayPlayers = this.awayTeam.players;
   this.players = this.homePlayers.concat(this.awayPlayers);
-  this.humanPlayer = this.homeTeam.humanPlayer;
   this.goalDetector = goalDetector;
 };
+
+Object.defineProperty(Stadium.prototype, "humanPlayer", {
+  get: function() {
+    return this.homeTeam.humanPlayer;
+  }
+});
 
 Stadium.prototype.draw = function(ctx) {  
   ctx.drawImage(this.imgStadium, 0, 0);
@@ -30,14 +35,6 @@ Stadium.prototype.drawHumanPlayerMarker = function(ctx, player) {
   ctx.lineWidth = 1;
   ctx.strokeStyle = "rgba(255, 255, 255, 0.5)";
   ctx.stroke();
-};
-
-Stadium.prototype.findClosestHomePlayerToBall = function() {
-  return this.homeTeam.findClosestPlayerToBall(this.ball);
-};
-
-Stadium.prototype.selectHumanPlayer = function() {
-  return this.homeTeam.selectHumanPlayer(this.ball);
 };
 
 Stadium.prototype.updateAi = function() {

@@ -53,10 +53,12 @@ function loadGameScripts() {
     "game/ball.js",
     "game/player.js",
     "game/goalDetector.js",
+    "game/formation.js",
+    "game/individualAi.js",
+    "game/teamAi.js",
     "game/team.js",
     "game/stadium.js",
     "game/physics.js",
-    "game/ai.js",
     "game/camera.js",
     "game/game.js",
     "io/io.js"
@@ -85,8 +87,6 @@ function makeFixture(options) {
   var goalDetector = new GoalDetector(config, ball);
   var stadium = new Stadium(config.imgPitch, ball, homeTeam, awayTeam, goalDetector);
   var physics = new Physics(config, stadium);
-  var aiControllers = stadium.homeTeam.aiControllers.concat(stadium.awayTeam.aiControllers);
-  var ai = stadium.awayTeam.aiControllers[0];
 
   return {
     config: config,
@@ -99,9 +99,7 @@ function makeFixture(options) {
     awayPlayers: awayTeam.players,
     goalDetector: goalDetector,
     stadium: stadium,
-    physics: physics,
-    aiControllers: aiControllers,
-    ai: ai
+    physics: physics
   };
 }
 
@@ -139,18 +137,14 @@ function applyReplayEvent(event, game) {
   }
 
   if (event.type === "touch") {
-    var player = game.stadium.homeTeam.selectHumanPlayer(game.stadium.ball);
-    player.velocity = MathLib.computeVelocityForTarget(
-      player.position,
-      new Vector2d(event.target.x, event.target.y),
-      game.config.teamVelocity("home")
-    );
+    game.touchTarget = new Vector2d(event.target.x, event.target.y);
     game.started = true;
   }
 }
 
 function advanceReplayFrame(game, dt) {
   game.updateAi();
+  updateHumanInput(game);
   game.physics.lastDt = dt;
   game.physics.updatePlayerPosition(dt);
   game.physics.resolveBallPlayerContacts();

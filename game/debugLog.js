@@ -115,7 +115,7 @@ DebugLog.prototype.playersSnapshot = function(stadium) {
         facing: [this.round(player.facingX), this.round(player.facingY)],
         phase: player.phaseIndex,
         step: this.round(player.stepDistance),
-        human: player === stadium.humanPlayer
+        human: player === team.humanPlayer
       });
     }
   }
@@ -126,15 +126,17 @@ DebugLog.prototype.aiSnapshot = function(stadium) {
   var result = [];
   for (var t = 0; t < stadium.teams.length; t++) {
     var team = stadium.teams[t];
-    for (var i = 0; i < team.aiControllers.length; i++) {
-      var ai = team.aiControllers[i];
+    if (team.teamAi == null) continue;
+    var snapshots = team.teamAi.debugSnapshot();
+    for (var i = 0; i < snapshots.length; i++) {
+      var ai = snapshots[i];
       result.push({
         team: team.side,
         i: i,
-        role: ai.role,
+        teamState: ai.teamState,
+        command: ai.command,
         state: ai.state,
-        roleTarget: this.vectorSnapshot(ai.roleTarget),
-        target: this.vectorSnapshot(ai.tPos)
+        target: this.vectorSnapshot(ai.target)
       });
     }
   }

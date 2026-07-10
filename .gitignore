@@ -3,6 +3,7 @@
 .vscode/
 
 AGENTS.md
+design-docs/*.txt
 
 node_modules/
 npm-debug.log*
