@@ -19,7 +19,7 @@ TeamAi.prototype.update = function() {
 
   this.state = this.nextState();
   var targets = this.formation.positions(this.state, this.team.side, this.team.players.length);
-  var closest = this.closestPlayerToBall();
+  var closest = this.team.side == "home" ? this.selectedHumanPlayer() : this.closestPlayerToBall();
   var activeHumanControl = this.team.side == "home" && this.hasActiveHumanControl();
   var context = {
     ball: this.stadium.ball,
@@ -113,6 +113,20 @@ TeamAi.prototype.closestPlayerToBall = function() {
     if (distance < closestDistance) {
       closest = player;
       closestDistance = distance;
+    }
+  }
+  return closest;
+};
+
+TeamAi.prototype.selectedHumanPlayer = function() {
+  var closest = this.closestPlayerToBall();
+  var current = this.team.humanPlayer;
+  if (current != null && closest !== current) {
+    var currentDistance = MathLib.computeDistance(current.position, this.stadium.ball.position);
+    var closestDistance = MathLib.computeDistance(closest.position, this.stadium.ball.position);
+    var hysteresis = this.config.humanSwitchHysteresisDistance || 0;
+    if (currentDistance <= closestDistance + hysteresis) {
+      return current;
     }
   }
   return closest;

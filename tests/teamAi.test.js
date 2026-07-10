@@ -71,7 +71,7 @@ test("TeamAi assigns inactive to closest home player and stops it", function() {
   assertEqual(fixture.homePlayers[0].velocity.y, 0);
 });
 
-test("TeamAi closest-player selection has no hysteresis", function() {
+test("TeamAi keeps current human when another player is only slightly closer", function() {
   var fixture = makeFixture({ homeTeamSize: 2, awayTeamSize: 1 });
   startedGame(fixture);
   fixture.config.humanSwitchHysteresisDistance = 20;
@@ -81,10 +81,45 @@ test("TeamAi closest-player selection has no hysteresis", function() {
   fixture.homePlayers[1].position.y = 100;
   fixture.ball.position.x = 120;
   fixture.ball.position.y = 100;
+  fixture.homeTeam.humanPlayer = fixture.homePlayers[0];
+
+  fixture.homeTeam.updateAi();
+
+  assertTrue(fixture.homeTeam.humanPlayer === fixture.homePlayers[0]);
+});
+
+test("TeamAi switches human when another player is clearly closer", function() {
+  var fixture = makeFixture({ homeTeamSize: 2, awayTeamSize: 1 });
+  startedGame(fixture);
+  fixture.config.humanSwitchHysteresisDistance = 20;
+  fixture.homePlayers[0].position.x = 100;
+  fixture.homePlayers[0].position.y = 100;
+  fixture.homePlayers[1].position.x = 140;
+  fixture.homePlayers[1].position.y = 100;
+  fixture.ball.position.x = 140;
+  fixture.ball.position.y = 100;
+  fixture.homeTeam.humanPlayer = fixture.homePlayers[0];
 
   fixture.homeTeam.updateAi();
 
   assertTrue(fixture.homeTeam.humanPlayer === fixture.homePlayers[1]);
+});
+
+test("TeamAi away ball attacker ignores human hysteresis", function() {
+  var fixture = makeFixture({ homeTeamSize: 1, awayTeamSize: 2 });
+  startedGame(fixture);
+  fixture.config.humanSwitchHysteresisDistance = 500;
+  fixture.awayPlayers[0].position.x = 100;
+  fixture.awayPlayers[0].position.y = 100;
+  fixture.awayPlayers[1].position.x = 140;
+  fixture.awayPlayers[1].position.y = 100;
+  fixture.ball.position.x = 140;
+  fixture.ball.position.y = 100;
+
+  fixture.awayTeam.updateAi();
+
+  assertTrue(fixture.awayPlayers[1].velocity.x === 0 && fixture.awayPlayers[1].velocity.y === 0);
+  assertTrue(fixture.awayPlayers[0].velocity.x !== 0 || fixture.awayPlayers[0].velocity.y !== 0);
 });
 
 test("TeamAi moves non-human home players to formation", function() {

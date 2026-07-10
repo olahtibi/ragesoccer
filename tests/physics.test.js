@@ -21,6 +21,18 @@ test("Physics advances player position and walk phase by travelled distance", fu
   assertNear(fixture.playerHome.stepDistance, 2, 0.0001);
 });
 
+test("Ball position does not mutate configured initial ball position", function() {
+  var fixture = makeFixture();
+  var initialX = fixture.config.initialBallPosition.x;
+  var initialY = fixture.config.initialBallPosition.y;
+
+  fixture.ball.position.x += 25;
+  fixture.ball.position.y += 30;
+
+  assertNear(fixture.config.initialBallPosition.x, initialX, 0.0001);
+  assertNear(fixture.config.initialBallPosition.y, initialY, 0.0001);
+});
+
 test("Physics advances every player in the stadium", function() {
   var fixture = makeFixture({ homeTeamSize: 2, awayTeamSize: 2 });
   for (var i = 0; i < fixture.stadium.players.length; i++) {
