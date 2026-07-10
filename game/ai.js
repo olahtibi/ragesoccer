@@ -53,10 +53,8 @@ var Ai = function (config, stadium, controlledPlayer, team, opponentTeam) {
     this.detourStep = Math.PI / 6;    // Max angular step per frame when arcing around the ball (30°).
     this.detourRadius = this.contactDist + 4; // Radius of the arc waypoint around the ball.
     this.shootAngleTolerance = 0.15;  // Angular alignment needed (radians) before switching to shooting.
-    this.shootExitAngleTolerance = 0.18; // Small hysteresis so committed shots do not jitter near the ball.
     this.orbitCommitAngle = Math.PI - 0.3; // Hysteresis: don't flip orbit direction near the exact opposite.
     this.orbitDir = 0;                // -1 or +1 once we've committed to a way around the ball.
-    this.shootingThrough = false;     // True once the AI has committed to running through the ball.
     this.raceMargin = 0.08;           // seconds of slack before we concede the ball race.
     this.ownGoalDangerRadius = 130;   // Any ball closer than this to our goal is a threat.
     this.ownGoalDangerSpeed = 20;     // Or a ball moving into our goal faster than this.
@@ -116,7 +114,6 @@ Ai.prototype.update = function(context) {
     // so we don't inherit a stale side next time we're back on the ball.
     if (this.state !== 'attack') {
         this.orbitDir = 0;
-        this.shootingThrough = false;
     }
 
     this.moveTo(target);
@@ -142,7 +139,6 @@ Ai.prototype.updateRole = function(context) {
 
     if (this.state !== "press") {
         this.orbitDir = 0;
-        this.shootingThrough = false;
     }
     this.moveToRoleTarget(target, context);
     this.holdGoaliePose();
@@ -188,7 +184,6 @@ Ai.prototype.pressureTarget = function(context) {
     if (ball.position.z > 0 || ball.velocity.z > 0) {
         this.state = "receive";
         this.orbitDir = 0;
-        this.shootingThrough = false;
         return this.clampToField(this.predictLandingPos() || new Vector2d(ball.position.x, ball.position.y));
     }
 
@@ -350,6 +345,10 @@ Ai.prototype.moveToRoleTarget = function(target, context) {
 Ai.prototype.applyTargetDeadband = function(target) {
     var deadband = this.config.aiTargetDeadband || 0;
     if (deadband <= 0 || this.tPos == null) {
+        return target;
+    }
+
+    if (MathLib.computeDistance(this.tPos, this.controlledPlayer.position) < 0.75) {
         return target;
     }
 
@@ -654,30 +653,40 @@ Ai.prototype.attackTarget = function(me) {
     var absDelta = Math.abs(delta);
 
     var meBallDistance = Math.sqrt(meBallX * meBallX + meBallY * meBallY);
-    var committedShot = this.shootingThrough &&
-        meBallDistance <= this.detourRadius + this.runThroughDistance + 2 &&
-        absDelta < this.shootExitAngleTolerance;
-
-    if (absDelta < this.shootAngleTolerance || committedShot) {
+    if (absDelta < this.shootAngleTolerance) {
         // Cleanly lined up behind the ball → sprint straight through it toward
         // the goal. The contact normal at collision is essentially goal-ward,
         // so the physics impulse sends the ball at the goal.
         this.orbitDir = 0;
-        this.shootingThrough = true;
         return new Vector2d(
             ball.position.x + ux * this.runThroughDistance,
             ball.position.y + uy * this.runThroughDistance
         );
     }
 
-    this.shootingThrough = false;
-    if (meBallDistance <= this.detourRadius + 3 && absDelta <= 0.25) {
-        this.orbitDir = 0;
-        var setupRadius = this.detourRadius + this.config.aiArrivalSlowRadius;
-        return new Vector2d(
-            ball.position.x - ux * setupRadius,
-            ball.position.y - uy * setupRadius
+    if (meBallDistance <= this.detourRadius + this.config.aiArrivalSlowRadius && absDelta <= 0.25) {
+        var correctionStep = Math.min(this.detourStep / 2, absDelta);
+        var correctionDir = delta >= 0 ? 1 : -1;
+        var correctionAngle = angleMe + correctionDir * correctionStep;
+        var correctionRadius = Math.max(meBallDistance, this.detourRadius);
+        var correctionTarget = new Vector2d(
+            ball.position.x + Math.cos(correctionAngle) * correctionRadius,
+            ball.position.y + Math.sin(correctionAngle) * correctionRadius
         );
+        var correctionX = correctionTarget.x - me.position.x;
+        var correctionY = correctionTarget.y - me.position.y;
+        if (
+            me.velocity != null &&
+            me.velocity.x * me.velocity.x + me.velocity.y * me.velocity.y > 0.01 &&
+            correctionX * me.velocity.x + correctionY * me.velocity.y < 0
+        ) {
+            var velocityLength = Math.sqrt(me.velocity.x * me.velocity.x + me.velocity.y * me.velocity.y);
+            return new Vector2d(
+                me.position.x + me.velocity.x / velocityLength * this.config.aiArrivalSlowRadius,
+                me.position.y + me.velocity.y / velocityLength * this.config.aiArrivalSlowRadius
+            );
+        }
+        return correctionTarget;
     }
 
     // Otherwise: arc around the ball on an escort circle. Two things matter
