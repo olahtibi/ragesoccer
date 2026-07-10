@@ -8,13 +8,15 @@ var assertNear = testlib.assertNear;
 
 test("Physics advances player position and walk phase by travelled distance", function() {
   var fixture = makeFixture();
+  var startX = fixture.playerHome.position.x;
+  var startY = fixture.playerHome.position.y;
   fixture.playerHome.velocity.x = 10;
   fixture.playerHome.velocity.y = 0;
 
   fixture.physics.updatePlayerPosition(1);
 
-  assertNear(fixture.playerHome.position.x, 342, 0.0001);
-  assertNear(fixture.playerHome.position.y, 480, 0.0001);
+  assertNear(fixture.playerHome.position.x, startX + 10, 0.0001);
+  assertNear(fixture.playerHome.position.y, startY, 0.0001);
   assertEqual(fixture.playerHome.phaseIndex, 2);
   assertNear(fixture.playerHome.stepDistance, 2, 0.0001);
 });

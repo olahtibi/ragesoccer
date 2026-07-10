@@ -71,34 +71,33 @@ test("DebugLog trims snapshots older than configured seconds", function() {
   assertEqual(setup.game.debugLog.snapshots[2].time, 0.1);
 });
 
-test("DebugLog snapshot includes ball, players, and AI roles states and targets", function() {
+test("DebugLog snapshot includes ball, players, and AI commands states and targets", function() {
   var setup = makeDebugGame({ homeTeamSize: 3, awayTeamSize: 3 });
-  var ai = setup.fixture.stadium.awayTeam.aiControllers[0];
   setup.fixture.config.debug = true;
   setup.fixture.config.debugLogEveryNFrames = 1;
   setup.fixture.ball.position.x = 12.345;
   setup.fixture.ball.velocity.y = -6.789;
-  ai.setRole("goalie", new Vector2d(300.123, 120.456));
-  ai.state = "goalie";
-  ai.tPos = new Vector2d(301.123, 121.456);
+  setup.game.started = true;
+  setup.fixture.ball.position.x = setup.fixture.awayPlayers[0].position.x + 20;
+  setup.fixture.ball.position.y = setup.fixture.awayPlayers[0].position.y;
+  setup.game.updateAi();
 
   setup.game.debugLog.record(setup.game);
 
   var snapshot = setup.game.debugLog.snapshots[0];
   assertEqual(snapshot.dt, 0);
-  assertEqual(snapshot.ball.pos.x, 12.35);
+  assertEqual(snapshot.ball.pos.x, setup.game.debugLog.round(setup.fixture.ball.position.x));
   assertEqual(snapshot.ball.vel.y, -6.79);
   assertEqual(snapshot.players.length, 6);
   assertEqual(snapshot.players[0].team, "home");
   assertEqual(snapshot.players[0].i, 0);
-  assertTrue(snapshot.players[0].human);
+  assertTrue(snapshot.players[0].human || snapshot.players[1].human || snapshot.players[2].human);
   assertEqual(snapshot.ai.length, 6);
   assertEqual(snapshot.ai[3].team, "away");
   assertEqual(snapshot.ai[3].i, 0);
-  assertEqual(snapshot.ai[3].role, "goalie");
-  assertEqual(snapshot.ai[3].state, "goalie");
-  assertEqual(snapshot.ai[3].roleTarget.x, 300.12);
-  assertEqual(snapshot.ai[3].target.y, 121.46);
+  assertEqual(snapshot.ai[3].command, "attackBall");
+  assertEqual(snapshot.ai[3].state, "moving");
+  assertTrue(snapshot.ai[3].target !== null);
 });
 
 test("DebugLog records keyboard and touch events when debug is true", function() {

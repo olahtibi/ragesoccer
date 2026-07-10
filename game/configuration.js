@@ -49,6 +49,8 @@ var Configuration = function () {
   this.aiPressReleaseDistance = 90;
   this.aiKeeperChallengeRadius = 70;
   this.aiTargetDeadband = 2;
+  this.aiKickoffSpotRadius = 5;
+  this.aiTargetReachedRadius = 1;
   this.humanSwitchHysteresisDistance = 20;
   this.ballRadius = 2;
   this.playerRadius = 4;
@@ -58,8 +60,7 @@ var Configuration = function () {
   this.imgPlayerAway = document.getElementById("player-away");
   this.objCanvas = document.getElementById("myCanvas");
   this.initialBallPosition = new Vector3d(334, 433, 0);
-  this.initialPlayerHomePosition = new Vector2d(332, 480);
-  this.initialPlayerAwayPosition = new Vector2d(334, 400);
+  this.aiCenterY = this.initialBallPosition.y;
   this.homeTeamSize = 4;
   this.awayTeamSize = 4;
   this.playerVelocity = 50; // Pixels per second
@@ -133,35 +134,4 @@ Configuration.prototype.comnputeScaleBy = function() {
   else {
     return this.viewportHeight / (this.stadiumHeight * this.viewportRatio);
   }
-};
-
-Configuration.prototype.initialPlayerPositions = function(teamSide) {
-  var positions;
-  if (teamSide == "home") {
-    positions = [
-      this.initialPlayerHomePosition,
-      new Vector2d(250, 560),
-      new Vector2d(420, 560),
-      new Vector2d(250, 650),
-      new Vector2d(420, 650)
-    ];
-  } else {
-    positions = [
-      this.initialPlayerAwayPosition,
-      new Vector2d(250, 320),
-      new Vector2d(420, 320),
-      new Vector2d(250, 230),
-      new Vector2d(420, 230)
-    ];
-  }
-
-  var size = teamSide == "home" ? this.homeTeamSize : this.awayTeamSize;
-  if (size < 1) size = 1;
-  if (size > positions.length) size = positions.length;
-
-  var result = [];
-  for (var i = 0; i < size; i++) {
-    result.push(new Vector2d(positions[i].x, positions[i].y));
-  }
-  return result;
 };

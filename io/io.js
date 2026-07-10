@@ -13,10 +13,47 @@ function touchHandler(e) {
         window.game.debugLog.recordTouchEvent(new Vector2d(targetX, targetY));
     }
     var target = new Vector2d(targetX, targetY);
-    var player = window.game.stadium.homeTeam.selectHumanPlayer(window.game.stadium.ball);
+    var player = window.game.stadium.humanPlayer;
+    if (player == null) {
+        return;
+    }
     window.game.touchTarget = target;
     player.velocity = MathLib.computeVelocityForTarget(player.position, target, velocity);
     startGame();
+}
+
+function updateHumanInput(game) {
+    if(game == null || game.isPaused()) {
+        return;
+    }
+    if(hasMovementInput()) {
+        game.touchTarget = null;
+        return;
+    }
+    if(game.touchTarget != null) {
+        updateTouchControl(game);
+    }
+}
+
+function hasMovementInput() {
+    var keys = window.keyMap || {};
+    return keys[37] || keys[38] || keys[39] || keys[40];
+}
+
+function updateTouchControl(game) {
+    var player = game.stadium.humanPlayer;
+    if(player == null) {
+        game.touchTarget = null;
+        return;
+    }
+    var threshold = game.config.aiTargetReachedRadius || 1;
+    if(MathLib.computeDistance(player.position, game.touchTarget) <= threshold) {
+        game.touchTarget = null;
+        player.velocity.x = 0;
+        player.velocity.y = 0;
+        return;
+    }
+    player.velocity = MathLib.computeVelocityForTarget(player.position, game.touchTarget, game.config.teamVelocity("home"));
 }
 
 function checkInput(e) {
@@ -27,7 +64,10 @@ function checkInput(e) {
     if(!window.game.isPaused()) {
         // Pixels per second
         var velocity = window.game.config.teamVelocity("home");
-        var player = window.game.stadium.homeTeam.selectHumanPlayer(window.game.stadium.ball);
+        var player = window.game.stadium.humanPlayer;
+        if(player == null) {
+            return;
+        }
         player.velocity.x = 0;
         player.velocity.y = 0;
         // player - home
@@ -65,10 +105,10 @@ function checkInput(e) {
             window.game.debugLog.dump();
         }
     }
-    if(window.keyMap[107]) {
+    if(window.keyMap[81]) {
         window.game.config.viewportRatio /= 1.2;
     }
-    if(window.keyMap[109]) {
+    if(window.keyMap[87]) {
         window.game.config.viewportRatio *= 1.2;
     }
 }

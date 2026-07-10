@@ -18,11 +18,17 @@ function makeInputGame(fixture) {
   return game;
 }
 
+function selectHumanWithTeamAi(game) {
+  game.started = true;
+  game.updateAi();
+}
+
 test("Keyboard input controls the home player closest to the ball", function() {
   var fixture = makeFixture({ homeTeamSize: 2, awayTeamSize: 1, playerStrength: 10 });
-  makeInputGame(fixture);
+  var game = makeInputGame(fixture);
   fixture.ball.position.x = fixture.stadium.homePlayers[1].position.x;
   fixture.ball.position.y = fixture.stadium.homePlayers[1].position.y;
+  selectHumanWithTeamAi(game);
 
   checkInput({ keyCode: 39, type: "keydown" });
 
@@ -34,9 +40,10 @@ test("Keyboard input controls the home player closest to the ball", function() {
 
 test("Keyboard diagonal input normalizes selected player velocity", function() {
   var fixture = makeFixture({ homeTeamSize: 2, awayTeamSize: 1, playerStrength: 10 });
-  makeInputGame(fixture);
+  var game = makeInputGame(fixture);
   fixture.ball.position.x = fixture.stadium.homePlayers[1].position.x;
   fixture.ball.position.y = fixture.stadium.homePlayers[1].position.y;
+  selectHumanWithTeamAi(game);
 
   checkInput({ keyCode: 39, type: "keydown" });
   checkInput({ keyCode: 40, type: "keydown" });
@@ -50,6 +57,7 @@ test("Touch input controls the home player closest to the ball", function() {
   var game = makeInputGame(fixture);
   fixture.ball.position.x = fixture.stadium.homePlayers[1].position.x;
   fixture.ball.position.y = fixture.stadium.homePlayers[1].position.y;
+  selectHumanWithTeamAi(game);
   var scaleBy = fixture.config.comnputeScaleBy();
 
   touchHandler({
@@ -116,6 +124,21 @@ test("Input handlers record debug events only when debug is enabled", function()
   assertEqual(game.debugLog.events[0].type, "keydown");
   assertEqual(game.debugLog.events[0].keyCode, 39);
   assertEqual(game.debugLog.events[1].type, "keyup");
+});
+
+test("Q and W zoom viewport in and out", function() {
+  var fixture = makeFixture();
+  var game = makeInputGame(fixture);
+  var originalRatio = game.config.viewportRatio;
+
+  checkInput({ keyCode: 81, type: "keydown" });
+
+  assertEqual(game.config.viewportRatio, originalRatio / 1.2);
+
+  checkInput({ keyCode: 81, type: "keyup" });
+  checkInput({ keyCode: 87, type: "keydown" });
+
+  assertNear(game.config.viewportRatio, originalRatio, 0.0001);
 });
 
 test("Touch handler records debug touch target in world coordinates", function() {
