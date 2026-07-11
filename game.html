@@ -1,7 +1,5 @@
-<html>
+<html style="position: relative;">
 	<head>
-		<meta name="viewport" content="width=device-width, initial-scale=1">
-		<link rel="stylesheet" href="styles/game.css?v=0016">
 		<script type="text/javascript" src="src/math/vector.js?v=0016"></script>
 		<script type="text/javascript" src="src/math/mathlib.js?v=0016"></script>
 		<script type="text/javascript" src="src/core/configuration.js?v=0016"></script>
@@ -22,35 +20,12 @@
 		<script type="text/javascript" src="src/world/physics.js?v=0016"></script>
 		<script type="text/javascript" src="src/world/goalDetector.js?v=0016"></script>
 		<script type="text/javascript" src="src/input/io.js?v=0016"></script>
-		<script>
-			function shouldWaitForLandscape() {
-				return window.matchMedia &&
-					window.matchMedia("(orientation: portrait) and (pointer: coarse)").matches;
-			}
-
-			function startGameWhenLandscape() {
-				if (window.game != null) {
-					return;
-				}
-
-				if (shouldWaitForLandscape()) {
-					window.addEventListener("resize", startGameWhenLandscape);
-					window.addEventListener("orientationchange", startGameWhenLandscape);
-					return;
-				}
-
-				window.removeEventListener("resize", startGameWhenLandscape);
-				window.removeEventListener("orientationchange", startGameWhenLandscape);
-				startLoop();
-			}
-		</script>
 	</head>
-	<body onload="startGameWhenLandscape();">
-		<div id="rotateNotice">Rotate your phone to landscape</div>
-		<img id="pitch" class="hiddenAsset" src="assets/images/pitch.jpg">
-		<img id="ball" class="hiddenAsset" src="assets/images/ball.png">
-		<img id="player-home" class="hiddenAsset" src="assets/images/player-sprite-home.png">
-		<img id="player-away" class="hiddenAsset" src="assets/images/player-sprite-away.png">
-		<canvas id="myCanvas" width="640" height="480"></canvas>
+	<body onload="startLoop();" style="margin: 0px; overflow-x: hidden; position: relative;">
+		<img id="pitch" src="assets/images/pitch.jpg" style="visibility: hidden; position: absolute; top: -1000px; left: -1000px;">
+		<img id="ball" src="assets/images/ball.png" style="visibility: hidden; position: absolute; top: -1000px; left: -1000px;">
+		<img id="player-home" src="assets/images/player-sprite-home.png" style="visibility: hidden; position: absolute; top: -1000px; left: -1000px;">
+		<img id="player-away" src="assets/images/player-sprite-away.png" style="visibility: hidden; position: absolute; top: -1000px; left: -1000px;">
+		<canvas id="myCanvas" width="640" height="480" style="border:1px solid #000000;"></canvas>
 	</body>
 </html>
