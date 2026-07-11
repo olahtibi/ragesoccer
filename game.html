@@ -1,31 +1,7 @@
-<html style="position: relative;">
+<html>
 	<head>
 		<meta name="viewport" content="width=device-width, initial-scale=1">
-		<style>
-			#rotateNotice {
-				display: none;
-			}
-
-			@media (orientation: portrait) and (pointer: coarse) {
-				#rotateNotice {
-					align-items: center;
-					background: #111;
-					color: #fff;
-					display: flex;
-					font: 20px Arial, sans-serif;
-					inset: 0;
-					justify-content: center;
-					padding: 24px;
-					position: fixed;
-					text-align: center;
-					z-index: 9999;
-				}
-
-				#myCanvas {
-					display: none;
-				}
-			}
-		</style>
+		<link rel="stylesheet" href="css/game.css?v=0016">
 		<script type="text/javascript" src="mathlib/vector.js?v=0016"></script>
 		<script type="text/javascript" src="mathlib/mathlib.js?v=0016"></script>
 		<script type="text/javascript" src="game/configuration.js?v=0016"></script>
@@ -65,12 +41,12 @@
 			}
 		</script>
 	</head>
-	<body onload="startGameWhenLandscape();" style="margin: 0px; overflow-x: hidden; position: relative;">
+	<body onload="startGameWhenLandscape();">
 		<div id="rotateNotice">Rotate your phone to landscape</div>
-		<img id="pitch" src="resources/pitch.jpg" style="visibility: hidden; position: absolute; top: -1000px; left: -1000px;">
-		<img id="ball" src="resources/ball.png" style="visibility: hidden; position: absolute; top: -1000px; left: -1000px;">
-		<img id="player-home" src="resources/player-sprite-home.png" style="visibility: hidden; position: absolute; top: -1000px; left: -1000px;">
-		<img id="player-away" src="resources/player-sprite-away.png" style="visibility: hidden; position: absolute; top: -1000px; left: -1000px;">		
-		<canvas id="myCanvas" width="640" height="480" style="border:1px solid #000000;"></canvas>		
+		<img id="pitch" class="hiddenAsset" src="resources/pitch.jpg">
+		<img id="ball" class="hiddenAsset" src="resources/ball.png">
+		<img id="player-home" class="hiddenAsset" src="resources/player-sprite-home.png">
+		<img id="player-away" class="hiddenAsset" src="resources/player-sprite-away.png">
+		<canvas id="myCanvas" width="640" height="480"></canvas>
 	</body>
 </html>
