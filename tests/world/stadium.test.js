@@ -33,7 +33,9 @@ test("Stadium draw renders every player", function() {
       drawCount++;
     },
     beginPath: function() {},
-    ellipse: function() {},
+    moveTo: function() {},
+    lineTo: function() {},
+    closePath: function() {},
     stroke: function() {}
   };
 
@@ -44,31 +46,41 @@ test("Stadium draw renders every player", function() {
 
 test("Stadium draw marks the human controlled player", function() {
   var fixture = makeFixture({ homeTeamSize: 2, awayTeamSize: 1 });
-  var ellipseArgs = null;
+  fixture.stadium.humanPlayer.facingX = 0;
+  fixture.stadium.humanPlayer.facingY = -1;
+  var moveToArgs = null;
+  var lineToCount = 0;
   var strokes = 0;
+  var closed = false;
   var ctx = {
     drawImage: function() {},
     beginPath: function() {},
-    ellipse: function(x, y, radiusX, radiusY) {
-      ellipseArgs = {
+    moveTo: function(x, y) {
+      moveToArgs = {
         x: x,
-        y: y,
-        radiusX: radiusX,
-        radiusY: radiusY
+        y: y
       };
+    },
+    lineTo: function() {
+      lineToCount++;
+    },
+    closePath: function() {
+      closed = true;
     },
     stroke: function() {
       strokes++;
     },
-    strokeStyle: null
+    strokeStyle: null,
+    lineWidth: null
   };
 
   fixture.stadium.draw(ctx);
 
-  assertEqual(ellipseArgs.x, fixture.stadium.humanPlayer.position.x);
-  assertEqual(ellipseArgs.y, fixture.stadium.humanPlayer.position.y);
-  assertEqual(ellipseArgs.radiusX, 10);
-  assertEqual(ellipseArgs.radiusY, 5);
-  assertEqual(ctx.strokeStyle, "rgba(255, 255, 255, 0.5)");
+  assertEqual(moveToArgs.x, fixture.stadium.humanPlayer.position.x - 1);
+  assertEqual(moveToArgs.y, fixture.stadium.humanPlayer.position.y - 12);
+  assertEqual(lineToCount, 9);
+  assertTrue(closed);
+  assertEqual(ctx.lineWidth, 1);
+  assertEqual(ctx.strokeStyle, "rgba(255, 255, 0, 0.5)");
   assertEqual(strokes, 1);
 });

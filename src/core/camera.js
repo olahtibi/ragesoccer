@@ -48,7 +48,7 @@ Camera.prototype.renderOverlay = function(ctx) {
         if(this.showStats) {
             ctx.font = "10px Arial";
             ctx.fillStyle = 'white';
-            ctx.fillText("FPS: " + window.game.physics.fps, 335 - this.position.x, 15 - this.position.y);
+            ctx.fillText("FPS: " + window.game.physics.displayFps, 420 - this.position.x, 15 - this.position.y);
         }
     }
     ctx.restore();

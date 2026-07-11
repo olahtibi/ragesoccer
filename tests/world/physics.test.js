@@ -108,3 +108,20 @@ test("Physics ball-player contact kicks the ball outward", function() {
   assertTrue(fixture.ball.velocity.z > 0);
   assertNear(fixture.ball.position.x, 106.01, 0.0001);
 });
+
+test("Physics keeps a rounded throttled FPS display value", function() {
+  var fixture = makeFixture();
+  fixture.physics.lastUpdated = 0;
+
+  fixture.physics.updateStats(16);
+  var firstDisplay = fixture.physics.displayFps;
+  fixture.physics.updateStats(32);
+
+  assertEqual(firstDisplay, 63);
+  assertEqual(fixture.physics.displayFps, firstDisplay);
+
+  fixture.physics.updateStats(272);
+
+  assertTrue(fixture.physics.fps > 0);
+  assertEqual(fixture.physics.displayFps, Math.round(fixture.physics.fps));
+});

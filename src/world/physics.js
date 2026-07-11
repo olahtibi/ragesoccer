@@ -3,7 +3,10 @@ var Physics = function (config, stadium) {
   this.stadium = stadium;
   this.lastUpdated = new Date().getTime();
   this.fps = 0.0;
-  this.deltaArr = [0.0];
+  this.displayFps = 0;
+  this.deltaArr = [];
+  this.fpsDisplayIntervalMs = 250;
+  this.lastFpsDisplayUpdated = 0;
   this.frameNumber = 0;
   this.lastDt = 0;
 };
@@ -33,13 +36,21 @@ Physics.prototype.update = function() {
 Physics.prototype.updateStats = function(currentTime) {
   this.frameNumber++;
   var deltaT = currentTime - this.lastUpdated;
-  this.deltaArr[this.frameNumber % 100] = deltaT;
+  if (this.deltaArr.length < 100) {
+    this.deltaArr.push(deltaT);
+  } else {
+    this.deltaArr[this.frameNumber % 100] = deltaT;
+  }
   var avg = 0.0;
   for (var i = 0; i < this.deltaArr.length; i++) {
     avg += this.deltaArr[i];
   }
   avg /= this.deltaArr.length;
-  this.fps = 1000.0 / avg;
+  this.fps = avg > 0 ? 1000.0 / avg : 0;
+  if (this.displayFps === 0 || currentTime - this.lastFpsDisplayUpdated >= this.fpsDisplayIntervalMs) {
+    this.displayFps = Math.round(this.fps);
+    this.lastFpsDisplayUpdated = currentTime;
+  }
   this.lastUpdated = currentTime;
 };
 

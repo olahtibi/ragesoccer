@@ -30,10 +30,26 @@ Stadium.prototype.draw = function(ctx) {
 };
 
 Stadium.prototype.drawHumanPlayerMarker = function(ctx, player) {
+  var centerX = player.position.x - 1;
+  var centerY = player.position.y - 2;
+  var outerRadius = 10;
+  var innerRadius = 4;
+  var points = 5;
   ctx.beginPath();
-  ctx.ellipse(player.position.x, player.position.y, 10, 5, 0, 0, 2 * Math.PI);
+  for (var i = 0; i < points * 2; i++) {
+    var radius = i % 2 == 0 ? outerRadius : innerRadius;
+    var angle = -Math.PI / 2 + i * Math.PI / points;
+    var x = centerX + Math.cos(angle) * radius;
+    var y = centerY + Math.sin(angle) * radius;
+    if (i == 0) {
+      ctx.moveTo(x, y);
+    } else {
+      ctx.lineTo(x, y);
+    }
+  }
+  ctx.closePath();
   ctx.lineWidth = 1;
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.5)";
+  ctx.strokeStyle = "rgba(255, 255, 0, 0.5)";
   ctx.stroke();
 };
 
