@@ -1,27 +1,75 @@
 <html style="position: relative;">
 	<head>
-		<script type="text/javascript" src="src/math/vector.js?v=0017"></script>
-		<script type="text/javascript" src="src/math/mathlib.js?v=0017"></script>
-		<script type="text/javascript" src="src/core/configuration.js?v=0017"></script>
-		<script type="text/javascript" src="src/core/debugLog.js?v=0017"></script>
-		<script type="text/javascript" src="src/core/camera.js?v=0017"></script>
-		<script type="text/javascript" src="src/ai/formation.js?v=0017"></script>
-		<script type="text/javascript" src="src/ai/commands/inactiveCommand.js?v=0017"></script>
-		<script type="text/javascript" src="src/ai/commands/moveToPositionCommand.js?v=0017"></script>
-		<script type="text/javascript" src="src/ai/commands/attackBallCommand.js?v=0017"></script>
-		<script type="text/javascript" src="src/ai/commands/commandRegistry.js?v=0017"></script>
-		<script type="text/javascript" src="src/ai/individualAi.js?v=0017"></script>
-		<script type="text/javascript" src="src/ai/teamAi.js?v=0017"></script>
-		<script type="text/javascript" src="src/world/team.js?v=0017"></script>
-		<script type="text/javascript" src="src/core/game.js?v=0017"></script>
-		<script type="text/javascript" src="src/world/stadium.js?v=0017"></script>
-		<script type="text/javascript" src="src/world/ball.js?v=0017"></script>
-		<script type="text/javascript" src="src/world/player.js?v=0017"></script>
-		<script type="text/javascript" src="src/world/physics.js?v=0017"></script>
-		<script type="text/javascript" src="src/world/goalDetector.js?v=0017"></script>
-		<script type="text/javascript" src="src/input/io.js?v=0017"></script>
+		<style>
+			#rotateNotice {
+				display: none;
+			}
+
+			@media (orientation: portrait) and (pointer: coarse) {
+				#rotateNotice {
+					align-items: center;
+					background: #111;
+					color: #fff;
+					display: flex;
+					font: 20px Arial, sans-serif;
+					inset: 0;
+					justify-content: center;
+					padding: 24px;
+					position: fixed;
+					text-align: center;
+					z-index: 9999;
+				}
+
+				#myCanvas {
+					display: none;
+				}
+			}
+		</style>
+		<script type="text/javascript" src="src/math/vector.js?v=0020"></script>
+		<script type="text/javascript" src="src/math/mathlib.js?v=0020"></script>
+		<script type="text/javascript" src="src/core/configuration.js?v=0020"></script>
+		<script type="text/javascript" src="src/core/debugLog.js?v=0020"></script>
+		<script type="text/javascript" src="src/core/camera.js?v=0020"></script>
+		<script type="text/javascript" src="src/ai/formation.js?v=0020"></script>
+		<script type="text/javascript" src="src/ai/commands/inactiveCommand.js?v=0020"></script>
+		<script type="text/javascript" src="src/ai/commands/moveToPositionCommand.js?v=0020"></script>
+		<script type="text/javascript" src="src/ai/commands/attackBallCommand.js?v=0020"></script>
+		<script type="text/javascript" src="src/ai/commands/commandRegistry.js?v=0020"></script>
+		<script type="text/javascript" src="src/ai/individualAi.js?v=0020"></script>
+		<script type="text/javascript" src="src/ai/teamAi.js?v=0020"></script>
+		<script type="text/javascript" src="src/world/team.js?v=0020"></script>
+		<script type="text/javascript" src="src/core/game.js?v=0020"></script>
+		<script type="text/javascript" src="src/world/stadium.js?v=0020"></script>
+		<script type="text/javascript" src="src/world/ball.js?v=0020"></script>
+		<script type="text/javascript" src="src/world/player.js?v=0020"></script>
+		<script type="text/javascript" src="src/world/physics.js?v=0020"></script>
+		<script type="text/javascript" src="src/world/goalDetector.js?v=0020"></script>
+		<script type="text/javascript" src="src/input/io.js?v=0020"></script>
+		<script>
+			function shouldWaitForLandscape() {
+				return window.matchMedia &&
+					window.matchMedia("(orientation: portrait) and (pointer: coarse)").matches;
+			}
+
+			function startGameWhenLandscape() {
+				if (window.game != null) {
+					return;
+				}
+
+				if (shouldWaitForLandscape()) {
+					window.addEventListener("resize", startGameWhenLandscape);
+					window.addEventListener("orientationchange", startGameWhenLandscape);
+					return;
+				}
+
+				window.removeEventListener("resize", startGameWhenLandscape);
+				window.removeEventListener("orientationchange", startGameWhenLandscape);
+				startLoop();
+			}
+		</script>
 	</head>
-	<body onload="startLoop();" style="margin: 0px; overflow-x: hidden; position: relative;">
+	<body onload="startGameWhenLandscape();" style="margin: 0px; overflow-x: hidden; position: relative;">
+		<div id="rotateNotice">Rotate your phone to landscape</div>
 		<img id="pitch" src="assets/images/pitch.jpg" style="visibility: hidden; position: absolute; top: -1000px; left: -1000px;">
 		<img id="ball" src="assets/images/ball.png" style="visibility: hidden; position: absolute; top: -1000px; left: -1000px;">
 		<img id="player-home" src="assets/images/player-sprite-home.png" style="visibility: hidden; position: absolute; top: -1000px; left: -1000px;">
