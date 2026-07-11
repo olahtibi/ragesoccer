@@ -1,0 +1,76 @@
+var testlib = require("../../testlib");
+var makeFixture = require("../../helpers").makeFixture;
+
+var test = testlib.test;
+var assertTrue = testlib.assertTrue;
+var assertEqual = testlib.assertEqual;
+var assertNear = testlib.assertNear;
+
+test("attackBall shoots through ball when aligned behind it", function() {
+  var fixture = makeFixture();
+  var ai = new IndividualAi(fixture.config, fixture.awayTeam, fixture.playerAway);
+  fixture.playerAway.position.x = 336;
+  fixture.playerAway.position.y = 380;
+  fixture.ball.position.x = 336;
+  fixture.ball.position.y = 400;
+  fixture.ball.velocity.x = 0;
+  fixture.ball.velocity.y = 0;
+
+  ai.setCommand("attackBall", null);
+  ai.update({ ball: fixture.ball });
+
+  assertEqual(ai.commandState, "shoot");
+  assertNear(ai.tPos.x, 336, 0.0001);
+  assertTrue(ai.tPos.y > fixture.ball.position.y);
+  assertNear(fixture.ball.velocity.x, 0, 0.0001);
+  assertNear(fixture.ball.velocity.y, 0, 0.0001);
+});
+
+test("attackBall approaches behind-ball setup point when far and not aligned", function() {
+  var fixture = makeFixture();
+  var ai = new IndividualAi(fixture.config, fixture.awayTeam, fixture.playerAway);
+  fixture.playerAway.position.x = 300;
+  fixture.playerAway.position.y = 400;
+  fixture.ball.position.x = 336;
+  fixture.ball.position.y = 400;
+
+  ai.setCommand("attackBall", null);
+  ai.update({ ball: fixture.ball });
+
+  assertEqual(ai.commandState, "approach");
+  assertNear(ai.tPos.x, 336, 0.0001);
+  assertTrue(ai.tPos.y < fixture.ball.position.y);
+});
+
+test("attackBall detours around ball when close and not aligned", function() {
+  var fixture = makeFixture();
+  var ai = new IndividualAi(fixture.config, fixture.awayTeam, fixture.playerAway);
+  fixture.playerAway.position.x = 346;
+  fixture.playerAway.position.y = 400;
+  fixture.ball.position.x = 336;
+  fixture.ball.position.y = 400;
+
+  ai.setCommand("attackBall", null);
+  ai.update({ ball: fixture.ball });
+
+  assertEqual(ai.commandState, "detour");
+  assertNear(MathLib.computeDistance(ai.tPos, fixture.ball.position), fixture.config.aiAttackDetourRadius, 0.0001);
+  assertTrue(ai.attackOrbitDir !== 0);
+});
+
+test("attackBall keeps detour direction across updates", function() {
+  var fixture = makeFixture();
+  var ai = new IndividualAi(fixture.config, fixture.awayTeam, fixture.playerAway);
+  fixture.playerAway.position.x = 346;
+  fixture.playerAway.position.y = 400;
+  fixture.ball.position.x = 336;
+  fixture.ball.position.y = 400;
+
+  ai.setCommand("attackBall", null);
+  ai.update({ ball: fixture.ball });
+  var orbitDir = ai.attackOrbitDir;
+  ai.update({ ball: fixture.ball });
+
+  assertEqual(ai.commandState, "detour");
+  assertEqual(ai.attackOrbitDir, orbitDir);
+});

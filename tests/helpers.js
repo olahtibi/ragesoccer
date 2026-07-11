@@ -46,22 +46,26 @@ function loadGameScripts() {
   setupBrowserStubs();
 
   [
-    "mathlib/vector.js",
-    "mathlib/mathlib.js",
-    "game/configuration.js",
-    "game/debugLog.js",
-    "game/ball.js",
-    "game/player.js",
-    "game/goalDetector.js",
-    "game/formation.js",
-    "game/individualAi.js",
-    "game/teamAi.js",
-    "game/team.js",
-    "game/stadium.js",
-    "game/physics.js",
-    "game/camera.js",
-    "game/game.js",
-    "io/io.js"
+    "src/math/vector.js",
+    "src/math/mathlib.js",
+    "src/core/configuration.js",
+    "src/core/debugLog.js",
+    "src/world/ball.js",
+    "src/world/player.js",
+    "src/world/goalDetector.js",
+    "src/ai/formation.js",
+    "src/ai/commands/inactiveCommand.js",
+    "src/ai/commands/moveToPositionCommand.js",
+    "src/ai/commands/attackBallCommand.js",
+    "src/ai/commands/commandRegistry.js",
+    "src/ai/individualAi.js",
+    "src/ai/teamAi.js",
+    "src/world/team.js",
+    "src/world/stadium.js",
+    "src/world/physics.js",
+    "src/core/camera.js",
+    "src/core/game.js",
+    "src/input/io.js"
   ].forEach(loadScript);
 
   scriptsLoaded = true;

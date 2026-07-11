@@ -13,3 +13,10 @@ Tests:
 ```
 node tests/run.js
 ```
+
+Structure:
+- Runtime code: `src/`
+- AI commands: `src/ai/commands/`
+- Tests: `tests/`
+- Images: `assets/images/`
+- Styles: `styles/`

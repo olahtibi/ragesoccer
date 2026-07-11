@@ -1,5 +1,5 @@
-var testlib = require("./testlib");
-var helpers = require("./helpers");
+var testlib = require("../testlib");
+var helpers = require("../helpers");
 var makeFixture = helpers.makeFixture;
 var replayDebugLog = helpers.replayDebugLog;
 

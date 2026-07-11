@@ -1,5 +1,5 @@
-var testlib = require("./testlib");
-var makeConfig = require("./helpers").makeConfig;
+var testlib = require("../testlib");
+var makeConfig = require("../helpers").makeConfig;
 
 var test = testlib.test;
 var assertEqual = testlib.assertEqual;

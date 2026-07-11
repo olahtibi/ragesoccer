@@ -1,5 +1,5 @@
-var testlib = require("./testlib");
-var makeFixture = require("./helpers").makeFixture;
+var testlib = require("../testlib");
+var makeFixture = require("../helpers").makeFixture;
 
 var test = testlib.test;
 var assertEqual = testlib.assertEqual;

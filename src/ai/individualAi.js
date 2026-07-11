@@ -7,68 +7,32 @@ var IndividualAi = function(config, team, player) {
   this.target = null;
   this.sPos = null;
   this.tPos = null;
-  this.attackOrbitDir = 0;
+  this.commands = createIndividualAiCommandRegistry();
+  this.activeCommand = this.commands[this.command];
 };
 
+Object.defineProperty(IndividualAi.prototype, "attackOrbitDir", {
+  get: function() {
+    return this.commands.attackBall.attackOrbitDir;
+  }
+});
+
 IndividualAi.prototype.setCommand = function(command, target) {
-  if (this.command != command && this.command == "attackBall") {
-    this.attackOrbitDir = 0;
+  if (this.command != command && this.activeCommand != null && this.activeCommand.reset != null) {
+    this.activeCommand.reset(this);
   }
   this.command = command;
   this.target = target || null;
+  this.activeCommand = this.commands[this.command] || null;
 };
 
 IndividualAi.prototype.update = function(context) {
-  if (this.command == "inactive") {
-    this.commandState = "stopped";
-    this.sPos = null;
-    this.tPos = null;
-    return;
-  }
-
-  var target = this.target;
-  if (this.command == "attackBall") {
-    this.updateAttackBall(context);
-    return;
-  }
-
-  if (target == null) {
+  if (this.activeCommand == null) {
     this.stop();
     return;
   }
 
-  this.moveTo(target);
-};
-
-IndividualAi.prototype.updateAttackBall = function(context) {
-  var target = this.attackBallTarget(context);
-  this.moveTo(target, this.commandState);
-};
-
-IndividualAi.prototype.attackBallTarget = function(context) {
-  var ball = context.ball;
-  var toGoal = this.toOpponentGoal(ball.position);
-  var aligned = this.isAlignedBehindBall(ball.position, toGoal);
-  if (aligned) {
-    this.attackOrbitDir = 0;
-    this.commandState = "shoot";
-    return new Vector2d(
-      ball.position.x + toGoal.x * this.config.aiAttackRunThroughDistance,
-      ball.position.y + toGoal.y * this.config.aiAttackRunThroughDistance
-    );
-  }
-
-  if (MathLib.computeDistance(this.player.position, ball.position) <= this.config.aiAttackCloseDistance) {
-    this.commandState = "detour";
-    return this.attackDetourTarget(ball.position, toGoal);
-  }
-
-  this.attackOrbitDir = 0;
-  this.commandState = "approach";
-  return new Vector2d(
-    ball.position.x - toGoal.x * this.config.aiAttackSetupDistance,
-    ball.position.y - toGoal.y * this.config.aiAttackSetupDistance
-  );
+  this.activeCommand.update(this, context);
 };
 
 IndividualAi.prototype.toOpponentGoal = function(ballPosition) {
@@ -100,32 +64,6 @@ IndividualAi.prototype.isAlignedBehindBall = function(ballPosition, toGoal) {
   var anglePlayer = Math.atan2(dy, dx);
   var angleBehind = Math.atan2(-toGoal.y, -toGoal.x);
   return Math.abs(this.angleDelta(angleBehind, anglePlayer)) <= this.config.aiAttackAimToleranceRadians;
-};
-
-IndividualAi.prototype.attackDetourTarget = function(ballPosition, toGoal) {
-  var dx = this.player.position.x - ballPosition.x;
-  var dy = this.player.position.y - ballPosition.y;
-  var anglePlayer = Math.atan2(dy, dx);
-  var angleBehind = Math.atan2(-toGoal.y, -toGoal.x);
-  var delta = this.angleDelta(angleBehind, anglePlayer);
-  var absDelta = Math.abs(delta);
-
-  if (this.attackOrbitDir === 0) {
-    this.attackOrbitDir = delta >= 0 ? 1 : -1;
-  } else if (absDelta < this.config.aiAttackOrbitCommitAngle) {
-    var wanted = delta >= 0 ? 1 : -1;
-    if (wanted !== this.attackOrbitDir) {
-      this.attackOrbitDir = wanted;
-    }
-  }
-
-  var step = Math.min(this.config.aiAttackDetourStepRadians, absDelta);
-  var angle = anglePlayer + this.attackOrbitDir * step;
-  var radius = this.config.aiAttackDetourRadius;
-  return new Vector2d(
-    ballPosition.x + Math.cos(angle) * radius,
-    ballPosition.y + Math.sin(angle) * radius
-  );
 };
 
 IndividualAi.prototype.angleDelta = function(targetAngle, currentAngle) {
@@ -171,10 +109,16 @@ IndividualAi.prototype.draw = function(ctx) {
 };
 
 IndividualAi.prototype.debugSnapshot = function() {
-  return {
+  var snapshot = {
     command: this.command,
     state: this.commandState,
-    target: this.tPos,
-    attackOrbitDir: this.attackOrbitDir
+    target: this.tPos
   };
+  if (this.activeCommand != null && this.activeCommand.debugSnapshot != null) {
+    var commandSnapshot = this.activeCommand.debugSnapshot(this);
+    for (var key in commandSnapshot) {
+      snapshot[key] = commandSnapshot[key];
+    }
+  }
+  return snapshot;
 };

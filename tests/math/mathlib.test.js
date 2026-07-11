@@ -1,4 +1,4 @@
-var testlib = require("./testlib");
+var testlib = require("../testlib");
 
 var test = testlib.test;
 var assertTrue = testlib.assertTrue;
