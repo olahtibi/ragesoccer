@@ -3,19 +3,12 @@ var IndividualAi = function(config, team, player) {
   this.team = team;
   this.player = player;
   this.command = "inactive";
-  this.commandState = "stopped";
   this.target = null;
   this.sPos = null;
   this.tPos = null;
   this.commands = createIndividualAiCommandRegistry();
   this.activeCommand = this.commands[this.command];
 };
-
-Object.defineProperty(IndividualAi.prototype, "attackOrbitDir", {
-  get: function() {
-    return this.commands.attackBall.attackOrbitDir;
-  }
-});
 
 IndividualAi.prototype.setCommand = function(command, target) {
   if (this.command != command && this.activeCommand != null && this.activeCommand.reset != null) {
@@ -73,7 +66,7 @@ IndividualAi.prototype.angleDelta = function(targetAngle, currentAngle) {
   return delta;
 };
 
-IndividualAi.prototype.moveTo = function(target, movingState) {
+IndividualAi.prototype.moveTo = function(target) {
   this.sPos = this.player.position;
   this.tPos = target;
 
@@ -81,20 +74,19 @@ IndividualAi.prototype.moveTo = function(target, movingState) {
   var dy = target.y - this.player.position.y;
   var distance = Math.sqrt(dx * dx + dy * dy);
   if (distance <= this.config.aiTargetReachedRadius) {
-    this.stop(movingState);
-    return;
+    return this.stop();
   }
 
   var speed = this.config.teamVelocity(this.team.side);
-  this.commandState = movingState || "moving";
   this.player.velocity.x = dx / distance * speed;
   this.player.velocity.y = dy / distance * speed;
+  return "moving";
 };
 
-IndividualAi.prototype.stop = function(state) {
-  this.commandState = state || "stopped";
+IndividualAi.prototype.stop = function() {
   this.player.velocity.x = 0;
   this.player.velocity.y = 0;
+  return "stopped";
 };
 
 IndividualAi.prototype.draw = function(ctx) {
@@ -111,7 +103,7 @@ IndividualAi.prototype.draw = function(ctx) {
 IndividualAi.prototype.debugSnapshot = function() {
   var snapshot = {
     command: this.command,
-    state: this.commandState,
+    state: this.activeCommand != null ? this.activeCommand.state : "stopped",
     target: this.tPos
   };
   if (this.activeCommand != null && this.activeCommand.debugSnapshot != null) {

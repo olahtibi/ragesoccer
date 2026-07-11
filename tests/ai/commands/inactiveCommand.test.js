@@ -15,5 +15,5 @@ test("inactive leaves velocity unchanged", function() {
 
   assertEqual(fixture.playerAway.velocity.x, 2);
   assertEqual(fixture.playerAway.velocity.y, 3);
-  assertEqual(ai.commandState, "stopped");
+  assertEqual(ai.debugSnapshot().state, "stopped");
 });

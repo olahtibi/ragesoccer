@@ -19,7 +19,7 @@ test("attackBall shoots through ball when aligned behind it", function() {
   ai.setCommand("attackBall", null);
   ai.update({ ball: fixture.ball });
 
-  assertEqual(ai.commandState, "shoot");
+  assertEqual(ai.debugSnapshot().state, "shoot");
   assertNear(ai.tPos.x, 336, 0.0001);
   assertTrue(ai.tPos.y > fixture.ball.position.y);
   assertNear(fixture.ball.velocity.x, 0, 0.0001);
@@ -37,7 +37,7 @@ test("attackBall approaches behind-ball setup point when far and not aligned", f
   ai.setCommand("attackBall", null);
   ai.update({ ball: fixture.ball });
 
-  assertEqual(ai.commandState, "approach");
+  assertEqual(ai.debugSnapshot().state, "approach");
   assertNear(ai.tPos.x, 336, 0.0001);
   assertTrue(ai.tPos.y < fixture.ball.position.y);
 });
@@ -53,9 +53,9 @@ test("attackBall detours around ball when close and not aligned", function() {
   ai.setCommand("attackBall", null);
   ai.update({ ball: fixture.ball });
 
-  assertEqual(ai.commandState, "detour");
+  assertEqual(ai.debugSnapshot().state, "detour");
   assertNear(MathLib.computeDistance(ai.tPos, fixture.ball.position), fixture.config.aiAttackDetourRadius, 0.0001);
-  assertTrue(ai.attackOrbitDir !== 0);
+  assertTrue(ai.debugSnapshot().attackOrbitDir !== 0);
 });
 
 test("attackBall keeps detour direction across updates", function() {
@@ -68,9 +68,9 @@ test("attackBall keeps detour direction across updates", function() {
 
   ai.setCommand("attackBall", null);
   ai.update({ ball: fixture.ball });
-  var orbitDir = ai.attackOrbitDir;
+  var orbitDir = ai.debugSnapshot().attackOrbitDir;
   ai.update({ ball: fixture.ball });
 
-  assertEqual(ai.commandState, "detour");
-  assertEqual(ai.attackOrbitDir, orbitDir);
+  assertEqual(ai.debugSnapshot().state, "detour");
+  assertEqual(ai.debugSnapshot().attackOrbitDir, orbitDir);
 });

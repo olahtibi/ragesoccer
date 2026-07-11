@@ -1,8 +1,9 @@
 var InactiveCommand = function() {
+  this.state = "stopped";
 };
 
 InactiveCommand.prototype.update = function(ai) {
-  ai.commandState = "stopped";
+  this.state = "stopped";
   ai.sPos = null;
   ai.tPos = null;
 };

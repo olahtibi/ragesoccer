@@ -16,7 +16,7 @@ test("moveToPosition sets velocity toward target", function() {
 
   assertNear(fixture.playerAway.velocity.x, 0, 0.0001);
   assertNear(fixture.playerAway.velocity.y, fixture.config.teamVelocity("away"), 0.0001);
-  assertEqual(ai.commandState, "moving");
+  assertEqual(ai.debugSnapshot().state, "moving");
 });
 
 test("moveToPosition stops at target", function() {
@@ -32,5 +32,5 @@ test("moveToPosition stops at target", function() {
 
   assertEqual(fixture.playerAway.velocity.x, 0);
   assertEqual(fixture.playerAway.velocity.y, 0);
-  assertEqual(ai.commandState, "stopped");
+  assertEqual(ai.debugSnapshot().state, "stopped");
 });

@@ -29,11 +29,11 @@ test("IndividualAi resets previous command when command changes", function() {
 
   ai.setCommand("attackBall", null);
   ai.update({ ball: fixture.ball });
-  assertTrue(ai.attackOrbitDir !== 0);
+  assertTrue(ai.debugSnapshot().attackOrbitDir !== 0);
 
   ai.setCommand("moveToPosition", new Vector2d(400, 400));
 
-  assertEqual(ai.attackOrbitDir, 0);
+  assertEqual(ai.debugSnapshot().attackOrbitDir, undefined);
 });
 
 test("IndividualAi draw renders movement target line", function() {

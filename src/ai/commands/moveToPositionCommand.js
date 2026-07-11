@@ -1,11 +1,12 @@
 var MoveToPositionCommand = function() {
+  this.state = "stopped";
 };
 
 MoveToPositionCommand.prototype.update = function(ai) {
   if (ai.target == null) {
-    ai.stop();
+    this.state = ai.stop();
     return;
   }
 
-  ai.moveTo(ai.target);
+  this.state = ai.moveTo(ai.target);
 };
