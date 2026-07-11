@@ -54,7 +54,7 @@ Physics.prototype.updatePlayerPosition = function(dt) {
     // Walk-cycle: advance one sprite phase for every `playerStepPxPerPhase`
     // pixels of travel. Ties the animation speed to actual motion, so a
     // stopped or paused player never steps in place.
-    var stepDist = Math.sqrt(moveX * moveX + moveY * moveY);
+    var stepDist = MathLib.vectorLength(moveX, moveY);
     if (stepDist > 0) {
       p.stepDistance += stepDist;
       while (p.stepDistance >= pxPerPhase) {
@@ -94,9 +94,9 @@ Physics.prototype.resolveBallPlayerContacts = function() {
       // Degenerate overlap: fall back to the direction the player is facing.
       var fx = p.facingX || 0;
       var fy = p.facingY || -1;
-      var flen = Math.sqrt(fx * fx + fy * fy) || 1;
-      nx = fx / flen;
-      ny = fy / flen;
+      var fallback = MathLib.normalizeVector(fx, fy, 0, -1);
+      nx = fallback.x;
+      ny = fallback.y;
     }
 
     // Player and ball velocities projected onto the normal.
@@ -190,7 +190,7 @@ Physics.prototype.updateBallPosition = function(dt) {
   // Sprite rotation: advance one phase for every `ballSpinPxPerPhase` pixels
   // the ball actually travelled this frame. This ties spin speed to linear
   // speed, so fast kicks blur and slow rolls show a clearly visible turn.
-  var stepDist = Math.sqrt(moveArray[0] * moveArray[0] + moveArray[1] * moveArray[1]);
+  var stepDist = MathLib.vectorLength(moveArray[0], moveArray[1]);
   if (stepDist > 0) {
     ball.rollDistance += stepDist;
     var pxPerPhase = this.config.ballSpinPxPerPhase;

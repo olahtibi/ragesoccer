@@ -44,8 +44,7 @@ IndividualAi.prototype.toOpponentGoal = function(ballPosition) {
 
   var dx = goal.x - ballPosition.x;
   var dy = goal.y - ballPosition.y;
-  var d = Math.sqrt(dx * dx + dy * dy) || 1;
-  return new Vector2d(dx / d, dy / d);
+  return MathLib.normalizeVector(dx, dy, 0, 1);
 };
 
 IndividualAi.prototype.isAlignedBehindBall = function(ballPosition, toGoal) {
@@ -54,16 +53,9 @@ IndividualAi.prototype.isAlignedBehindBall = function(ballPosition, toGoal) {
   if (dx * dx + dy * dy < 0.0001) {
     return false;
   }
-  var anglePlayer = Math.atan2(dy, dx);
-  var angleBehind = Math.atan2(-toGoal.y, -toGoal.x);
-  return Math.abs(this.angleDelta(angleBehind, anglePlayer)) <= this.config.aiAttackAimToleranceRadians;
-};
-
-IndividualAi.prototype.angleDelta = function(targetAngle, currentAngle) {
-  var delta = targetAngle - currentAngle;
-  while (delta > Math.PI) delta -= 2 * Math.PI;
-  while (delta < -Math.PI) delta += 2 * Math.PI;
-  return delta;
+  var anglePlayer = MathLib.computeAngleRadians(dx, dy);
+  var angleBehind = MathLib.computeAngleRadians(-toGoal.x, -toGoal.y);
+  return Math.abs(MathLib.angleDeltaRadians(angleBehind, anglePlayer)) <= this.config.aiAttackAimToleranceRadians;
 };
 
 IndividualAi.prototype.moveTo = function(target) {
@@ -72,7 +64,7 @@ IndividualAi.prototype.moveTo = function(target) {
 
   var dx = target.x - this.player.position.x;
   var dy = target.y - this.player.position.y;
-  var distance = Math.sqrt(dx * dx + dy * dy);
+  var distance = MathLib.vectorLength(dx, dy);
   if (distance <= this.config.aiTargetReachedRadius) {
     return this.stop();
   }

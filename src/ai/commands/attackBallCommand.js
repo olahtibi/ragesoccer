@@ -42,9 +42,9 @@ AttackBallCommand.prototype.attackBallTarget = function(ai, context) {
 AttackBallCommand.prototype.attackDetourTarget = function(ai, ballPosition, toGoal) {
   var dx = ai.player.position.x - ballPosition.x;
   var dy = ai.player.position.y - ballPosition.y;
-  var anglePlayer = Math.atan2(dy, dx);
-  var angleBehind = Math.atan2(-toGoal.y, -toGoal.x);
-  var delta = ai.angleDelta(angleBehind, anglePlayer);
+  var anglePlayer = MathLib.computeAngleRadians(dx, dy);
+  var angleBehind = MathLib.computeAngleRadians(-toGoal.x, -toGoal.y);
+  var delta = MathLib.angleDeltaRadians(angleBehind, anglePlayer);
   var absDelta = Math.abs(delta);
 
   if (this.attackOrbitDir === 0) {
@@ -59,10 +59,8 @@ AttackBallCommand.prototype.attackDetourTarget = function(ai, ballPosition, toGo
   var step = Math.min(ai.config.aiAttackDetourStepRadians, absDelta);
   var angle = anglePlayer + this.attackOrbitDir * step;
   var radius = ai.config.aiAttackDetourRadius;
-  return new Vector2d(
-    ballPosition.x + Math.cos(angle) * radius,
-    ballPosition.y + Math.sin(angle) * radius
-  );
+  var offset = MathLib.vectorFromAngleRadians(angle, radius);
+  return new Vector2d(ballPosition.x + offset.x, ballPosition.y + offset.y);
 };
 
 AttackBallCommand.prototype.debugSnapshot = function() {

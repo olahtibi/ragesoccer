@@ -19,32 +19,40 @@ Player.prototype.updateFacing = function() {
     if(this.velocity.x == 0 && this.velocity.y == 0) {
         return;
     }
-    var alpha = MathLib.computeAngle(this.velocity.x, this.velocity.y);
-    if(alpha <= 22.5 || alpha >= 337.5) {
+    var alpha = MathLib.computeAngleRadians(this.velocity.x, this.velocity.y);
+    var eastNorth = Math.PI / 8;       // 22.5 degrees
+    var southEast = 3 * Math.PI / 8;   // 67.5 degrees
+    var southWest = 5 * Math.PI / 8;   // 112.5 degrees
+    var westSouth = 7 * Math.PI / 8;   // 157.5 degrees
+    var westNorth = 9 * Math.PI / 8;   // 202.5 degrees
+    var northWest = 11 * Math.PI / 8;  // 247.5 degrees
+    var northEast = 13 * Math.PI / 8;  // 292.5 degrees
+    var eastSouth = 15 * Math.PI / 8;  // 337.5 degrees
+    if(alpha <= eastNorth || alpha >= eastSouth) {
         this.facingX = 1;
         this.facingY = 0;
     }
-    else if(alpha <= 67.5 && alpha >= 22.5) {
+    else if(alpha <= southEast && alpha >= eastNorth) {
         this.facingX = 1;
         this.facingY = 1;
     }
-    else if(alpha <= 112.5 && alpha >= 67.5) {
+    else if(alpha <= southWest && alpha >= southEast) {
         this.facingX = 0;
         this.facingY = 1;
     }
-    else if(alpha <= 157.5 && alpha >= 112.5) {
+    else if(alpha <= westSouth && alpha >= southWest) {
         this.facingX = -1;
         this.facingY = 1;
     }
-    else if(alpha <= 202.5 && alpha >= 157.5) {
+    else if(alpha <= westNorth && alpha >= westSouth) {
         this.facingX = -1;
         this.facingY = 0;
     }
-    else if(alpha <= 247.5 && alpha >= 202.5) {
+    else if(alpha <= northWest && alpha >= westNorth) {
         this.facingX = -1;
         this.facingY = -1;
     }
-    else if(alpha <= 272.5 && alpha >= 247.5) {
+    else if(alpha <= northEast && alpha >= northWest) {
         this.facingX = 0;
         this.facingY = -1;
     }

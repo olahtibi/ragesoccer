@@ -27,6 +27,23 @@ test("Player updateFacing maps movement vectors", function() {
   assertEqual(player.facingY, 1);
 });
 
+test("Player updateFacing uses standard north and northeast sectors", function() {
+  var fixture = makeFixture();
+  var player = fixture.playerHome;
+
+  player.velocity.x = 0.1;
+  player.velocity.y = -10;
+  player.updateFacing();
+  assertEqual(player.facingX, 0);
+  assertEqual(player.facingY, -1);
+
+  player.velocity.x = 5;
+  player.velocity.y = -10;
+  player.updateFacing();
+  assertEqual(player.facingX, 1);
+  assertEqual(player.facingY, -1);
+});
+
 test("Player updateFacing preserves facing at zero velocity", function() {
   var fixture = makeFixture();
   var player = fixture.playerHome;
