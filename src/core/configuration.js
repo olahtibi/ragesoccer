@@ -136,10 +136,12 @@ Configuration.prototype.teamVelocity = function(teamSide) {
 };
 
 Configuration.prototype.computeScaleBy = function() {
+  var scaleBy;
   if(this.viewportWidth > this.viewportHeight) {
-    return this.viewportWidth / (this.stadiumWidth * this.viewportRatio);  
+    scaleBy = this.viewportWidth / (this.stadiumWidth * this.viewportRatio);
   }
   else {
-    return this.viewportHeight / (this.stadiumHeight * this.viewportRatio);
+    scaleBy = this.viewportHeight / (this.stadiumHeight * this.viewportRatio);
   }
+  return Math.round(scaleBy);
 };
