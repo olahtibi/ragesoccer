@@ -1,5 +1,31 @@
 <html style="position: relative;">
 	<head>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<style>
+			#rotateNotice {
+				display: none;
+			}
+
+			@media (orientation: portrait) and (pointer: coarse) {
+				#rotateNotice {
+					align-items: center;
+					background: #111;
+					color: #fff;
+					display: flex;
+					font: 20px Arial, sans-serif;
+					inset: 0;
+					justify-content: center;
+					padding: 24px;
+					position: fixed;
+					text-align: center;
+					z-index: 9999;
+				}
+
+				#myCanvas {
+					display: none;
+				}
+			}
+		</style>
 		<script type="text/javascript" src="mathlib/vector.js?v=0016"></script>
 		<script type="text/javascript" src="mathlib/mathlib.js?v=0016"></script>
 		<script type="text/javascript" src="game/configuration.js?v=0016"></script>
@@ -16,8 +42,31 @@
 		<script type="text/javascript" src="game/physics.js?v=0016"></script>
 		<script type="text/javascript" src="game/goalDetector.js?v=0016"></script>
 		<script type="text/javascript" src="io/io.js?v=0016"></script>
+		<script>
+			function shouldWaitForLandscape() {
+				return window.matchMedia &&
+					window.matchMedia("(orientation: portrait) and (pointer: coarse)").matches;
+			}
+
+			function startGameWhenLandscape() {
+				if (window.game != null) {
+					return;
+				}
+
+				if (shouldWaitForLandscape()) {
+					window.addEventListener("resize", startGameWhenLandscape);
+					window.addEventListener("orientationchange", startGameWhenLandscape);
+					return;
+				}
+
+				window.removeEventListener("resize", startGameWhenLandscape);
+				window.removeEventListener("orientationchange", startGameWhenLandscape);
+				startLoop();
+			}
+		</script>
 	</head>
-	<body onload="startLoop();" style="margin: 0px; overflow-x: hidden; position: relative;">
+	<body onload="startGameWhenLandscape();" style="margin: 0px; overflow-x: hidden; position: relative;">
+		<div id="rotateNotice">Rotate your phone to landscape</div>
 		<img id="pitch" src="resources/pitch.jpg" style="visibility: hidden; position: absolute; top: -1000px; left: -1000px;">
 		<img id="ball" src="resources/ball.png" style="visibility: hidden; position: absolute; top: -1000px; left: -1000px;">
 		<img id="player-home" src="resources/player-sprite-home.png" style="visibility: hidden; position: absolute; top: -1000px; left: -1000px;">

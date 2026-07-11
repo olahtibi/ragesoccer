@@ -6,7 +6,7 @@ window.addEventListener("touchstart", touchHandler, false);
 
 function touchHandler(e) {
     var velocity = window.game.config.teamVelocity("home");
-    var scaleBy = window.game.config.comnputeScaleBy();
+    var scaleBy = window.game.config.computeScaleBy();
     var targetX = (0 - window.game.camera.position.x) + e.touches[0].clientX / scaleBy;
     var targetY = (0 - window.game.camera.position.y) + e.touches[0].clientY / scaleBy;
     if(window.game.debugLog != null) {

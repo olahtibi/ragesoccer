@@ -135,7 +135,7 @@ Configuration.prototype.teamVelocity = function(teamSide) {
   return this.strengthToVelocity(strength);
 };
 
-Configuration.prototype.comnputeScaleBy = function() {
+Configuration.prototype.computeScaleBy = function() {
   if(this.viewportWidth > this.viewportHeight) {
     return this.viewportWidth / (this.stadiumWidth * this.viewportRatio);  
   }

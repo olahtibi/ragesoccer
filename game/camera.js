@@ -7,7 +7,7 @@ var Camera = function (config, stadium) {
 
 Camera.prototype.windowToViewport = function(ctx) {
     ctx.save();
-	var scaleBy = this.config.comnputeScaleBy();
+	var scaleBy = this.config.computeScaleBy();
 	ctx.scale(scaleBy, scaleBy);
     if(this.stadium.ball.position.x * scaleBy >= this.config.stadiumWidth * scaleBy - (this.config.viewportWidth / 2)) {
         this.position.x = (this.config.viewportWidth - this.config.stadiumWidth * scaleBy) / scaleBy;

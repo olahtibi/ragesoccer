@@ -58,7 +58,7 @@ test("Touch input controls the home player closest to the ball", function() {
   fixture.ball.position.x = fixture.stadium.homePlayers[1].position.x;
   fixture.ball.position.y = fixture.stadium.homePlayers[1].position.y;
   selectHumanWithTeamAi(game);
-  var scaleBy = fixture.config.comnputeScaleBy();
+  var scaleBy = fixture.config.computeScaleBy();
 
   touchHandler({
     touches: [
@@ -144,7 +144,7 @@ test("Q and W zoom viewport in and out", function() {
 test("Touch handler records debug touch target in world coordinates", function() {
   var fixture = makeFixture({ homeTeamSize: 2, awayTeamSize: 1 });
   var game = makeInputGame(fixture);
-  var scaleBy = fixture.config.comnputeScaleBy();
+  var scaleBy = fixture.config.computeScaleBy();
   fixture.config.debug = true;
   game.camera.position.x = -10;
   game.camera.position.y = -20;

@@ -18,16 +18,22 @@ test("Options page contains strength and team-size controls", function() {
   assertTrue(html.indexOf('id="opponentStrength"') !== -1);
   assertTrue(html.indexOf('id="homeTeamSize"') !== -1);
   assertTrue(html.indexOf('id="awayTeamSize"') !== -1);
-  assertTrue(html.indexOf("6 - Tottenham Hotspur") !== -1);
-  assertTrue(html.indexOf("10 - Manchester City") !== -1);
+  assertTrue(html.indexOf("1 - Red Novices") !== -1);
+  assertTrue(html.indexOf("1 - Blue Novices") !== -1);
+  assertTrue(html.indexOf("10 - Red Titans") !== -1);
+  assertTrue(html.indexOf("10 - Blue Titans") !== -1);
   assertTrue(html.indexOf("game.html?") !== -1);
 });
 
 test("Game page contains canvas assets scripts and boot hook", function() {
   var html = readFile("game.html");
 
-  assertTrue(html.indexOf('onload="startLoop();"') !== -1);
+  assertTrue(html.indexOf('onload="startGameWhenLandscape();"') !== -1);
   assertTrue(html.indexOf('id="myCanvas"') !== -1);
+  assertTrue(html.indexOf('id="rotateNotice"') !== -1);
+  assertTrue(html.indexOf("(orientation: portrait) and (pointer: coarse)") !== -1);
+  assertTrue(html.indexOf("function startGameWhenLandscape()") !== -1);
+  assertTrue(html.indexOf("startLoop();") !== -1);
   assertTrue(html.indexOf('src="resources/pitch.jpg"') !== -1);
   assertTrue(html.indexOf('src="game/configuration.js') !== -1);
   assertTrue(html.indexOf('src="io/io.js') !== -1);
