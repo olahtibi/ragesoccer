@@ -85,11 +85,47 @@ Stadium.prototype.updateKickoff = function() {
   if (this.kickoffComplete) {
     return;
   }
+  this.restrictHomeKickoffPlayerToCenterEllipse();
   var vx = this.ball.velocity.x;
   var vy = this.ball.velocity.y;
   var minSpeed = this.config.minVelocity || 0;
   if (vx * vx + vy * vy > minSpeed * minSpeed) {
     this.kickoffComplete = true;
+  }
+};
+
+Stadium.prototype.restrictHomeKickoffPlayerToCenterEllipse = function() {
+  if (this.initialKickoffState() != "kickoffUs") {
+    return;
+  }
+  if (typeof window != "undefined" && window.game != null && window.game.started != true) {
+    return;
+  }
+  var player = this.humanPlayer;
+  if (player == null) {
+    return;
+  }
+  var centerX = this.config.initialBallPosition.x;
+  var centerY = this.config.aiCenterY;
+  var radiusX = this.config.centerCircleRadiusX;
+  var radiusY = this.config.centerCircleRadiusY;
+  var dx = player.position.x - centerX;
+  var dy = player.position.y - centerY;
+  var ellipseDistance = (dx * dx) / (radiusX * radiusX) + (dy * dy) / (radiusY * radiusY);
+  if (ellipseDistance <= 1) {
+    return;
+  }
+
+  var scale = 1 / Math.sqrt(ellipseDistance);
+  var nx = dx * scale;
+  var ny = dy * scale;
+  player.position.x = centerX + nx;
+  player.position.y = centerY + ny;
+
+  var outward = player.velocity.x * dx / (radiusX * radiusX) + player.velocity.y * dy / (radiusY * radiusY);
+  if (outward > 0) {
+    player.velocity.x = 0;
+    player.velocity.y = 0;
   }
 };
 

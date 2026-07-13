@@ -4,6 +4,14 @@ var makeFixture = require("../helpers").makeFixture;
 var test = testlib.test;
 var assertTrue = testlib.assertTrue;
 var assertEqual = testlib.assertEqual;
+var assertNear = testlib.assertNear;
+
+function centerEllipseDistance(config, position) {
+  var dx = position.x - config.initialBallPosition.x;
+  var dy = position.y - config.aiCenterY;
+  return (dx * dx) / (config.centerCircleRadiusX * config.centerCircleRadiusX) +
+    (dy * dy) / (config.centerCircleRadiusY * config.centerCircleRadiusY);
+}
 
 test("Game objects can be composed without browser rendering", function() {
   var fixture = makeFixture();
@@ -103,4 +111,66 @@ test("Stadium completes kickoff when ball exceeds speed threshold", function() {
   fixture.stadium.updateKickoff();
 
   assertEqual(fixture.stadium.kickoffComplete, true);
+});
+
+test("Stadium keeps home kickoff player inside center ellipse before kickoff", function() {
+  var fixture = makeFixture({ homeTeamSize: 1, awayTeamSize: 1 });
+  window.game = {
+    started: true,
+    isPaused: function() { return false; }
+  };
+  fixture.stadium.humanPlayer.position.x = fixture.config.initialBallPosition.x;
+  fixture.stadium.humanPlayer.position.y = fixture.config.aiCenterY - fixture.config.centerCircleRadiusY - 20;
+  fixture.stadium.humanPlayer.velocity.y = -fixture.config.teamVelocity("home");
+
+  fixture.stadium.updateKickoff();
+
+  assertNear(centerEllipseDistance(fixture.config, fixture.stadium.humanPlayer.position), 1, 0.0001);
+  assertEqual(fixture.stadium.humanPlayer.velocity.x, 0);
+  assertEqual(fixture.stadium.humanPlayer.velocity.y, 0);
+});
+
+test("Stadium does not clamp default home player before game starts", function() {
+  var fixture = makeFixture({ homeTeamSize: 4, awayTeamSize: 4 });
+  window.game = {
+    started: false,
+    isPaused: function() { return false; }
+  };
+  var player = fixture.stadium.humanPlayer;
+  var startX = player.position.x;
+  var startY = player.position.y;
+
+  fixture.stadium.updateKickoff();
+
+  assertEqual(player.position.x, startX);
+  assertEqual(player.position.y, startY);
+});
+
+test("Stadium does not clamp home player after kickoff is complete", function() {
+  var fixture = makeFixture({ homeTeamSize: 1, awayTeamSize: 1 });
+  window.game = {
+    started: true,
+    isPaused: function() { return false; }
+  };
+  fixture.stadium.kickoffComplete = true;
+  fixture.stadium.humanPlayer.position.x = fixture.config.initialBallPosition.x;
+  fixture.stadium.humanPlayer.position.y = fixture.config.aiCenterY - fixture.config.centerCircleRadiusY - 20;
+
+  fixture.stadium.updateKickoff();
+
+  assertTrue(centerEllipseDistance(fixture.config, fixture.stadium.humanPlayer.position) > 1);
+});
+
+test("Stadium does not clamp home player during opponent kickoff", function() {
+  var fixture = makeFixture({ homeTeamSize: 1, awayTeamSize: 1, kickoffSide: "away" });
+  window.game = {
+    started: true,
+    isPaused: function() { return false; }
+  };
+  fixture.stadium.humanPlayer.position.x = fixture.config.initialBallPosition.x;
+  fixture.stadium.humanPlayer.position.y = fixture.config.aiCenterY - fixture.config.centerCircleRadiusY - 20;
+
+  fixture.stadium.updateKickoff();
+
+  assertTrue(centerEllipseDistance(fixture.config, fixture.stadium.humanPlayer.position) > 1);
 });
