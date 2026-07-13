@@ -40,7 +40,7 @@ test("Configuration maps strength to velocity", function() {
 
 test("Configuration parses and clamps game options from query string", function() {
   var originalSearch = window.location.search;
-  window.location.search = "?playerStrength=10&opponentStrength=0&homeTeamSize=5&awayTeamSize=12";
+  window.location.search = "?playerStrength=10&opponentStrength=0&homeTeamSize=5&awayTeamSize=12&kickoffSide=away";
 
   var config = new Configuration();
 
@@ -49,6 +49,7 @@ test("Configuration parses and clamps game options from query string", function(
   assertEqual(config.opponentStrength, 1);
   assertEqual(config.homeTeamSize, 5);
   assertEqual(config.awayTeamSize, 5);
+  assertEqual(config.kickoffSide, "away");
 });
 
 test("Configuration falls back for invalid query options", function() {

@@ -78,6 +78,7 @@ function makeConfig(options) {
   config.awayTeamSize = options.awayTeamSize != null ? options.awayTeamSize : 1;
   config.playerStrength = options.playerStrength != null ? options.playerStrength : config.playerStrength;
   config.opponentStrength = options.opponentStrength != null ? options.opponentStrength : config.opponentStrength;
+  config.kickoffSide = options.kickoffSide != null ? options.kickoffSide : config.kickoffSide;
   config.playerVelocity = config.teamVelocity("home");
   return config;
 }
@@ -153,6 +154,7 @@ function advanceReplayFrame(game, dt) {
   game.physics.updatePlayerPosition(dt);
   game.physics.resolveBallPlayerContacts();
   game.physics.updateBallPosition(dt);
+  game.stadium.updateKickoff();
   game.stadium.goalDetector.update();
 }
 

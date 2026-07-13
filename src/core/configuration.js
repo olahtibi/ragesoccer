@@ -49,7 +49,9 @@ var Configuration = function () {
   this.aiPressReleaseDistance = 90;
   this.aiKeeperChallengeRadius = 70;
   this.aiTargetDeadband = 2;
-  this.aiKickoffSpotRadius = 5;
+  this.kickoffSide = "home";
+  this.centerCircleRadiusX = 62;
+  this.centerCircleRadiusY = 40;
   this.aiTargetReachedRadius = 1;
   this.aiAttackerSwitchHysteresisDistance = 20;
   this.humanSwitchHysteresisDistance = 20;
@@ -88,6 +90,7 @@ Configuration.prototype.applyQueryOptions = function() {
   this.opponentStrength = this.parseIntOption(params.opponentStrength, this.opponentStrength, this.minStrength, this.maxStrength);
   this.homeTeamSize = this.parseIntOption(params.homeTeamSize, this.homeTeamSize, 1, 5);
   this.awayTeamSize = this.parseIntOption(params.awayTeamSize, this.awayTeamSize, 1, 5);
+  this.kickoffSide = this.parseSideOption(params.kickoffSide, this.kickoffSide);
   this.playerVelocity = this.teamVelocity("home");
 };
 
@@ -123,6 +126,13 @@ Configuration.prototype.parseIntOption = function(paramsValue, defaultValue, min
   if (value < minValue) value = minValue;
   if (value > maxValue) value = maxValue;
   return value;
+};
+
+Configuration.prototype.parseSideOption = function(paramsValue, defaultValue) {
+  if (paramsValue == "home" || paramsValue == "away") {
+    return paramsValue;
+  }
+  return defaultValue;
 };
 
 Configuration.prototype.strengthToVelocity = function(strength) {

@@ -47,18 +47,35 @@ Formation.prototype.positionForRole = function(state, side, role, index, count) 
   var centerY = this.config.aiCenterY;
   var attackDir = side == "home" ? -1 : 1;
   var progress = role == "defender" ? -150 : 130;
+  var kickingSide = this.kickoffSideForState(state);
 
   if (state == "attack") {
     progress += 55;
   } else if (state == "defense") {
     progress -= 55;
-  } else if (state == "kickoff" && role == "striker") {
-    progress = -20;
+  } else if (kickingSide != null && role == "striker") {
+    progress = side == kickingSide ? -20 : this.nonKickingKickoffProgress();
   }
 
   var x = centerX + this.lane(index, count) * 90;
   var y = centerY + attackDir * progress;
   return this.clampToField(new Vector2d(x, y));
+};
+
+Formation.prototype.kickoffSideForState = function(state) {
+  if (state == "kickoffUs") {
+    return "home";
+  }
+  if (state == "kickoffOpponent") {
+    return "away";
+  }
+  return null;
+};
+
+Formation.prototype.nonKickingKickoffProgress = function() {
+  var radiusY = this.config.centerCircleRadiusY || 0;
+  var clearance = this.config.playerRadius || 0;
+  return -(radiusY + clearance + 8);
 };
 
 Formation.prototype.goaliePosition = function(side) {

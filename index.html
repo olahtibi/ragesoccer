@@ -40,7 +40,8 @@
 					"playerStrength=" + encodeURIComponent(document.getElementById("playerStrength").value),
 					"opponentStrength=" + encodeURIComponent(document.getElementById("opponentStrength").value),
 					"homeTeamSize=" + encodeURIComponent(document.getElementById("homeTeamSize").value),
-					"awayTeamSize=" + encodeURIComponent(document.getElementById("awayTeamSize").value)
+					"awayTeamSize=" + encodeURIComponent(document.getElementById("awayTeamSize").value),
+					"kickoffSide=" + encodeURIComponent(document.getElementById("kickoffSide").value)
 				];
 				window.location.href = "game.html?v=0020&" + params.join("&");
 			}
@@ -93,6 +94,12 @@
 				<option value="3">3</option>
 				<option value="4" selected>4</option>
 				<option value="5">5</option>
+			</select>
+
+			<label for="kickoffSide">Kickoff</label>
+			<select id="kickoffSide">
+				<option value="home" selected>Player team</option>
+				<option value="away">Opponent team</option>
 			</select>
 
 			<button type="button" onclick="startGame();">Start</button>

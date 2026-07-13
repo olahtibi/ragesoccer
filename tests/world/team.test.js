@@ -17,8 +17,20 @@ test("Team creates configured players and team AI", function() {
 test("Team creates players at kickoff formation positions", function() {
   var fixture = makeFixture({ homeTeamSize: 3, awayTeamSize: 3 });
   var formation = new Formation(fixture.config);
-  var homePositions = formation.positions("kickoff", "home", 3);
-  var awayPositions = formation.positions("kickoff", "away", 3);
+  var homePositions = formation.positions("kickoffUs", "home", 3);
+  var awayPositions = formation.positions("kickoffUs", "away", 3);
+
+  assertEqual(fixture.homePlayers[2].position.x, homePositions[2].x);
+  assertEqual(fixture.homePlayers[2].position.y, homePositions[2].y);
+  assertEqual(fixture.awayPlayers[2].position.x, awayPositions[2].x);
+  assertEqual(fixture.awayPlayers[2].position.y, awayPositions[2].y);
+});
+
+test("Team creates players at away kickoff formation positions", function() {
+  var fixture = makeFixture({ homeTeamSize: 3, awayTeamSize: 3, kickoffSide: "away" });
+  var formation = new Formation(fixture.config);
+  var homePositions = formation.positions("kickoffOpponent", "home", 3);
+  var awayPositions = formation.positions("kickoffOpponent", "away", 3);
 
   assertEqual(fixture.homePlayers[2].position.x, homePositions[2].x);
   assertEqual(fixture.homePlayers[2].position.y, homePositions[2].y);

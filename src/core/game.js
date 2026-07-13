@@ -63,6 +63,7 @@ function renderNewFrame() {
   window.game.updateAi();
   updateHumanInput(window.game);
   window.game.physics.update();
+  window.game.stadium.updateKickoff();
   window.game.stadium.goalDetector.update();
   if (window.game.config.debug == true) {
     window.game.debugLog.record(window.game);

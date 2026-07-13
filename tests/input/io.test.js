@@ -75,6 +75,36 @@ test("Touch input controls the home player closest to the ball", function() {
   assertNear(game.touchTarget.y, fixture.stadium.homePlayers[1].position.y + 50, 0.0001);
 });
 
+test("Keyboard input starts opponent kickoff without moving frozen home player", function() {
+  var fixture = makeFixture({ homeTeamSize: 1, awayTeamSize: 1, kickoffSide: "away" });
+  var game = makeInputGame(fixture);
+
+  checkInput({ keyCode: 39, type: "keydown" });
+
+  assertEqual(game.started, true);
+  assertEqual(fixture.stadium.humanPlayer.velocity.x, 0);
+  assertEqual(fixture.stadium.humanPlayer.velocity.y, 0);
+});
+
+test("Touch input starts opponent kickoff without moving frozen home player", function() {
+  var fixture = makeFixture({ homeTeamSize: 1, awayTeamSize: 1, kickoffSide: "away" });
+  var game = makeInputGame(fixture);
+
+  touchHandler({
+    touches: [
+      {
+        clientX: 100,
+        clientY: 100
+      }
+    ]
+  });
+
+  assertEqual(game.started, true);
+  assertEqual(game.touchTarget, null);
+  assertEqual(fixture.stadium.humanPlayer.velocity.x, 0);
+  assertEqual(fixture.stadium.humanPlayer.velocity.y, 0);
+});
+
 test("Slash does not pause or dump logs when debug is disabled", function() {
   var fixture = makeFixture();
   var game = makeInputGame(fixture);

@@ -27,17 +27,37 @@ test("Formation mirrors home and away around configured center line", function()
   assertTrue(away[2].y > config.aiCenterY);
 });
 
-test("Formation kickoff puts a striker near kickoff in own half", function() {
+function outsideCenterEllipse(config, position) {
+  var dx = position.x - config.initialBallPosition.x;
+  var dy = position.y - config.aiCenterY;
+  return (dx * dx) / (config.centerCircleRadiusX * config.centerCircleRadiusX) +
+    (dy * dy) / (config.centerCircleRadiusY * config.centerCircleRadiusY) >= 1;
+}
+
+test("Formation kickoffUs puts home striker near kickoff and away striker outside center ellipse", function() {
   var config = makeConfig({ homeTeamSize: 3, awayTeamSize: 3 });
   var formation = new Formation(config);
 
-  var home = formation.positions("kickoff", "home", 3);
-  var away = formation.positions("kickoff", "away", 3);
+  var home = formation.positions("kickoffUs", "home", 3);
+  var away = formation.positions("kickoffUs", "away", 3);
 
   assertTrue(home[2].y > config.aiCenterY);
-  assertTrue(away[2].y < config.aiCenterY);
   assertTrue(Math.abs(home[2].y - config.aiCenterY) <= 25);
+  assertTrue(away[2].y < config.aiCenterY);
+  assertTrue(outsideCenterEllipse(config, away[2]));
+});
+
+test("Formation kickoffOpponent puts away striker near kickoff and home striker outside center ellipse", function() {
+  var config = makeConfig({ homeTeamSize: 3, awayTeamSize: 3 });
+  var formation = new Formation(config);
+
+  var home = formation.positions("kickoffOpponent", "home", 3);
+  var away = formation.positions("kickoffOpponent", "away", 3);
+
+  assertTrue(away[2].y < config.aiCenterY);
   assertTrue(Math.abs(away[2].y - config.aiCenterY) <= 25);
+  assertTrue(home[2].y > config.aiCenterY);
+  assertTrue(outsideCenterEllipse(config, home[2]));
 });
 
 test("Formation defense shifts toward own goal and attack shifts toward opponent goal", function() {

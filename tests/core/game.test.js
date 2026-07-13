@@ -21,7 +21,7 @@ test("Game delegates AI update to stadium without exposing controllers", functio
   assertEqual(updated[0], "stadium");
 });
 
-test("Render frame updates AI then human input before physics", function() {
+test("Render frame updates AI then human input before physics and kickoff", function() {
   var order = [];
   var originalGame = window.game;
   var originalCtx = window.ctx;
@@ -43,6 +43,9 @@ test("Render frame updates AI then human input before physics", function() {
       }
     },
     stadium: {
+      updateKickoff: function() {
+        order.push("kickoff");
+      },
       goalDetector: {
         update: function() {}
       },
@@ -69,4 +72,5 @@ test("Render frame updates AI then human input before physics", function() {
   assertEqual(order[0], "ai");
   assertEqual(order[1], "human");
   assertEqual(order[2], "physics");
+  assertEqual(order[3], "kickoff");
 });

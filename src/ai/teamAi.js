@@ -4,7 +4,7 @@ var TeamAi = function(config, stadium, team, opponentTeam) {
   this.team = team;
   this.opponentTeam = opponentTeam;
   this.formation = new Formation(config);
-  this.state = "kickoff";
+  this.state = config.kickoffSide == "away" ? "kickoffOpponent" : "kickoffUs";
   this.ballAttacker = null;
   this._individualAis = [];
 
@@ -22,6 +22,7 @@ TeamAi.prototype.update = function() {
   var targets = this.formation.positions(this.state, this.team.side, this.team.players.length);
   var closest = this.team.side == "home" ? this.selectedHumanPlayer() : this.selectedBallAttacker();
   var activeHumanControl = this.team.side == "home" && this.hasActiveHumanControl();
+  var frozenForKickoff = this.stadium.isTeamFrozenForKickoff(this.team.side);
   var context = {
     ball: this.stadium.ball,
     team: this.team,
@@ -30,7 +31,11 @@ TeamAi.prototype.update = function() {
 
   for (var i = 0; i < this._individualAis.length; i++) {
     var ai = this._individualAis[i];
-    if (this.team.side == "home" && ai.player === closest) {
+    if (frozenForKickoff) {
+      ai.player.velocity.x = 0;
+      ai.player.velocity.y = 0;
+      ai.setCommand("inactive", null);
+    } else if (this.team.side == "home" && ai.player === closest) {
       this.team.humanPlayer = ai.player;
       if (!activeHumanControl) {
         ai.player.velocity.x = 0;
@@ -67,8 +72,8 @@ TeamAi.prototype.hasActiveHumanControl = function() {
 };
 
 TeamAi.prototype.nextState = function() {
-  if (this.isKickoff()) {
-    return "kickoff";
+  if (this.isKickoffState() && !this.stadium.isKickoffComplete()) {
+    return this.state;
   }
 
   if (this.isBallInOwnHalf()) {
@@ -85,8 +90,8 @@ TeamAi.prototype.nextState = function() {
   return "attack";
 };
 
-TeamAi.prototype.isKickoff = function() {
-  return MathLib.computeDistance(this.stadium.ball.position, this.config.initialBallPosition) <= this.config.aiKickoffSpotRadius;
+TeamAi.prototype.isKickoffState = function() {
+  return this.state == "kickoffUs" || this.state == "kickoffOpponent";
 };
 
 TeamAi.prototype.isBallInOwnHalf = function() {

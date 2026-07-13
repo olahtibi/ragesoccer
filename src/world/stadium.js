@@ -1,4 +1,5 @@
 var Stadium = function (imgStadium, ball, homeTeam, awayTeam, goalDetector) {
+  this.config = homeTeam.config;
   this.imgStadium = imgStadium;
   this.ball = ball;
   this.homeTeam = homeTeam;
@@ -10,6 +11,7 @@ var Stadium = function (imgStadium, ball, homeTeam, awayTeam, goalDetector) {
   this.awayPlayers = this.awayTeam.players;
   this.players = this.homePlayers.concat(this.awayPlayers);
   this.goalDetector = goalDetector;
+  this.kickoffComplete = false;
 };
 
 Object.defineProperty(Stadium.prototype, "humanPlayer", {
@@ -56,6 +58,38 @@ Stadium.prototype.drawHumanPlayerMarker = function(ctx, player) {
 Stadium.prototype.updateAi = function() {
   for (var i = 0; i < this.teams.length; i++) {
     this.teams[i].updateAi();
+  }
+};
+
+Stadium.prototype.initialKickoffState = function() {
+  return this.config.kickoffSide == "away" ? "kickoffOpponent" : "kickoffUs";
+};
+
+Stadium.prototype.isKickoffComplete = function() {
+  return this.kickoffComplete == true;
+};
+
+Stadium.prototype.isKickoffState = function(state) {
+  return state == "kickoffUs" || state == "kickoffOpponent";
+};
+
+Stadium.prototype.isTeamFrozenForKickoff = function(side) {
+  if (this.kickoffComplete) {
+    return false;
+  }
+  var state = this.initialKickoffState();
+  return (state == "kickoffUs" && side == "away") || (state == "kickoffOpponent" && side == "home");
+};
+
+Stadium.prototype.updateKickoff = function() {
+  if (this.kickoffComplete) {
+    return;
+  }
+  var vx = this.ball.velocity.x;
+  var vy = this.ball.velocity.y;
+  var minSpeed = this.config.minVelocity || 0;
+  if (vx * vx + vy * vy > minSpeed * minSpeed) {
+    this.kickoffComplete = true;
   }
 };
 

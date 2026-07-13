@@ -21,11 +21,15 @@ The frame then applies human input and physics. This order matters: team AI sele
 
 Team state is one of:
 
-- `kickoff`: ball is near the initial kickoff spot.
+- `kickoffUs`: home/human team has kickoff.
+- `kickoffOpponent`: away/opponent team has kickoff.
 - `defense`: ball is in the team's own half.
 - `attack`: ball is in the opponent half.
 
-The state is recalculated in `TeamAi.nextState()`. Formation targets come from `src/ai/formation.js`:
+Kickoff states are initial `TeamAi` states derived from `config.kickoffSide`.
+They are kept until `Stadium.updateKickoff()` sees the ball moving faster than
+`config.minVelocity`; ball position never transitions a team back into kickoff.
+Formation targets come from `src/ai/formation.js`:
 
 ```js
 var targets = this.formation.positions(this.state, this.team.side, this.team.players.length);
@@ -36,6 +40,9 @@ For each player, `TeamAi.update()` assigns a command:
 - Home team closest selected player: `inactive`
 - Away team selected ball attacker: `attackBall`
 - Other players: `moveToPosition`
+
+During kickoff, the non-kicking team is assigned `inactive` for every player
+until kickoff is complete.
 
 The home selected player becomes `team.humanPlayer`. If keyboard or touch input is active, AI does not zero that player's velocity; input updates it later in the frame.
 

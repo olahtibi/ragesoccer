@@ -84,3 +84,23 @@ test("Stadium draw marks the human controlled player", function() {
   assertEqual(ctx.strokeStyle, "rgba(255, 255, 0, 0.5)");
   assertEqual(strokes, 1);
 });
+
+test("Stadium keeps kickoff incomplete while ball is below speed threshold", function() {
+  var fixture = makeFixture();
+  fixture.ball.velocity.x = fixture.config.minVelocity;
+  fixture.ball.velocity.y = 0;
+
+  fixture.stadium.updateKickoff();
+
+  assertEqual(fixture.stadium.kickoffComplete, false);
+});
+
+test("Stadium completes kickoff when ball exceeds speed threshold", function() {
+  var fixture = makeFixture();
+  fixture.ball.velocity.x = fixture.config.minVelocity + 1;
+  fixture.ball.velocity.y = 0;
+
+  fixture.stadium.updateKickoff();
+
+  assertEqual(fixture.stadium.kickoffComplete, true);
+});

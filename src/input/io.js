@@ -17,6 +17,13 @@ function touchHandler(e) {
     if (player == null) {
         return;
     }
+    if (window.game.stadium.isTeamFrozenForKickoff("home")) {
+        window.game.touchTarget = null;
+        player.velocity.x = 0;
+        player.velocity.y = 0;
+        startGame();
+        return;
+    }
     window.game.touchTarget = target;
     player.velocity = MathLib.computeVelocityForTarget(player.position, target, velocity);
     startGame();
@@ -24,6 +31,15 @@ function touchHandler(e) {
 
 function updateHumanInput(game) {
     if(game == null || game.isPaused()) {
+        return;
+    }
+    if(game.stadium.isTeamFrozenForKickoff("home")) {
+        game.touchTarget = null;
+        var frozenPlayer = game.stadium.humanPlayer;
+        if(frozenPlayer != null) {
+            frozenPlayer.velocity.x = 0;
+            frozenPlayer.velocity.y = 0;
+        }
         return;
     }
     if(hasMovementInput()) {
@@ -66,6 +82,14 @@ function checkInput(e) {
         var velocity = window.game.config.teamVelocity("home");
         var player = window.game.stadium.humanPlayer;
         if(player == null) {
+            return;
+        }
+        if(window.game.stadium.isTeamFrozenForKickoff("home")) {
+            player.velocity.x = 0;
+            player.velocity.y = 0;
+            if(hasMovementInput()) {
+                startGame();
+            }
             return;
         }
         player.velocity.x = 0;

@@ -10,7 +10,8 @@ var Team = function(config, side) {
 
 Team.prototype.createPlayers = function() {
   var size = this.side == "home" ? this.config.homeTeamSize : this.config.awayTeamSize;
-  var positions = new Formation(this.config).positions("kickoff", this.side, size);
+  var kickoffState = this.config.kickoffSide == "away" ? "kickoffOpponent" : "kickoffUs";
+  var positions = new Formation(this.config).positions(kickoffState, this.side, size);
   var players = [];
   var img = this.side == "home" ? this.config.imgPlayerHome : this.config.imgPlayerAway;
 
