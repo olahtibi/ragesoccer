@@ -165,7 +165,11 @@ function startKickoffCutscene(kickoffSide) {
                 players: game.stadium.awayPlayers,
                 positions: formation.positions(state, "away", game.stadium.awayPlayers.length)
             }
-        ]
+        ],
+        onComplete: function(completedGame) {
+            completedGame.stadium.startKickoff(state);
+            completedGame.updateAi();
+        }
     });
     startGame();
 }

@@ -51,6 +51,15 @@ TeamAi.prototype.update = function() {
   }
 };
 
+TeamAi.prototype.setKickoffState = function(state) {
+  if (state != "kickoffUs" && state != "kickoffOpponent") {
+    return false;
+  }
+  this.state = state;
+  this.ballAttacker = null;
+  return true;
+};
+
 TeamAi.prototype.shouldUpdate = function() {
   if (typeof window == "undefined" || window.game == null) {
     return true;

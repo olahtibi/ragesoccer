@@ -106,7 +106,7 @@ test("Touch input starts opponent kickoff without moving frozen home player", fu
 });
 
 test("J starts a home kickoff cutscene with formation targets", function() {
-  var fixture = makeFixture({ homeTeamSize: 3, awayTeamSize: 3 });
+  var fixture = makeFixture({ homeTeamSize: 3, awayTeamSize: 3, kickoffSide: "away" });
   var game = makeInputGame(fixture);
   var formation = new Formation(fixture.config);
   var homeTargets = formation.positions("kickoffUs", "home", 3);
@@ -116,10 +116,18 @@ test("J starts a home kickoff cutscene with formation targets", function() {
 
   assertEqual(game.cutscene.isActive(), true);
   assertEqual(game.cutscene.ballPosition.x, fixture.config.initialBallPosition.x);
+  assertEqual(fixture.stadium.currentKickoffState(), "kickoffOpponent");
   assertEqual(game.cutscene.teams[0].positions[2].x, homeTargets[2].x);
   assertEqual(game.cutscene.teams[0].positions[2].y, homeTargets[2].y);
   assertEqual(game.cutscene.teams[1].positions[2].x, awayTargets[2].x);
   assertEqual(game.cutscene.teams[1].positions[2].y, awayTargets[2].y);
+
+  game.cutscene.clear(game);
+
+  assertEqual(fixture.stadium.currentKickoffState(), "kickoffUs");
+  assertEqual(fixture.homeTeam.teamAi.state, "kickoffUs");
+  assertEqual(fixture.awayTeam.teamAi.state, "kickoffUs");
+  assertEqual(fixture.stadium.isTeamFrozenForKickoff("away"), true);
 });
 
 test("K starts an away kickoff cutscene with formation targets", function() {
@@ -132,10 +140,38 @@ test("K starts an away kickoff cutscene with formation targets", function() {
   checkInput({ keyCode: 75, type: "keydown" });
 
   assertEqual(game.cutscene.isActive(), true);
+  assertEqual(fixture.stadium.currentKickoffState(), "kickoffUs");
   assertEqual(game.cutscene.teams[0].positions[2].x, homeTargets[2].x);
   assertEqual(game.cutscene.teams[0].positions[2].y, homeTargets[2].y);
   assertEqual(game.cutscene.teams[1].positions[2].x, awayTargets[2].x);
   assertEqual(game.cutscene.teams[1].positions[2].y, awayTargets[2].y);
+
+  game.cutscene.clear(game);
+
+  assertEqual(fixture.stadium.currentKickoffState(), "kickoffOpponent");
+  assertEqual(fixture.homeTeam.teamAi.state, "kickoffOpponent");
+  assertEqual(fixture.awayTeam.teamAi.state, "kickoffOpponent");
+  assertEqual(fixture.stadium.isTeamFrozenForKickoff("home"), true);
+});
+
+test("J completion selects the positioned kickoff player before kickoff clamp", function() {
+  var fixture = makeFixture({ homeTeamSize: 4, awayTeamSize: 4, kickoffSide: "away" });
+  var game = makeInputGame(fixture);
+  fixture.homePlayers[1].position.x = fixture.config.initialBallPosition.x;
+  fixture.homePlayers[1].position.y = fixture.config.aiCenterY;
+
+  checkInput({ keyCode: 74, type: "keydown" });
+  var nonKickoffTarget = game.cutscene.teams[0].positions[1];
+  for (var i = 0; i < game.cutscene.teams[0].players.length; i++) {
+    game.cutscene.teams[0].players[i].position.x = game.cutscene.teams[0].positions[i].x;
+    game.cutscene.teams[0].players[i].position.y = game.cutscene.teams[0].positions[i].y;
+  }
+  game.cutscene.clear(game);
+  fixture.stadium.updateKickoff();
+
+  assertTrue(fixture.stadium.humanPlayer === fixture.homePlayers[3]);
+  assertEqual(fixture.homePlayers[1].position.x, nonKickoffTarget.x);
+  assertEqual(fixture.homePlayers[1].position.y, nonKickoffTarget.y);
 });
 
 test("Slash toggles pause while cutscene is active", function() {

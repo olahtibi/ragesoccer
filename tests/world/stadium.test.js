@@ -113,6 +113,22 @@ test("Stadium completes kickoff when ball exceeds speed threshold", function() {
   assertEqual(fixture.stadium.kickoffComplete, true);
 });
 
+test("Stadium startKickoff flips active kickoff state and resets kickoff completion", function() {
+  var fixture = makeFixture({ homeTeamSize: 1, awayTeamSize: 1 });
+  fixture.stadium.kickoffComplete = true;
+  fixture.homeTeam.teamAi.state = "attack";
+  fixture.awayTeam.teamAi.state = "defense";
+
+  var started = fixture.stadium.startKickoff("kickoffOpponent");
+
+  assertEqual(started, true);
+  assertEqual(fixture.stadium.currentKickoffState(), "kickoffOpponent");
+  assertEqual(fixture.stadium.kickoffComplete, false);
+  assertEqual(fixture.homeTeam.teamAi.state, "kickoffOpponent");
+  assertEqual(fixture.awayTeam.teamAi.state, "kickoffOpponent");
+  assertEqual(fixture.stadium.isTeamFrozenForKickoff("home"), true);
+});
+
 test("Stadium keeps home kickoff player inside center ellipse before kickoff", function() {
   var fixture = makeFixture({ homeTeamSize: 1, awayTeamSize: 1 });
   window.game = {

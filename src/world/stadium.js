@@ -11,6 +11,7 @@ var Stadium = function (imgStadium, ball, homeTeam, awayTeam, goalDetector) {
   this.awayPlayers = this.awayTeam.players;
   this.players = this.homePlayers.concat(this.awayPlayers);
   this.goalDetector = goalDetector;
+  this.kickoffState = this.kickoffStateForSide(this.config.kickoffSide);
   this.kickoffComplete = false;
 };
 
@@ -61,8 +62,30 @@ Stadium.prototype.updateAi = function() {
   }
 };
 
-Stadium.prototype.initialKickoffState = function() {
-  return this.config.kickoffSide == "away" ? "kickoffOpponent" : "kickoffUs";
+Stadium.prototype.kickoffStateForSide = function(side) {
+  return side == "away" ? "kickoffOpponent" : "kickoffUs";
+};
+
+Stadium.prototype.startKickoff = function(state) {
+  if (!this.isKickoffState(state)) {
+    return false;
+  }
+  this.kickoffState = state;
+  this.kickoffComplete = false;
+  this.setTeamAiKickoffState(state);
+  return true;
+};
+
+Stadium.prototype.setTeamAiKickoffState = function(state) {
+  for (var i = 0; i < this.teams.length; i++) {
+    if (this.teams[i].teamAi != null) {
+      this.teams[i].teamAi.setKickoffState(state);
+    }
+  }
+};
+
+Stadium.prototype.currentKickoffState = function() {
+  return this.kickoffState;
 };
 
 Stadium.prototype.isKickoffComplete = function() {
@@ -77,7 +100,7 @@ Stadium.prototype.isTeamFrozenForKickoff = function(side) {
   if (this.kickoffComplete) {
     return false;
   }
-  var state = this.initialKickoffState();
+  var state = this.currentKickoffState();
   return (state == "kickoffUs" && side == "away") || (state == "kickoffOpponent" && side == "home");
 };
 
@@ -95,7 +118,7 @@ Stadium.prototype.updateKickoff = function() {
 };
 
 Stadium.prototype.restrictHomeKickoffPlayerToCenterEllipse = function() {
-  if (this.initialKickoffState() != "kickoffUs") {
+  if (this.currentKickoffState() != "kickoffUs") {
     return;
   }
   if (typeof window != "undefined" && window.game != null && window.game.started != true) {

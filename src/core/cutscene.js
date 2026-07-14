@@ -3,6 +3,7 @@ var CutsceneController = function(config) {
   this.active = false;
   this.ballPosition = null;
   this.teams = [];
+  this.onComplete = null;
 };
 
 CutsceneController.prototype.isActive = function() {
@@ -17,6 +18,7 @@ CutsceneController.prototype.startRestart = function(options) {
   this.active = true;
   this.ballPosition = new Vector3d(options.ballPosition.x, options.ballPosition.y, options.ballPosition.z || 0);
   this.teams = options.teams;
+  this.onComplete = typeof options.onComplete == "function" ? options.onComplete : null;
   this.stopPlayers();
   return true;
 };
@@ -123,10 +125,15 @@ CutsceneController.prototype.lockBall = function(ball) {
 };
 
 CutsceneController.prototype.clear = function(game) {
+  var onComplete = this.onComplete;
   this.active = false;
   this.ballPosition = null;
   this.teams = [];
+  this.onComplete = null;
   if (game != null && game.camera != null && game.camera.clearFocusTarget != null) {
     game.camera.clearFocusTarget();
+  }
+  if (onComplete != null) {
+    onComplete(game);
   }
 };
