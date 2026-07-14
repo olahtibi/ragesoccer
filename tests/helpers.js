@@ -64,6 +64,7 @@ function loadGameScripts() {
     "src/world/stadium.js",
     "src/world/physics.js",
     "src/core/camera.js",
+    "src/core/cutscene.js",
     "src/core/game.js",
     "src/input/io.js"
   ].forEach(loadScript);
@@ -148,10 +149,20 @@ function applyReplayEvent(event, game) {
 }
 
 function advanceReplayFrame(game, dt) {
-  game.updateAi();
-  updateHumanInput(game);
+  if (game.cutscene != null && game.cutscene.isActive()) {
+    game.cutscene.updateBeforePhysics(game);
+  } else {
+    game.updateAi();
+    updateHumanInput(game);
+  }
   game.physics.lastDt = dt;
   game.physics.updatePlayerPosition(dt);
+  if (game.cutscene != null && game.cutscene.isActive()) {
+    game.cutscene.updateAfterPhysics(game);
+    game.stadium.updateKickoff();
+    game.stadium.goalDetector.update();
+    return;
+  }
   game.physics.resolveBallPlayerContacts();
   game.physics.updateBallPosition(dt);
   game.stadium.updateKickoff();

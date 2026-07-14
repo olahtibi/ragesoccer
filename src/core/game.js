@@ -6,6 +6,7 @@ var Game = function (config, stadium, camera, physics) {
   this.started = false;
   this.paused = false;
   this.touchTarget = null;
+  this.cutscene = new CutsceneController(config);
   this.debugLog = new DebugLog(config);
 };
 
@@ -60,9 +61,15 @@ function createContext() {
 }
 
 function renderNewFrame() {    
-  window.game.updateAi();
-  updateHumanInput(window.game);
-  window.game.physics.update();
+  if (window.game.cutscene.isActive()) {
+    window.game.cutscene.updateBeforePhysics(window.game);
+    window.game.physics.updatePlayersOnly();
+    window.game.cutscene.updateAfterPhysics(window.game);
+  } else {
+    window.game.updateAi();
+    updateHumanInput(window.game);
+    window.game.physics.update();
+  }
   window.game.stadium.updateKickoff();
   window.game.stadium.goalDetector.update();
   if (window.game.config.debug == true) {

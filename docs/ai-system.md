@@ -4,7 +4,7 @@ This document describes the current AI architecture and the steps for extending 
 
 ## Runtime Flow
 
-AI updates are driven once per frame from `src/core/game.js`:
+AI updates are driven once per frame from `src/core/game.js` when no cutscene is active:
 
 1. `renderNewFrame()` calls `window.game.updateAi()`.
 2. `Game.updateAi()` delegates to `Stadium.updateAi()`.
@@ -14,6 +14,12 @@ AI updates are driven once per frame from `src/core/game.js`:
 6. `IndividualAi` dispatches to the active command object.
 
 The frame then applies human input and physics. This order matters: team AI selects the controlled home player before input code writes human velocity.
+
+If `Game.cutscene.isActive()` is true, `renderNewFrame()` skips team AI and
+human input. `src/core/cutscene.js` owns player movement from explicit target
+positions, locks the ball at the restart position, and lets physics animate
+player movement while skipping ball contact and ball movement. The cutscene
+module does not depend on AI commands or formation semantics.
 
 ## Team AI
 

@@ -13,6 +13,29 @@ var Physics = function (config, stadium) {
 
 Physics.prototype.update = function() {
   var currentTime = new Date().getTime();
+  var dt = this.computeDt(currentTime);
+  if (dt == null) {
+    return;
+  }
+  this.lastDt = dt;
+  this.updatePlayerPosition(dt);
+  this.resolveBallPlayerContacts();
+  this.updateBallPosition(dt);
+  this.updateStats(currentTime);
+};
+
+Physics.prototype.updatePlayersOnly = function() {
+  var currentTime = new Date().getTime();
+  var dt = this.computeDt(currentTime);
+  if (dt == null) {
+    return;
+  }
+  this.lastDt = dt;
+  this.updatePlayerPosition(dt);
+  this.updateStats(currentTime);
+};
+
+Physics.prototype.computeDt = function(currentTime) {
   // While the game is paused, freeze the entire simulation. We still refresh
   // lastUpdated on every frame so that when play resumes, dt starts at a
   // single-frame value instead of "pause duration ago", which would otherwise
@@ -20,17 +43,13 @@ Physics.prototype.update = function() {
   if (window.game != null && window.game.isPaused && window.game.isPaused()) {
     this.lastUpdated = currentTime;
     this.lastDt = 0;
-    return;
+    return null;
   }
   var dt = (currentTime - this.lastUpdated) / 1000.0;
   // Clamp dt so a paused/backgrounded tab doesn't teleport bodies on resume.
   if (dt > 0.1) dt = 0.1;
   if (dt < 0) dt = 0;
-  this.lastDt = dt;
-  this.updatePlayerPosition(dt);
-  this.resolveBallPlayerContacts();
-  this.updateBallPosition(dt);
-  this.updateStats(currentTime);
+  return dt;
 };
 
 Physics.prototype.updateStats = function(currentTime) {

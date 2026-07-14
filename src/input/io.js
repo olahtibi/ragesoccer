@@ -5,6 +5,9 @@ window.addEventListener('keyup', checkInput, false);
 window.addEventListener("touchstart", touchHandler, false);
 
 function touchHandler(e) {
+    if(window.game.cutscene != null && window.game.cutscene.isActive()) {
+        return;
+    }
     var velocity = window.game.config.teamVelocity("home");
     var scaleBy = window.game.config.computeScaleBy();
     var targetX = (0 - window.game.camera.position.x) + e.touches[0].clientX / scaleBy;
@@ -31,6 +34,10 @@ function touchHandler(e) {
 
 function updateHumanInput(game) {
     if(game == null || game.isPaused()) {
+        return;
+    }
+    if(game.cutscene != null && game.cutscene.isActive()) {
+        game.touchTarget = null;
         return;
     }
     if(game.stadium.isTeamFrozenForKickoff("home")) {
@@ -77,6 +84,11 @@ function checkInput(e) {
         window.game.debugLog.recordKeyEvent(e);
     }
     window.keyMap[e.keyCode] = e.type == 'keydown';
+    handleCutsceneInput(e);
+    handleGlobalInput();
+    if(window.game.cutscene != null && window.game.cutscene.isActive()) {
+        return;
+    }
     if(!window.game.isPaused()) {
         // Pixels per second
         var velocity = window.game.config.teamVelocity("home");
@@ -120,6 +132,45 @@ function checkInput(e) {
             player.velocity.y /= Math.sqrt(2);
         }
     }
+}
+
+function handleCutsceneInput(e) {
+    if(e.type != "keydown" || window.game == null || window.game.cutscene == null || window.game.cutscene.isActive()) {
+        return;
+    }
+    if(e.keyCode == 74) {
+        startKickoffCutscene("home");
+    }
+    if(e.keyCode == 75) {
+        startKickoffCutscene("away");
+    }
+}
+
+function startKickoffCutscene(kickoffSide) {
+    var game = window.game;
+    var state = kickoffSide == "away" ? "kickoffOpponent" : "kickoffUs";
+    var formation = new Formation(game.config);
+    var ballPosition = game.config.initialBallPosition;
+    game.touchTarget = null;
+    game.cutscene.startRestart({
+        ballPosition: ballPosition,
+        teams: [
+            {
+                side: "home",
+                players: game.stadium.homePlayers,
+                positions: formation.positions(state, "home", game.stadium.homePlayers.length)
+            },
+            {
+                side: "away",
+                players: game.stadium.awayPlayers,
+                positions: formation.positions(state, "away", game.stadium.awayPlayers.length)
+            }
+        ]
+    });
+    startGame();
+}
+
+function handleGlobalInput() {
     if(window.keyMap[70]) {
         window.game.camera.showStats = !window.game.camera.showStats;
     }

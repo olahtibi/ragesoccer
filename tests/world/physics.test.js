@@ -109,6 +109,24 @@ test("Physics ball-player contact kicks the ball outward", function() {
   assertNear(fixture.ball.position.x, 106.01, 0.0001);
 });
 
+test("Physics player-only update advances players without touching the ball", function() {
+  var fixture = makeFixture();
+  fixture.playerHome.position.x = 100;
+  fixture.playerHome.position.y = 100;
+  fixture.playerHome.velocity.x = 20;
+  fixture.ball.position.x = 104;
+  fixture.ball.position.y = 100;
+  fixture.ball.velocity.x = 100;
+  fixture.physics.lastUpdated = new Date().getTime() - 100;
+
+  fixture.physics.updatePlayersOnly();
+
+  assertEqual(fixture.ball.position.x, 104);
+  assertEqual(fixture.ball.position.y, 100);
+  assertEqual(fixture.ball.velocity.x, 100);
+  assertTrue(fixture.playerHome.position.x > 100);
+});
+
 test("Physics keeps a rounded throttled FPS display value", function() {
   var fixture = makeFixture();
   fixture.physics.lastUpdated = 0;

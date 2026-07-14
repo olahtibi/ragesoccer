@@ -2,6 +2,7 @@ var testlib = require("../testlib");
 var makeFixture = require("../helpers").makeFixture;
 
 var test = testlib.test;
+var assertTrue = testlib.assertTrue;
 var assertNear = testlib.assertNear;
 
 test("Camera snaps viewport translation to device pixels", function() {
@@ -35,4 +36,36 @@ test("Camera snaps viewport translation to device pixels", function() {
   var scaleBy = fixture.config.computeScaleBy();
   assertNear(translateArgs.x * scaleBy * 2, Math.round(translateArgs.x * scaleBy * 2), 0.0001);
   assertNear(translateArgs.y * scaleBy * 2, Math.round(translateArgs.y * scaleBy * 2), 0.0001);
+});
+
+test("Camera lerps toward focus target and reports arrival", function() {
+  var fixture = makeFixture();
+  fixture.config.viewportWidth = 400;
+  fixture.config.viewportHeight = 300;
+  fixture.config.viewportRatio = 0.7;
+  fixture.config.cutsceneCameraLerp = 0.5;
+  fixture.config.cutsceneCameraArrivedRadius = 0.001;
+  var camera = new Camera(fixture.config, fixture.stadium);
+  camera.position.x = 0;
+  camera.position.y = 0;
+  camera.setFocusTarget(new Vector2d(334, 433));
+  var translateArgs = null;
+  var ctx = {
+    save: function() {},
+    scale: function() {},
+    translate: function(x, y) {
+      translateArgs = { x: x, y: y };
+    }
+  };
+
+  camera.windowToViewport(ctx);
+
+  var desired = camera.viewportPositionForTarget(camera.focusTarget, fixture.config.computeScaleBy());
+  assertNear(translateArgs.x, desired.x * 0.5, 0.0001);
+  assertNear(translateArgs.y, desired.y * 0.5, 0.0001);
+  assertTrue(!camera.hasArrivedAtFocus());
+
+  camera.position.x = desired.x;
+  camera.position.y = desired.y;
+  assertTrue(camera.hasArrivedAtFocus());
 });

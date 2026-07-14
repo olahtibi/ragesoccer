@@ -105,6 +105,60 @@ test("Touch input starts opponent kickoff without moving frozen home player", fu
   assertEqual(fixture.stadium.humanPlayer.velocity.y, 0);
 });
 
+test("J starts a home kickoff cutscene with formation targets", function() {
+  var fixture = makeFixture({ homeTeamSize: 3, awayTeamSize: 3 });
+  var game = makeInputGame(fixture);
+  var formation = new Formation(fixture.config);
+  var homeTargets = formation.positions("kickoffUs", "home", 3);
+  var awayTargets = formation.positions("kickoffUs", "away", 3);
+
+  checkInput({ keyCode: 74, type: "keydown" });
+
+  assertEqual(game.cutscene.isActive(), true);
+  assertEqual(game.cutscene.ballPosition.x, fixture.config.initialBallPosition.x);
+  assertEqual(game.cutscene.teams[0].positions[2].x, homeTargets[2].x);
+  assertEqual(game.cutscene.teams[0].positions[2].y, homeTargets[2].y);
+  assertEqual(game.cutscene.teams[1].positions[2].x, awayTargets[2].x);
+  assertEqual(game.cutscene.teams[1].positions[2].y, awayTargets[2].y);
+});
+
+test("K starts an away kickoff cutscene with formation targets", function() {
+  var fixture = makeFixture({ homeTeamSize: 3, awayTeamSize: 3 });
+  var game = makeInputGame(fixture);
+  var formation = new Formation(fixture.config);
+  var homeTargets = formation.positions("kickoffOpponent", "home", 3);
+  var awayTargets = formation.positions("kickoffOpponent", "away", 3);
+
+  checkInput({ keyCode: 75, type: "keydown" });
+
+  assertEqual(game.cutscene.isActive(), true);
+  assertEqual(game.cutscene.teams[0].positions[2].x, homeTargets[2].x);
+  assertEqual(game.cutscene.teams[0].positions[2].y, homeTargets[2].y);
+  assertEqual(game.cutscene.teams[1].positions[2].x, awayTargets[2].x);
+  assertEqual(game.cutscene.teams[1].positions[2].y, awayTargets[2].y);
+});
+
+test("Slash toggles pause while cutscene is active", function() {
+  var fixture = makeFixture();
+  var game = makeInputGame(fixture);
+  fixture.config.debug = true;
+  game.debugLog.dump = function() {};
+  game.cutscene.startRestart({
+    ballPosition: fixture.config.initialBallPosition,
+    teams: [
+      {
+        side: "home",
+        players: fixture.homePlayers,
+        positions: [fixture.homePlayers[0].position]
+      }
+    ]
+  });
+
+  checkInput({ keyCode: 191, type: "keydown" });
+
+  assertTrue(game.isPaused());
+});
+
 test("Slash does not pause or dump logs when debug is disabled", function() {
   var fixture = makeFixture();
   var game = makeInputGame(fixture);
