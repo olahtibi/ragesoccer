@@ -62,25 +62,25 @@ Camera.prototype.hasArrivedAtFocus = function() {
     return MathLib.computeDistance(this.position, desired) <= this.config.cutsceneCameraArrivedRadius;
 };
 
-Camera.prototype.renderOverlay = function(ctx) {
+Camera.prototype.renderOverlay = function(ctx, displayFps) {
     if(this.config.viewportRatio >= 0.6 && this.config.viewportRatio <= 0.8) {
         ctx.font = "30px Arial";
         ctx.fillStyle = 'white';
-        ctx.fillText(this.stadium.goalDetector.homeScore, 20 - this.position.x, 40 - this.position.y);
+        ctx.fillText(this.stadium.homeTeam.score, 20 - this.position.x, 40 - this.position.y);
         ctx.fillStyle = 'red';
-        ctx.fillText(this.stadium.goalDetector.homeScore, 21 - this.position.x, 39 - this.position.y);
+        ctx.fillText(this.stadium.homeTeam.score, 21 - this.position.x, 39 - this.position.y);
         ctx.fillStyle = 'white';
         ctx.fillText("-", 60 - this.position.x, 40 - this.position.y);
         ctx.fillStyle = 'black';
         ctx.fillText("-", 61 - this.position.x, 39 - this.position.y);
         ctx.fillStyle = 'white';
-        ctx.fillText(this.stadium.goalDetector.awayScore, 80 - this.position.x, 40 - this.position.y);
+        ctx.fillText(this.stadium.awayTeam.score, 80 - this.position.x, 40 - this.position.y);
         ctx.fillStyle = 'blue';
-        ctx.fillText(this.stadium.goalDetector.awayScore, 81 - this.position.x, 39 - this.position.y);
+        ctx.fillText(this.stadium.awayTeam.score, 81 - this.position.x, 39 - this.position.y);
         if(this.showStats) {
             ctx.font = "10px Arial";
             ctx.fillStyle = 'white';
-            ctx.fillText("FPS: " + window.game.physics.displayFps, 420 - this.position.x, 15 - this.position.y);
+            ctx.fillText("FPS: " + displayFps, 420 - this.position.x, 15 - this.position.y);
         }
     }
     ctx.restore();

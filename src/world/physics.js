@@ -36,20 +36,16 @@ Physics.prototype.updatePlayersOnly = function() {
 };
 
 Physics.prototype.computeDt = function(currentTime) {
-  // While the game is paused, freeze the entire simulation. We still refresh
-  // lastUpdated on every frame so that when play resumes, dt starts at a
-  // single-frame value instead of "pause duration ago", which would otherwise
-  // teleport the ball on unpause.
-  if (window.game != null && window.game.isPaused && window.game.isPaused()) {
-    this.lastUpdated = currentTime;
-    this.lastDt = 0;
-    return null;
-  }
   var dt = (currentTime - this.lastUpdated) / 1000.0;
   // Clamp dt so a paused/backgrounded tab doesn't teleport bodies on resume.
   if (dt > 0.1) dt = 0.1;
   if (dt < 0) dt = 0;
   return dt;
+};
+
+Physics.prototype.resetClock = function() {
+  this.lastUpdated = new Date().getTime();
+  this.lastDt = 0;
 };
 
 Physics.prototype.updateStats = function(currentTime) {

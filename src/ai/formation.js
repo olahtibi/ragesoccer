@@ -47,7 +47,7 @@ Formation.prototype.positionForRole = function(state, side, role, index, count) 
   var centerY = this.config.aiCenterY;
   var attackDir = side == "home" ? -1 : 1;
   var progress = role == "defender" ? -150 : 130;
-  var kickingSide = this.kickoffSideForState(state);
+  var kickingSide = this.kickoffSideForState(state, side);
 
   if (state == "attack") {
     progress += 55;
@@ -62,12 +62,12 @@ Formation.prototype.positionForRole = function(state, side, role, index, count) 
   return this.clampToField(new Vector2d(x, y));
 };
 
-Formation.prototype.kickoffSideForState = function(state) {
+Formation.prototype.kickoffSideForState = function(state, side) {
   if (state == "kickoffUs") {
-    return "home";
+    return side;
   }
   if (state == "kickoffOpponent") {
-    return "away";
+    return side == "home" ? "away" : "home";
   }
   return null;
 };

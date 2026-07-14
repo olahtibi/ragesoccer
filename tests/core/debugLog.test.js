@@ -9,7 +9,7 @@ var assertEqual = testlib.assertEqual;
 
 function makeDebugGame(options) {
   var fixture = makeFixture(options);
-  var game = new Game(fixture.config, fixture.stadium, {}, fixture.physics);
+  var game = fixture.game;
   window.game = game;
   return {
     fixture: fixture,
@@ -77,8 +77,7 @@ test("DebugLog snapshot includes ball, players, and AI commands states and targe
   setup.fixture.config.debugLogEveryNFrames = 1;
   setup.fixture.ball.position.x = 12.345;
   setup.fixture.ball.velocity.y = -6.789;
-  setup.game.started = true;
-  setup.fixture.stadium.kickoffComplete = true;
+  setup.game.matchFlow.state = "normalPlay";
   setup.fixture.ball.position.x = setup.fixture.awayPlayers[0].position.x + 20;
   setup.fixture.ball.position.y = setup.fixture.awayPlayers[0].position.y;
   setup.game.updateAi();

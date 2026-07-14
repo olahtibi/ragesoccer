@@ -14,6 +14,7 @@ var testlib = require("./testlib");
   { name: "AI Commands", path: "./ai/commands/attackBallCommand.test" },
   { name: "Individual AI", path: "./ai/individualAi.test" },
   { name: "Cutscene", path: "./core/cutscene.test" },
+  { name: "Restart", path: "./core/restart.test" },
   { name: "Team AI", path: "./ai/teamAi.test" },
   { name: "Team", path: "./world/team.test" },
   { name: "Stadium", path: "./world/stadium.test" },

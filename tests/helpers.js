@@ -65,8 +65,12 @@ function loadGameScripts() {
     "src/world/physics.js",
     "src/core/camera.js",
     "src/core/cutscene.js",
-    "src/core/game.js",
-    "src/input/io.js"
+    "src/input/humanController.js",
+    "src/core/restart.js",
+    "src/core/kickoffRestart.js",
+    "src/core/matchFlow.js",
+    "src/input/io.js",
+    "src/core/game.js"
   ].forEach(loadScript);
 
   scriptsLoaded = true;
@@ -86,13 +90,13 @@ function makeConfig(options) {
 
 function makeFixture(options) {
   var config = makeConfig(options);
-  var ball = new Ball(config.imgBall, config.ballRadius, new Vector3d(334, 433, 0));
-  var homeTeam = new Team(config, "home");
-  var awayTeam = new Team(config, "away");
-
-  var goalDetector = new GoalDetector(config, ball);
-  var stadium = new Stadium(config.imgPitch, ball, homeTeam, awayTeam, goalDetector);
-  var physics = new Physics(config, stadium);
+  var game = createGame(config);
+  var ball = game.stadium.ball;
+  var homeTeam = game.teams[0];
+  var awayTeam = game.teams[1];
+  var goalDetector = game.goalDetector;
+  var stadium = game.stadium;
+  var physics = game.physics;
 
   return {
     config: config,
@@ -105,18 +109,22 @@ function makeFixture(options) {
     awayPlayers: awayTeam.players,
     goalDetector: goalDetector,
     stadium: stadium,
-    physics: physics
+    physics: physics,
+    teamAis: game.teamAis,
+    homeTeamAi: game.teamAis[0],
+    awayTeamAi: game.teamAis[1],
+    game: game
   };
 }
 
 function replayDebugLog(payload, fixture) {
-  var game = new Game(fixture.config, fixture.stadium, {}, fixture.physics);
+  var game = fixture.game;
   game.camera = {
     position: new Vector2d(0, 0),
     showStats: false
   };
   window.game = game;
-  window.keyMap = {};
+  var input = new BrowserInput(game, window);
 
   var events = (payload.events || []).slice();
   var eventIndex = 0;
@@ -124,7 +132,7 @@ function replayDebugLog(payload, fixture) {
   for (var i = 0; i < frames.length; i++) {
     var frame = frames[i];
     while (eventIndex < events.length && events[eventIndex].frame <= frame.frame) {
-      applyReplayEvent(events[eventIndex], game);
+      applyReplayEvent(events[eventIndex], game, input);
       eventIndex++;
     }
     advanceReplayFrame(game, frame.dt || 0);
@@ -133,9 +141,9 @@ function replayDebugLog(payload, fixture) {
   return game;
 }
 
-function applyReplayEvent(event, game) {
+function applyReplayEvent(event, game, input) {
   if (event.type === "keydown" || event.type === "keyup") {
-    checkInput({
+    input.handleKey({
       type: event.type,
       keyCode: event.keyCode
     });
@@ -143,30 +151,21 @@ function applyReplayEvent(event, game) {
   }
 
   if (event.type === "touch") {
-    game.touchTarget = new Vector2d(event.target.x, event.target.y);
-    game.started = true;
+    game.humanController.setTouchTarget(new Vector2d(event.target.x, event.target.y));
+    game.resumeFromInput();
   }
 }
 
 function advanceReplayFrame(game, dt) {
-  if (game.cutscene != null && game.cutscene.isActive()) {
-    game.cutscene.updateBeforePhysics(game);
-  } else {
-    game.updateAi();
-    updateHumanInput(game);
-  }
+  game.updateAi();
+  var canMove = !game.matchFlow.isRestartActive() || game.restartController.canTeamMove(game.teams[0]);
+  game.humanController.update(canMove);
   game.physics.lastDt = dt;
   game.physics.updatePlayerPosition(dt);
-  if (game.cutscene != null && game.cutscene.isActive()) {
-    game.cutscene.updateAfterPhysics(game);
-    game.stadium.updateKickoff();
-    game.stadium.goalDetector.update();
-    return;
-  }
   game.physics.resolveBallPlayerContacts();
   game.physics.updateBallPosition(dt);
-  game.stadium.updateKickoff();
-  game.stadium.goalDetector.update();
+  game.matchFlow.updateAfterPhysics(game.context());
+  game.updateScore();
 }
 
 module.exports = {

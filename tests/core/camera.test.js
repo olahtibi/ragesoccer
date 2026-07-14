@@ -4,6 +4,7 @@ var makeFixture = require("../helpers").makeFixture;
 var test = testlib.test;
 var assertTrue = testlib.assertTrue;
 var assertNear = testlib.assertNear;
+var assertEqual = testlib.assertEqual;
 
 test("Camera snaps viewport translation to device pixels", function() {
   var originalDevicePixelRatio = window.devicePixelRatio;
@@ -68,4 +69,23 @@ test("Camera lerps toward focus target and reports arrival", function() {
   camera.position.x = desired.x;
   camera.position.y = desired.y;
   assertTrue(camera.hasArrivedAtFocus());
+});
+
+test("Camera overlay renders team-owned scores and supplied FPS", function() {
+  var fixture = makeFixture();
+  fixture.homeTeam.score = 2;
+  fixture.awayTeam.score = 1;
+  fixture.game.camera.showStats = true;
+  var labels = [];
+  var ctx = {
+    fillText: function(value) { labels.push(String(value)); },
+    restore: function() {}
+  };
+
+  fixture.game.camera.renderOverlay(ctx, 60);
+
+  assertEqual(labels[0], "2");
+  assertEqual(labels[1], "2");
+  assertTrue(labels.indexOf("1") !== -1);
+  assertTrue(labels.indexOf("FPS: 60") !== -1);
 });
