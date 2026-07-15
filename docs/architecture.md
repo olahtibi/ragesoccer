@@ -246,7 +246,8 @@ and shared set-piece positioning. Throw-ins interpret generic directional input
 as an inward lofted throw. Corners and goal kicks return to ordinary
 player-to-ball contact after positioning. A corner also supplies the awarded
 team AI with a central penalty-area target so its taker crosses instead of
-shooting directly at goal.
+shooting directly at goal. Goal kicks explicitly select the formation's
+goalkeeper as taker so another nearby player cannot be positioned beside them.
 
 `BoundaryDetector` reports the first pitch edge crossed, its crossing position,
 and the ball's last-touch side. `Game` gives goals priority, then converts a

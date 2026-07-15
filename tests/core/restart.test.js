@@ -147,6 +147,35 @@ test("Corner restart gives the awarded AI team a central crossing target", funct
   assertEqual(fixture.game.restartController.attackTarget(fixture.homeTeam), null);
 });
 
+test("Goal kick always positions the goalkeeper as the only nearby taker", function() {
+  var fixture = makeFixture({ homeTeamSize: 3, awayTeamSize: 3 });
+  var ballPosition = new Vector2d(
+    fixture.config.initialBallPosition.x,
+    fixture.config.fieldBottom - fixture.config.goalKickDistance
+  );
+  fixture.homePlayers[0].position.x = fixture.config.fieldLeft;
+  fixture.homePlayers[0].position.y = fixture.config.aiCenterY;
+  fixture.homePlayers[1].position.x = ballPosition.x;
+  fixture.homePlayers[1].position.y = ballPosition.y;
+
+  fixture.game.beginRestart("goalKick", "home", {
+    boundary: "bottom",
+    position: new Vector2d(fixture.config.initialBallPosition.x, fixture.config.fieldBottom)
+  });
+
+  var homeScene = fixture.game.cutscene.teams[0];
+  var nearby = 0;
+  for (var i = 0; i < homeScene.positions.length; i++) {
+    if (MathLib.computeDistance(homeScene.positions[i], ballPosition) < 40) nearby++;
+  }
+  assertEqual(nearby, 1);
+  assertNear(
+    MathLib.computeDistance(homeScene.positions[0], ballPosition),
+    fixture.config.goalKickTakerDistance,
+    0.0001
+  );
+});
+
 test("Kickoff clamps the human player to the center ellipse", function() {
   var fixture = makeFixture();
   fixture.game.resumeFromInput();

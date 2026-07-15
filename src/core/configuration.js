@@ -59,6 +59,7 @@ var Configuration = function () {
   this.restartOpponentDistance = 45;
   this.restartPlacementClearance = 1;
   this.goalKickDistance = 25;
+  this.goalKickTakerDistance = 20;
   this.cornerCrossDistance = 65;
   this.throwInSpeed = 180;
   this.throwInLoft = 90;
