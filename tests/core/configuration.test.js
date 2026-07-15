@@ -30,6 +30,7 @@ test("Configuration defaults strength and team-size options", function() {
   assertEqual(config.awayTeamSize, 4);
   assertEqual(config.outOfPlayRestartsEnabled, true);
   assertNear(config.outOfPlayRestartDelaySeconds, 0.35, 0.0001);
+  assertNear(config.cutsceneCameraLerp, 0.06, 0.0001);
 });
 
 test("Configuration maps strength to velocity", function() {
