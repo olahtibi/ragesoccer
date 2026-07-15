@@ -168,3 +168,31 @@ test("attackBall keeps shoot commitment without relaxing entry accuracy", functi
   committedAi.update({ ball: fixture.ball });
   assertTrue(committedAi.debugSnapshot().state != "shoot");
 });
+
+test("attackBall does not stop short of a nearly aligned correction waypoint", function() {
+  var fixture = makeFixture();
+  var ai = new IndividualAi(fixture.config, fixture.awayTeam, fixture.playerAway);
+  fixture.ball.position.x = 336;
+  fixture.ball.position.y = 400;
+
+  ai.setCommand("attackBall", null);
+  fixture.playerAway.position.x = 336;
+  fixture.playerAway.position.y = 390;
+  ai.update({ ball: fixture.ball });
+
+  var radius = 9.46;
+  fixture.playerAway.position.x = fixture.ball.position.x + Math.sin(0.2) * radius;
+  fixture.playerAway.position.y = fixture.ball.position.y - Math.cos(0.2) * radius;
+  ai.update({ ball: fixture.ball });
+  assertTrue(ai.debugSnapshot().correctingAim);
+
+  fixture.playerAway.position.x = fixture.ball.position.x + Math.sin(0.0524) * radius;
+  fixture.playerAway.position.y = fixture.ball.position.y - Math.cos(0.0524) * radius;
+  ai.update({ ball: fixture.ball });
+
+  assertEqual(ai.debugSnapshot().state, "shoot");
+  assertTrue(ai.debugSnapshot().correctingAim);
+  assertTrue(MathLib.computeDistance(ai.tPos, fixture.playerAway.position) <
+    fixture.config.aiTargetReachedRadius);
+  assertTrue(fixture.playerAway.velocity.x != 0 || fixture.playerAway.velocity.y != 0);
+});

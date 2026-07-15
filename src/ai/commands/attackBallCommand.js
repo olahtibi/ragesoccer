@@ -12,7 +12,9 @@ AttackBallCommand.prototype.reset = function() {
 
 AttackBallCommand.prototype.update = function(ai, context) {
   var target = this.attackBallTarget(ai, context);
-  ai.moveTo(target);
+  var reachedRadius = this.correctingAim ?
+    ai.config.aiAttackCorrectionReachedRadius : null;
+  ai.moveTo(target, reachedRadius);
 };
 
 AttackBallCommand.prototype.attackBallTarget = function(ai, context) {

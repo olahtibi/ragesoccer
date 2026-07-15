@@ -60,14 +60,16 @@ IndividualAi.prototype.isAlignedBehindBall = function(ballPosition, toGoal, tole
   return Math.abs(MathLib.angleDeltaRadians(angleBehind, anglePlayer)) <= tolerance;
 };
 
-IndividualAi.prototype.moveTo = function(target) {
+IndividualAi.prototype.moveTo = function(target, targetReachedRadius) {
   this.sPos = this.player.position;
   this.tPos = target;
 
   var dx = target.x - this.player.position.x;
   var dy = target.y - this.player.position.y;
   var distance = MathLib.vectorLength(dx, dy);
-  if (distance <= this.config.aiTargetReachedRadius) {
+  var reachedRadius = targetReachedRadius == null ?
+    this.config.aiTargetReachedRadius : targetReachedRadius;
+  if (distance <= reachedRadius) {
     return this.stop();
   }
 
@@ -77,7 +79,7 @@ IndividualAi.prototype.moveTo = function(target) {
   return "moving";
 };
 
-IndividualAi.prototype.moveToFormationPosition = function(target) {
+IndividualAi.prototype.moveToFormationPosition = function(target, resumeFromStop) {
   this.sPos = this.player.position;
   this.tPos = target;
 
@@ -85,7 +87,9 @@ IndividualAi.prototype.moveToFormationPosition = function(target) {
   var dy = target.y - this.player.position.y;
   var distance = MathLib.vectorLength(dx, dy);
   var deadband = this.config.aiTargetDeadband || this.config.aiTargetReachedRadius;
-  if (distance <= deadband) {
+  var resumeRadius = this.config.aiTargetResumeRadius || deadband;
+  var reachedRadius = resumeFromStop ? Math.max(deadband, resumeRadius) : deadband;
+  if (distance <= reachedRadius) {
     return this.stop();
   }
 

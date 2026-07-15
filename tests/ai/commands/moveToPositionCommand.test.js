@@ -57,3 +57,26 @@ test("moveToPosition stops at target", function() {
   assertEqual(fixture.playerAway.velocity.y, 0);
   assertEqual(ai.debugSnapshot().state, "stopped");
 });
+
+test("moveToPosition uses hysteresis before resuming near a drifting target", function() {
+  var fixture = makeFixture();
+  var ai = new IndividualAi(fixture.config, fixture.awayTeam, fixture.playerAway);
+  fixture.playerAway.position.x = 10;
+  fixture.playerAway.position.y = 10;
+
+  ai.setCommand("moveToPosition", new Vector2d(10, 13));
+  ai.update({ ball: fixture.ball });
+  assertEqual(ai.debugSnapshot().state, "stopped");
+
+  ai.setCommand("moveToPosition", new Vector2d(10, 15));
+  ai.update({ ball: fixture.ball });
+  assertEqual(ai.debugSnapshot().state, "moving");
+
+  ai.setCommand("moveToPosition", new Vector2d(10, 11.5));
+  ai.update({ ball: fixture.ball });
+  assertEqual(ai.debugSnapshot().state, "stopped");
+
+  ai.setCommand("moveToPosition", new Vector2d(10, 13));
+  ai.update({ ball: fixture.ball });
+  assertEqual(ai.debugSnapshot().state, "stopped");
+});
