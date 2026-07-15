@@ -336,8 +336,33 @@ test("Corner restart never selects the goalkeeper or cover defender as taker", f
   assertTrue(MathLib.computeDistance(homeScene.positions[1], scene.ballPosition) > 20);
   assertTrue(Math.abs(
     homeScene.positions[3].y -
-      (fixture.config.fieldTop + fixture.config.cornerCrossDistance)
+      (fixture.config.fieldTop + fixture.config.cornerBoxDepth)
   ) <= fixture.config.restartPositionVariationY);
+});
+
+test("Corner restart applies the taker-aware layered plan before jitter", function() {
+  var fixture = makeFixture({ homeTeamSize: 11, awayTeamSize: 11 });
+  fixture.game.beginRestart("corner", "home", {
+    boundary: "top",
+    position: new Vector2d(fixture.config.fieldLeft, fixture.config.fieldTop)
+  });
+  var scene = fixture.game.cutscene;
+  var homeScene = scene.teams[0];
+  var takerIndex = homeScene.players.indexOf(scene.readyPlayer);
+  var plan = new Formation(fixture.config).cornerAttackingPlan(
+    "home",
+    11,
+    takerIndex,
+    true
+  );
+  var shortIndex = plan.groups.indexOf("short");
+
+  assertTrue(takerIndex >= 0);
+  assertTrue(Math.abs(homeScene.positions[shortIndex].x - plan.positions[shortIndex].x) <=
+    fixture.config.restartPositionVariationX);
+  assertTrue(Math.abs(homeScene.positions[shortIndex].y - plan.positions[shortIndex].y) <=
+    fixture.config.restartPositionVariationY);
+  assertTrue(MathLib.computeDistance(homeScene.positions[takerIndex], scene.ballPosition) < 20);
 });
 
 test("Goal kick always positions the goalkeeper as the only nearby taker", function() {

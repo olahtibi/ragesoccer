@@ -195,10 +195,13 @@ The first striker is the dedicated kickoff taker. The taker stands centrally
 at `kickoffTakerDistance` behind the ball while any additional striker remains
 in a supporting lane.
 
-For an attacking corner, the goalkeeper and one designated defender hold their
-normal attacking positions while the remaining outfield players spread across
-the configured cross depth. After the kick, every AI receiver pursues the
-incoming ball until it reaches that depth or the defending team touches it.
+For an 11-player attacking corner, the goalkeeper and two balanced cover
+defenders stay back. The selected taker is excluded before the other players
+are assigned to four staggered box runs, a late run, an edge-of-box position,
+and a corner-side short option. Smaller teams reduce cover before sacrificing
+the taker or the first box target. After the kick, box runners pursue the first
+ball immediately, the late runner releases after the configured travel
+distance, and the edge and short players hold until normal play resumes.
 
 `TeamAi` uses formation targets for every player not assigned to human control or direct ball attack.
 

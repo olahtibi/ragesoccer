@@ -22,6 +22,12 @@ CornerRestart.prototype.createScene = function(context, request) {
   var toGoal = MathLib.normalizeVector(goalX - ballPosition.x, goalY - ballPosition.y, 0,
     request.awardedTo == "home" ? -1 : 1);
   var takerIndex = this.takerIndex(context, request, ballPosition);
+  var cornerPlan = new Formation(this.config).cornerAttackingPlan(
+    request.awardedTo,
+    this.awardedTeamSize(context, request),
+    takerIndex,
+    ballPosition.x <= this.config.initialBallPosition.x
+  );
   return RestartPositioning.createScene(
     this.config,
     context,
@@ -29,8 +35,16 @@ CornerRestart.prototype.createScene = function(context, request) {
     ballPosition,
     new Vector2d(ballPosition.x - toGoal.x * offset, ballPosition.y - toGoal.y * offset),
     takerIndex,
-    "cornerUs"
+    "cornerUs",
+    cornerPlan.positions
   );
+};
+
+CornerRestart.prototype.awardedTeamSize = function(context, request) {
+  for (var i = 0; i < context.teams.length; i++) {
+    if (context.teams[i].side == request.awardedTo) return context.teams[i].players.length;
+  }
+  return 1;
 };
 
 CornerRestart.prototype.takerIndex = function(context, request, ballPosition) {
@@ -45,12 +59,12 @@ CornerRestart.prototype.takerIndex = function(context, request, ballPosition) {
 
   var formation = new Formation(this.config);
   var roles = formation.rolesForSize(team.players.length);
-  var coverIndex = formation.cornerCoverIndex(team.players.length);
+  var coverIndexes = formation.cornerCoverIndexes(team.players.length);
   var closestIndex = -1;
   var closestDistance = Infinity;
 
   for (var j = 0; j < team.players.length; j++) {
-    if (roles[j] == "goalie" || j == coverIndex) continue;
+    if (roles[j] == "goalie" || coverIndexes.indexOf(j) >= 0) continue;
     var distance = MathLib.computeDistance(team.players[j].position, ballPosition);
     if (distance < closestDistance) {
       closestDistance = distance;

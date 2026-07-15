@@ -6,6 +6,8 @@ var TeamAi = function(config, team, opponentTeam, ball) {
   this.formation = new Formation(config);
   this.state = config.kickoffSide == team.side ? "kickoffUs" : "kickoffOpponent";
   this.ballAttacker = null;
+  this.cornerTakerIndex = -1;
+  this.cornerPositioningTargets = null;
   this._individualAis = [];
   this.movementProfiles = this.createMovementProfiles();
 
@@ -24,8 +26,11 @@ TeamAi.prototype.update = function(context) {
   context = context || {};
   var restartActive = context.restartActive == true;
   this.state = this.nextState(restartActive);
+  this.updateCornerContext(context);
   var targets = context.positioningTargets ||
-    this.formation.positions(this.state, this.team.side, this.team.players.length);
+    (this.state == "cornerUs" && this.cornerPositioningTargets != null ?
+      this.cornerPositioningTargets :
+      this.formation.positions(this.state, this.team.side, this.team.players.length));
   var openPlayFormation = !restartActive &&
     (this.state == "attack" || this.state == "defense");
   targets = openPlayFormation ?
@@ -53,7 +58,7 @@ TeamAi.prototype.update = function(context) {
       ai.player.velocity.x = 0;
       ai.player.velocity.y = 0;
       ai.setCommand("inactive", null);
-    } else if (chasingCornerCross && this.isCornerReceiver(i)) {
+    } else if (chasingCornerCross && this.shouldChaseCorner(i)) {
       ai.setCommand("attackBall", null);
     } else if (this.team.side != "home" && ai.player === closest) {
       ai.setCommand("attackBall", null);
@@ -61,6 +66,20 @@ TeamAi.prototype.update = function(context) {
       ai.setCommand("moveToPosition", targets[i]);
     }
     ai.update(commandContext);
+  }
+};
+
+TeamAi.prototype.updateCornerContext = function(context) {
+  if (this.state != "cornerUs") {
+    this.cornerTakerIndex = -1;
+    this.cornerPositioningTargets = null;
+    return;
+  }
+  if (context.restartTaker != null) {
+    this.cornerTakerIndex = this.team.players.indexOf(context.restartTaker);
+  }
+  if (context.positioningTargets != null) {
+    this.cornerPositioningTargets = context.positioningTargets;
   }
 };
 
@@ -303,10 +322,20 @@ TeamAi.prototype.clamp = function(value, min, max) {
   return Math.max(min, Math.min(max, value));
 };
 
-TeamAi.prototype.isCornerReceiver = function(playerIndex) {
-  var roles = this.formation.rolesForSize(this.team.players.length);
-  return roles[playerIndex] != "goalie" &&
-    playerIndex != this.formation.cornerCoverIndex(this.team.players.length);
+TeamAi.prototype.shouldChaseCorner = function(playerIndex) {
+  var groups = this.formation.cornerAssignments(
+    this.team.players.length,
+    this.cornerTakerIndex
+  );
+  if (groups[playerIndex] == "box") return true;
+  return groups[playerIndex] == "late" &&
+    this.cornerBallProgress() >= this.config.cornerLateRunReleaseDistance;
+};
+
+TeamAi.prototype.cornerBallProgress = function() {
+  return this.team.side == "home" ?
+    this.ball.position.y - this.config.fieldTop :
+    this.config.fieldBottom - this.ball.position.y;
 };
 
 TeamAi.prototype.setRestartState = function(state) {

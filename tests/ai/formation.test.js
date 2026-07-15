@@ -211,27 +211,21 @@ test("Formation keeps goalie near own goal when present", function() {
   assertTrue(away[0].y < config.aiCenterY);
 });
 
-test("Formation sends corner receivers up while the goalie and one defender stay back", function() {
+test("Formation scales corner cover while preserving a box target", function() {
   var config = makeConfig({ homeTeamSize: 5, awayTeamSize: 5 });
   var formation = new Formation(config);
   var homeAttack = formation.positions("attack", "home", 5);
-  var awayAttack = formation.positions("attack", "away", 5);
-  var homeCorner = formation.positions("cornerUs", "home", 5);
-  var awayCorner = formation.positions("cornerUs", "away", 5);
+  var plan = formation.cornerAttackingPlan("home", 5, 3, true);
 
-  assertEqual(homeCorner[0].y, homeAttack[0].y);
-  assertEqual(homeCorner[1].y, homeAttack[1].y);
-  assertEqual(awayCorner[0].y, awayAttack[0].y);
-  assertEqual(awayCorner[1].y, awayAttack[1].y);
-
-  for (var i = 2; i < 5; i++) {
-    assertEqual(homeCorner[i].y, config.fieldTop + config.cornerCrossDistance);
-    assertEqual(awayCorner[i].y, config.fieldBottom - config.cornerCrossDistance);
-    assertEqual(homeCorner[i].x, awayCorner[i].x);
-  }
-
-  assertEqual(homeCorner[3].x - homeCorner[2].x, config.cornerReceiverSpacing);
-  assertEqual(homeCorner[4].x - homeCorner[3].x, config.cornerReceiverSpacing);
+  assertEqual(plan.groups[0], "goalie");
+  assertEqual(plan.groups[1], "cover");
+  assertEqual(plan.groups[2], "cover");
+  assertEqual(plan.groups[3], "taker");
+  assertEqual(plan.groups[4], "box");
+  assertEqual(plan.positions[0].y, homeAttack[0].y);
+  assertEqual(plan.positions[1].y, homeAttack[1].y);
+  assertEqual(plan.positions[2].y, homeAttack[2].y);
+  assertEqual(plan.positions[4].y, config.fieldTop + config.cornerBoxDepth);
 });
 
 test("Formation supports a corner attack when no defender role exists", function() {
@@ -241,18 +235,69 @@ test("Formation supports a corner attack when no defender role exists", function
 
   assertEqual(positions.length, 2);
   assertEqual(formation.cornerCoverIndex(2), -1);
-  assertEqual(positions[1].y, config.fieldTop + config.cornerCrossDistance);
+  assertEqual(positions[1].y, config.fieldTop + config.cornerBoxDepth);
 });
 
-test("Formation sends nine 11-player corner receivers up", function() {
+test("Formation builds a mirrored layered 11-player corner plan", function() {
   var config = makeConfig({ homeTeamSize: 11 });
   var formation = new Formation(config);
   var attack = formation.positions("attack", "home", 11);
-  var corner = formation.positions("cornerUs", "home", 11);
+  var home = formation.cornerAttackingPlan("home", 11, 9, true);
+  var away = formation.cornerAttackingPlan("away", 11, 9, true);
+  var counts = {};
 
-  assertEqual(corner[0].y, attack[0].y);
-  assertEqual(corner[1].y, attack[1].y);
-  for (var i = 2; i < 11; i++) {
-    assertEqual(corner[i].y, config.fieldTop + config.cornerCrossDistance);
+  for (var i = 0; i < home.groups.length; i++) {
+    counts[home.groups[i]] = (counts[home.groups[i]] || 0) + 1;
+    assertEqual(home.positions[i].x, away.positions[i].x);
+    assertEqual(
+      home.positions[i].y - config.fieldTop,
+      config.fieldBottom - away.positions[i].y
+    );
+  }
+
+  assertEqual(counts.goalie, 1);
+  assertEqual(counts.cover, 2);
+  assertEqual(counts.taker, 1);
+  assertEqual(counts.box, 4);
+  assertEqual(counts.late, 1);
+  assertEqual(counts.edge, 1);
+  assertEqual(counts.short, 1);
+  assertEqual(home.positions[0].y, attack[0].y);
+  assertEqual(home.positions[1].y, attack[1].y);
+  assertEqual(home.positions[4].y, attack[4].y);
+  assertEqual(home.positions[2].y, config.fieldTop + config.cornerBoxDepth);
+  assertEqual(home.positions[7].y, config.fieldTop + config.cornerBoxDepth +
+    config.cornerBoxDepthStep * 2);
+});
+
+test("Formation puts the short corner option on the corner side", function() {
+  var config = makeConfig({ homeTeamSize: 11 });
+  var formation = new Formation(config);
+  var left = formation.cornerAttackingPlan("home", 11, 9, true);
+  var right = formation.cornerAttackingPlan("home", 11, 9, false);
+  var shortIndex = left.groups.indexOf("short");
+
+  assertEqual(left.positions[shortIndex].x, config.fieldLeft + config.cornerShortInset);
+  assertEqual(right.positions[shortIndex].x, config.fieldRight - config.cornerShortInset);
+  assertEqual(left.positions[shortIndex].y, config.fieldTop + config.cornerShortDepth);
+});
+
+test("Formation reduces corner cover before losing the first box target", function() {
+  var config = makeConfig();
+  var formation = new Formation(config);
+  for (var size = 3; size <= 11; size++) {
+    var roles = formation.rolesForSize(size);
+    var covers = formation.cornerCoverIndexes(size);
+    var takerIndex = -1;
+    for (var i = roles.length - 1; i >= 0; i--) {
+      if (roles[i] != "goalie" && covers.indexOf(i) < 0) {
+        takerIndex = i;
+        break;
+      }
+    }
+    var groups = formation.cornerAssignments(size, takerIndex);
+    assertTrue(takerIndex >= 0);
+    assertTrue(covers.length <= 2);
+    assertTrue(groups.indexOf("box") >= 0);
   }
 });

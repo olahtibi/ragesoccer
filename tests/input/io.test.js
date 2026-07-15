@@ -170,6 +170,43 @@ test("J and K do not start restarts", function() {
   assertEqual(setupResult.game.cutscene.isActive(), false);
 });
 
+test("C awards a home corner on the ball side when debugging is enabled", function() {
+  var setupResult = setup();
+  setupResult.fixture.config.debug = true;
+  setupResult.game.restartController.clear();
+  setupResult.game.matchFlow.state = "normalPlay";
+  setupResult.fixture.ball.position.x = setupResult.fixture.config.fieldRight - 20;
+
+  setupResult.input.handleKey({ keyCode: 67, type: "keydown" });
+
+  assertEqual(setupResult.game.restartController.type(), "corner");
+  assertEqual(setupResult.game.restartController.phase(), "positioning");
+  assertEqual(
+    setupResult.game.cutscene.ballPosition.x,
+    setupResult.fixture.config.fieldRight -
+      setupResult.fixture.config.ballRadius -
+      setupResult.fixture.config.restartPlacementClearance
+  );
+  assertEqual(
+    setupResult.game.cutscene.ballPosition.y,
+    setupResult.fixture.config.fieldTop +
+      setupResult.fixture.config.ballRadius +
+      setupResult.fixture.config.restartPlacementClearance
+  );
+});
+
+test("C corner diagnostic is disabled when debugging is disabled", function() {
+  var setupResult = setup();
+  setupResult.fixture.config.debug = false;
+  setupResult.game.restartController.clear();
+  setupResult.game.matchFlow.state = "normalPlay";
+
+  setupResult.input.handleKey({ keyCode: 67, type: "keydown" });
+
+  assertEqual(setupResult.game.restartController.type(), null);
+  assertEqual(setupResult.game.cutscene.isActive(), false);
+});
+
 test("Restart positioning selects the newly closest human player on completion", function() {
   var setupResult = setup({ homeTeamSize: 4, awayTeamSize: 4, kickoffSide: "away" });
   setupResult.game.beginRestart("kickoff", "home");

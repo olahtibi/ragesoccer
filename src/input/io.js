@@ -53,6 +53,16 @@ BrowserInput.prototype.handleCommand = function(keyCode) {
   if (keyCode == 70) this.game.camera.showStats = !this.game.camera.showStats;
   if (keyCode == 81) this.game.config.viewportRatio /= 1.2;
   if (keyCode == 87) this.game.config.viewportRatio *= 1.2;
+  if (keyCode == 67 && this.game.config.debug == true &&
+      !this.game.isOutOfPlayPending()) {
+    var cornerX = this.game.stadium.ball.position.x <=
+      this.game.config.initialBallPosition.x ?
+      this.game.config.fieldLeft : this.game.config.fieldRight;
+    this.game.beginRestart("corner", "home", {
+      boundary: "top",
+      position: new Vector2d(cornerX, this.game.config.fieldTop)
+    });
+  }
   if (keyCode == 191 && this.game.config.debug == true) {
     this.game.togglePause();
     this.game.debugLog.dump();

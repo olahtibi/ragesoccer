@@ -22,39 +22,122 @@ Formation.prototype.positions = function(state, side, teamSize) {
 };
 
 Formation.prototype.cornerAttackingPositions = function(side, teamSize) {
+  return this.cornerAttackingPlan(side, teamSize, -1, true).positions;
+};
+
+Formation.prototype.cornerAttackingPlan = function(side, teamSize, takerIndex, cornerLeft) {
   var roles = this.rolesForSize(teamSize);
   var result = this.positions("attack", side, teamSize);
-  var coverIndex = this.cornerCoverIndex(teamSize);
-  var receivers = [];
+  var groups = this.cornerAssignments(teamSize, takerIndex);
+  var groupIndexes = {};
+  var groupCounts = {};
 
-  for (var i = 0; i < roles.length; i++) {
-    if (roles[i] != "goalie" && i != coverIndex) {
-      receivers.push(i);
-    }
+  for (var i = 0; i < groups.length; i++) {
+    groupCounts[groups[i]] = (groupCounts[groups[i]] || 0) + 1;
   }
 
   var goalX = (this.config.goalTopTopLeft.x + this.config.goalTopTopRight.x) / 2;
-  var targetY = side == "home" ?
-    this.config.fieldTop + this.config.cornerCrossDistance :
-    this.config.fieldBottom - this.config.cornerCrossDistance;
-  var spacing = this.config.cornerReceiverSpacing || 0;
-
-  for (var j = 0; j < receivers.length; j++) {
-    result[receivers[j]] = this.clampToField(new Vector2d(
-      goalX + this.lane(j, receivers.length) * spacing,
-      targetY
-    ));
+  var goalY = side == "home" ? this.config.fieldTop : this.config.fieldBottom;
+  var attackDir = side == "home" ? 1 : -1;
+  for (var j = 0; j < groups.length; j++) {
+    var group = groups[j];
+    var groupIndex = groupIndexes[group] || 0;
+    groupIndexes[group] = groupIndex + 1;
+    var x;
+    var depth;
+    if (group == "box") {
+      x = goalX + this.lane(groupIndex, groupCounts[group]) * this.config.cornerBoxSpacing;
+      depth = this.config.cornerBoxDepth + groupIndex * this.config.cornerBoxDepthStep;
+    } else if (group == "late") {
+      x = goalX + this.lane(groupIndex, groupCounts[group]) * this.config.cornerBoxSpacing * 2;
+      depth = this.config.cornerLateDepth;
+    } else if (group == "edge") {
+      x = goalX;
+      depth = this.config.cornerEdgeDepth;
+    } else if (group == "short") {
+      x = cornerLeft ? this.config.fieldLeft + this.config.cornerShortInset :
+        this.config.fieldRight - this.config.cornerShortInset;
+      depth = this.config.cornerShortDepth;
+    } else {
+      continue;
+    }
+    result[j] = this.clampToField(new Vector2d(x, goalY + attackDir * depth));
   }
 
-  return result;
+  return { positions: result, groups: groups };
 };
 
 Formation.prototype.cornerCoverIndex = function(teamSize) {
+  var indexes = this.cornerCoverIndexes(teamSize);
+  return indexes.length == 0 ? -1 : indexes[0];
+};
+
+Formation.prototype.cornerCoverIndexes = function(teamSize) {
   var roles = this.rolesForSize(teamSize);
+  var outfieldCount = 0;
   for (var i = 0; i < roles.length; i++) {
-    if (roles[i] == "defender") return i;
+    if (roles[i] != "goalie") outfieldCount++;
   }
-  return -1;
+  var coverLimit = Math.min(2, Math.max(0, outfieldCount - 2));
+  var defenders = [];
+  for (var i = 0; i < roles.length; i++) {
+    if (roles[i] == "defender") defenders.push(i);
+  }
+  var result = [];
+  if (coverLimit >= 1 && defenders.length > 0) result.push(defenders[0]);
+  if (coverLimit >= 2 && defenders.length > 1) result.push(defenders[defenders.length - 1]);
+  return result;
+};
+
+Formation.prototype.cornerAssignments = function(teamSize, takerIndex) {
+  var roles = this.rolesForSize(teamSize);
+  var covers = this.cornerCoverIndexes(teamSize);
+  var groups = [];
+  var candidates = [];
+  for (var i = 0; i < roles.length; i++) {
+    if (roles[i] == "goalie") {
+      groups[i] = "goalie";
+    } else if (covers.indexOf(i) >= 0) {
+      groups[i] = "cover";
+    } else if (i == takerIndex) {
+      groups[i] = "taker";
+    } else {
+      candidates.push(i);
+    }
+  }
+
+  var advancedCount = candidates.length;
+  if (advancedCount >= 2) {
+    var shortIndex = this.takeCornerCandidate(candidates, roles, ["midfielder", "striker", "defender"], false);
+    groups[shortIndex] = "short";
+  }
+  if (advancedCount >= 4) {
+    var lateIndex = this.takeCornerCandidate(candidates, roles, ["midfielder", "defender", "striker"], false);
+    groups[lateIndex] = "late";
+  }
+  if (advancedCount >= 6) {
+    var edgeIndex = this.takeCornerCandidate(candidates, roles, ["midfielder", "defender", "striker"], true);
+    groups[edgeIndex] = "edge";
+  }
+  for (var j = 0; j < candidates.length; j++) {
+    groups[candidates[j]] = "box";
+  }
+  return groups;
+};
+
+Formation.prototype.takeCornerCandidate = function(candidates, roles, preferences, fromEnd) {
+  for (var p = 0; p < preferences.length; p++) {
+    if (fromEnd) {
+      for (var i = candidates.length - 1; i >= 0; i--) {
+        if (roles[candidates[i]] == preferences[p]) return candidates.splice(i, 1)[0];
+      }
+    } else {
+      for (var j = 0; j < candidates.length; j++) {
+        if (roles[candidates[j]] == preferences[p]) return candidates.splice(j, 1)[0];
+      }
+    }
+  }
+  return candidates.shift();
 };
 
 Formation.prototype.kickoffTakerIndex = function(teamSize) {

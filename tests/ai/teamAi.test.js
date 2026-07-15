@@ -136,9 +136,10 @@ test("TeamAi can run without window.game or input globals", function() {
   assertEqual(attackBallIndex(fixture.awayTeamAi), 0);
 });
 
-test("TeamAi sends every corner receiver after the incoming cross", function() {
-  var fixture = makeFixture({ homeTeamSize: 1, awayTeamSize: 5 });
+test("TeamAi staggers box and late corner runs while support players hold", function() {
+  var fixture = makeFixture({ homeTeamSize: 1, awayTeamSize: 11 });
   fixture.awayTeamAi.setRestartState("cornerUs");
+  fixture.awayTeamAi.cornerTakerIndex = 9;
   fixture.ball.lastTouchedBy = "away";
   fixture.ball.position.y = fixture.config.fieldBottom - 20;
 
@@ -150,7 +151,21 @@ test("TeamAi sends every corner receiver after the incoming cross", function() {
   assertEqual(snapshots[1].command, "moveToPosition");
   assertEqual(snapshots[2].command, "attackBall");
   assertEqual(snapshots[3].command, "attackBall");
-  assertEqual(snapshots[4].command, "attackBall");
+  assertEqual(snapshots[4].command, "moveToPosition");
+  assertEqual(snapshots[5].command, "moveToPosition");
+  assertEqual(snapshots[6].command, "moveToPosition");
+  assertEqual(snapshots[7].command, "attackBall");
+  assertEqual(snapshots[8].command, "moveToPosition");
+  assertEqual(snapshots[9].command, "moveToPosition");
+  assertEqual(snapshots[10].command, "attackBall");
+
+  fixture.ball.position.y = fixture.config.fieldBottom -
+    fixture.config.cornerLateRunReleaseDistance;
+  update(fixture.awayTeamAi, false, true);
+
+  assertEqual(fixture.awayTeamAi.debugSnapshot()[6].command, "attackBall");
+  assertEqual(fixture.awayTeamAi.debugSnapshot()[5].command, "moveToPosition");
+  assertEqual(fixture.awayTeamAi.debugSnapshot()[8].command, "moveToPosition");
 
   fixture.ball.position.y = fixture.config.fieldBottom - fixture.config.cornerCrossDistance;
   update(fixture.awayTeamAi, false, true);
@@ -169,6 +184,29 @@ test("TeamAi uses only the corner taker before the cross is kicked", function() 
 
   assertEqual(attackBallCount(fixture.awayTeamAi), 1);
   assertEqual(attackBallIndex(fixture.awayTeamAi), 4);
+});
+
+test("TeamAi retains layered support targets after the corner restart clears", function() {
+  var fixture = makeFixture({ homeTeamSize: 11, awayTeamSize: 11 });
+  fixture.game.beginRestart("corner", "away", {
+    boundary: "bottom",
+    position: new Vector2d(fixture.config.fieldRight, fixture.config.fieldBottom)
+  });
+  fixture.game.updateAi();
+  var taker = fixture.game.restartController.taker(fixture.awayTeam);
+  var takerIndex = fixture.awayPlayers.indexOf(taker);
+  var groups = new Formation(fixture.config).cornerAssignments(11, takerIndex);
+  var shortIndex = groups.indexOf("short");
+  var expectedTarget = fixture.game.restartController.positioningTargets(fixture.awayTeam)[shortIndex];
+
+  fixture.game.restartController.clear();
+  fixture.game.matchFlow.state = "normalPlay";
+  fixture.ball.lastTouchedBy = "away";
+  fixture.ball.position.y = fixture.config.fieldBottom - 20;
+  update(fixture.awayTeamAi, false, true);
+
+  assertTrue(fixture.awayTeamAi.debugSnapshot()[shortIndex].target === expectedTarget);
+  assertEqual(fixture.awayTeamAi.debugSnapshot()[shortIndex].command, "moveToPosition");
 });
 
 test("TeamAi releases the corner shape when an opponent intercepts", function() {
