@@ -22,7 +22,10 @@ AttackBallCommand.prototype.attackBallTarget = function(ai, context) {
       0,
       ai.team.side == "home" ? -1 : 1
     );
-  var aligned = ai.isAlignedBehindBall(ball.position, toTarget);
+  var alignmentTolerance = this.state == "shoot" ?
+    ai.config.aiAttackAimReleaseToleranceRadians :
+    ai.config.aiAttackAimToleranceRadians;
+  var aligned = ai.isAlignedBehindBall(ball.position, toTarget, alignmentTolerance);
   if (aligned) {
     this.attackOrbitDir = 0;
     this.state = "shoot";

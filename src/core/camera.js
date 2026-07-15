@@ -80,7 +80,7 @@ Camera.prototype.renderOverlay = function(ctx, displayFps) {
         if(this.showStats) {
             ctx.font = "10px Arial";
             ctx.fillStyle = 'white';
-            ctx.fillText("FPS: " + displayFps, 420 - this.position.x, 15 - this.position.y);
+            ctx.fillText("FPS: " + displayFps, 350 - this.position.x, 15 - this.position.y);
         }
     }
     ctx.restore();

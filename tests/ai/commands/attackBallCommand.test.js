@@ -109,3 +109,41 @@ test("attackBall ignores the formation pace multiplier", function() {
     0.0001
   );
 });
+
+test("attackBall keeps shoot commitment without relaxing entry accuracy", function() {
+  var fixture = makeFixture();
+  fixture.ball.position.x = 336;
+  fixture.ball.position.y = 400;
+  var committedAi = new IndividualAi(fixture.config, fixture.awayTeam, fixture.playerAway);
+  fixture.playerAway.position.x = 336;
+  fixture.playerAway.position.y = 380;
+
+  committedAi.setCommand("attackBall", null);
+  committedAi.update({ ball: fixture.ball });
+  assertEqual(committedAi.debugSnapshot().state, "shoot");
+
+  var betweenTolerances = 0.22;
+  fixture.playerAway.position.x = fixture.ball.position.x + Math.sin(betweenTolerances) * 20;
+  fixture.playerAway.position.y = fixture.ball.position.y - Math.cos(betweenTolerances) * 20;
+  committedAi.update({ ball: fixture.ball });
+  assertEqual(committedAi.debugSnapshot().state, "shoot");
+
+  var freshPlayer = new Player(
+    fixture.config.imgPlayerAway,
+    new Vector2d(fixture.playerAway.position.x, fixture.playerAway.position.y),
+    fixture.config.playerSpriteWidth,
+    fixture.config.playerSpriteHeight,
+    fixture.config.playerSpriteCenterX,
+    fixture.config.playerSpriteCenterY
+  );
+  var freshAi = new IndividualAi(fixture.config, fixture.awayTeam, freshPlayer);
+  freshAi.setCommand("attackBall", null);
+  freshAi.update({ ball: fixture.ball });
+  assertTrue(freshAi.debugSnapshot().state != "shoot");
+
+  var outsideReleaseTolerance = 0.35;
+  fixture.playerAway.position.x = fixture.ball.position.x + Math.sin(outsideReleaseTolerance) * 20;
+  fixture.playerAway.position.y = fixture.ball.position.y - Math.cos(outsideReleaseTolerance) * 20;
+  committedAi.update({ ball: fixture.ball });
+  assertTrue(committedAi.debugSnapshot().state != "shoot");
+});

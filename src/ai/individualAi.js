@@ -48,7 +48,7 @@ IndividualAi.prototype.toOpponentGoal = function(ballPosition) {
   return MathLib.normalizeVector(dx, dy, 0, 1);
 };
 
-IndividualAi.prototype.isAlignedBehindBall = function(ballPosition, toGoal) {
+IndividualAi.prototype.isAlignedBehindBall = function(ballPosition, toGoal, tolerance) {
   var dx = this.player.position.x - ballPosition.x;
   var dy = this.player.position.y - ballPosition.y;
   if (dx * dx + dy * dy < 0.0001) {
@@ -56,7 +56,8 @@ IndividualAi.prototype.isAlignedBehindBall = function(ballPosition, toGoal) {
   }
   var anglePlayer = MathLib.computeAngleRadians(dx, dy);
   var angleBehind = MathLib.computeAngleRadians(-toGoal.x, -toGoal.y);
-  return Math.abs(MathLib.angleDeltaRadians(angleBehind, anglePlayer)) <= this.config.aiAttackAimToleranceRadians;
+  tolerance = tolerance == null ? this.config.aiAttackAimToleranceRadians : tolerance;
+  return Math.abs(MathLib.angleDeltaRadians(angleBehind, anglePlayer)) <= tolerance;
 };
 
 IndividualAi.prototype.moveTo = function(target) {

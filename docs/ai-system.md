@@ -153,6 +153,12 @@ function createIndividualAiCommandRegistry() {
 
 This keeps command state per player. For example, each attacker has its own `AttackBallCommand.attackOrbitDir`.
 
+`attackBall` uses alignment hysteresis around its shot commitment. A player
+must satisfy `aiAttackAimToleranceRadians` to enter `shoot`, then remains
+committed until its error exceeds `aiAttackAimReleaseToleranceRadians`. This
+keeps the original shot-entry accuracy while preventing close-range
+`detour`/`shoot` target reversals.
+
 ## Debug Data
 
 Debug logging depends on `debugSnapshot()`, not direct internal fields. Keep this shape stable:

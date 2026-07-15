@@ -106,6 +106,7 @@ var Configuration = function () {
   this.aiAttackRunThroughDistance = 18;
   this.aiAttackDetourStepRadians = Math.PI / 6;
   this.aiAttackAimToleranceRadians = 0.15;
+  this.aiAttackAimReleaseToleranceRadians = 0.30;
   this.aiAttackDetourRadius = this.ballRadius + this.playerRadius + 4;
   this.aiAttackCloseDistance = this.ballRadius + this.playerRadius + 20;
   this.aiAttackOrbitCommitAngle = Math.PI - 0.3;
