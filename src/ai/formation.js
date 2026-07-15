@@ -57,6 +57,14 @@ Formation.prototype.cornerCoverIndex = function(teamSize) {
   return -1;
 };
 
+Formation.prototype.kickoffTakerIndex = function(teamSize) {
+  var roles = this.rolesForSize(teamSize);
+  for (var i = 0; i < roles.length; i++) {
+    if (roles[i] == "striker") return i;
+  }
+  return -1;
+};
+
 Formation.prototype.rolesForSize = function(teamSize) {
   var sizes = {
     1: ["striker"],
@@ -88,16 +96,20 @@ Formation.prototype.positionForRole = function(state, side, role, index, count) 
   var attackDir = side == "home" ? -1 : 1;
   var progress = role == "defender" ? -150 : 130;
   var kickingSide = this.kickoffSideForState(state, side);
+  var kickoffTaker = kickingSide != null && side == kickingSide &&
+    role == "striker" && index == 0;
 
   if (state == "attack") {
     progress += 55;
   } else if (state == "defense") {
     progress -= 55;
   } else if (kickingSide != null && role == "striker") {
-    progress = side == kickingSide ? -20 : this.nonKickingKickoffProgress();
+    progress = side == kickingSide ?
+      (kickoffTaker ? -this.config.kickoffTakerDistance : -20) :
+      this.nonKickingKickoffProgress();
   }
 
-  var x = centerX + this.lane(index, count) * 90;
+  var x = kickoffTaker ? centerX : centerX + this.lane(index, count) * 90;
   var y = centerY + attackDir * progress;
   return this.clampToField(new Vector2d(x, y));
 };

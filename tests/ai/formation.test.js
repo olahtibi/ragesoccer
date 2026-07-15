@@ -60,6 +60,35 @@ test("Formation mirrors relative states for an away kickoff", function() {
   assertTrue(outsideCenterEllipse(config, home[2]));
 });
 
+test("Formation gives one 5v5 striker a dedicated close kickoff position", function() {
+  var config = makeConfig({ homeTeamSize: 5, awayTeamSize: 5 });
+  var formation = new Formation(config);
+  var home = formation.positions("kickoffUs", "home", 5);
+  var away = formation.positions("kickoffUs", "away", 5);
+
+  assertEqual(formation.kickoffTakerIndex(5), 3);
+  assertEqual(home[3].x, config.initialBallPosition.x);
+  assertEqual(home[3].y, config.aiCenterY + config.kickoffTakerDistance);
+  assertEqual(away[3].x, config.initialBallPosition.x);
+  assertEqual(away[3].y, config.aiCenterY - config.kickoffTakerDistance);
+
+  assertEqual(home[4].x, config.initialBallPosition.x + 45);
+  assertEqual(home[4].y, config.aiCenterY + 20);
+  assertTrue(MathLib.computeDistance(home[3], config.initialBallPosition) <
+    MathLib.computeDistance(home[4], config.initialBallPosition));
+  assertTrue(MathLib.computeDistance(away[3], config.initialBallPosition) <
+    MathLib.computeDistance(away[4], config.initialBallPosition));
+});
+
+test("Formation identifies the first striker as kickoff taker for every team size", function() {
+  var formation = new Formation(makeConfig());
+  var expected = [0, 1, 2, 3, 3];
+
+  for (var size = 1; size <= 5; size++) {
+    assertEqual(formation.kickoffTakerIndex(size), expected[size - 1]);
+  }
+});
+
 test("Formation defense shifts toward own goal and attack shifts toward opponent goal", function() {
   var config = makeConfig({ homeTeamSize: 3, awayTeamSize: 3 });
   var formation = new Formation(config);

@@ -54,6 +54,7 @@ var Configuration = function () {
   this.aiKeeperChallengeRadius = 70;
   this.aiTargetDeadband = 2;
   this.kickoffSide = "home";
+  this.kickoffTakerDistance = 8;
   this.outOfPlayRestartsEnabled = true;
   this.outOfPlayRestartDelaySeconds = 0.35;
   this.opponentRestartDelaySeconds = 1;

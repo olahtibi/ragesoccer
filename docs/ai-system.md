@@ -158,6 +158,10 @@ Formation positions are mirrored by side:
 - Home attacks toward the top goal.
 - Away attacks toward the bottom goal.
 
+The first striker is the dedicated kickoff taker. The taker stands centrally
+at `kickoffTakerDistance` behind the ball while any additional striker remains
+in a supporting lane.
+
 For an attacking corner, the goalkeeper and one designated defender hold their
 normal attacking positions while the remaining outfield players spread across
 the configured cross depth. After the kick, every AI receiver pursues the

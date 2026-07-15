@@ -5,9 +5,13 @@ var KickoffRestart = function(config) {
 
 KickoffRestart.prototype.createScene = function(context, request) {
   var teams = [];
+  var readyPlayer = null;
   for (var i = 0; i < context.teams.length; i++) {
     var team = context.teams[i];
     var state = this.teamAiState(team, request);
+    if (team.side == request.awardedTo) {
+      readyPlayer = team.players[this.formation.kickoffTakerIndex(team.players.length)];
+    }
     teams.push({
       side: team.side,
       players: team.players,
@@ -16,7 +20,8 @@ KickoffRestart.prototype.createScene = function(context, request) {
   }
   return {
     ballPosition: this.config.initialBallPosition,
-    teams: teams
+    teams: teams,
+    readyPlayer: readyPlayer
   };
 };
 
