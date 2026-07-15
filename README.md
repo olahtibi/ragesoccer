@@ -20,3 +20,7 @@ Structure:
 - Tests: `tests/`
 - Images: `assets/images/`
 - Styles: `styles/`
+
+Documentation:
+- [Architecture](docs/architecture.md)
+- [AI system](docs/ai-system.md)

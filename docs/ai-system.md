@@ -1,25 +1,32 @@
 # AI System
 
-This document describes the current AI architecture and the steps for extending it. The game uses plain browser-loaded JavaScript, so all AI constructors and helpers are global and must be loaded in dependency order from `game.html` and `tests/helpers.js`.
+This document describes the AI layers and the steps for extending them. Read
+[Architecture](architecture.md) first for ownership rules, match flow, restart
+strategies, and frame ordering. The game uses plain browser-loaded JavaScript,
+so constructors and helpers must be loaded in dependency order from `game.html`
+and `tests/helpers.js`.
 
 ## Runtime Flow
 
-AI updates are driven once per frame from `src/core/game.js` when no cutscene is active:
+AI updates are driven from `Game.update()` whenever `MatchFlow` selects full
+simulation:
 
-1. `renderNewFrame()` calls `window.game.updateAi()`.
-2. `Game.updateAi()` delegates to `Stadium.updateAi()`.
-3. `Stadium.updateAi()` updates each `Team`.
-4. `Team.updateAi()` delegates to `TeamAi.update()`.
-5. `TeamAi` chooses a team state, assigns one command per player, then calls `IndividualAi.update(context)`.
-6. `IndividualAi` dispatches to the active command object.
+1. `Game.updateAi()` asks `HumanController` to select the controlled player.
+2. `Game` updates each explicitly constructed `TeamAi` with restart context and
+   movement permission.
+3. `TeamAi` chooses a team state, assigns one command per player, and calls
+   `IndividualAi.update(context)`.
+4. `IndividualAi` dispatches to the active command object.
+5. `HumanController` applies human velocity after AI has made its assignments.
+6. Physics advances the world.
 
-The frame then applies human input and physics. This order matters: team AI selects the controlled home player before input code writes human velocity.
+This order matters: team AI marks the selected home player as `inactive` and
+zeros AI velocity before human control applies the final velocity.
 
-If `Game.cutscene.isActive()` is true, `renderNewFrame()` skips team AI and
-human input. `src/core/cutscene.js` owns player movement from explicit target
-positions, locks the ball at the restart position, and lets physics animate
-player movement while skipping ball contact and ball movement. The cutscene
-module does not depend on AI commands or formation semantics.
+During restart positioning, `MatchFlow` selects player-only simulation. The
+cutscene moves players toward explicit targets and locks the ball while AI,
+human input, and ball physics remain inactive. The restart strategy creates the
+scene; the cutscene does not understand formation or restart semantics.
 
 ## Team AI
 
@@ -27,14 +34,14 @@ module does not depend on AI commands or formation semantics.
 
 Team state is one of:
 
-- `kickoffUs`: home/human team has kickoff.
-- `kickoffOpponent`: away/opponent team has kickoff.
+- `kickoffUs`: this team has kickoff.
+- `kickoffOpponent`: the opposing team has kickoff.
 - `defense`: ball is in the team's own half.
 - `attack`: ball is in the opponent half.
 
-Kickoff states are initial `TeamAi` states derived from `config.kickoffSide`.
-They are kept until `Stadium.updateKickoff()` sees the ball moving faster than
-`config.minVelocity`; ball position never transitions a team back into kickoff.
+Restart states are assigned by the active restart strategy and are relative to
+each team. They are preserved while `MatchFlow` reports an active restart. When
+the restart completes, `TeamAi` returns to normal attack/defense transitions.
 Formation targets come from `src/ai/formation.js`:
 
 ```js
@@ -47,10 +54,11 @@ For each player, `TeamAi.update()` assigns a command:
 - Away team selected ball attacker: `attackBall`
 - Other players: `moveToPosition`
 
-During kickoff, the non-kicking team is assigned `inactive` for every player
-until kickoff is complete.
+During a restart, `Game` passes the strategy's movement permission into each
+`TeamAi`. A team that may not move is assigned `inactive` for every player.
 
-The home selected player becomes `team.humanPlayer`. If keyboard or touch input is active, AI does not zero that player's velocity; input updates it later in the frame.
+`HumanController`, not `TeamAi`, selects `team.humanPlayer`. `TeamAi` always
+assigns that player `inactive`; human input writes movement later in the frame.
 
 ## Individual AI
 
