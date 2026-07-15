@@ -3,6 +3,10 @@ var Formation = function(config) {
 };
 
 Formation.prototype.positions = function(state, side, teamSize) {
+  if (state == "cornerUs") {
+    return this.cornerAttackingPositions(side, teamSize);
+  }
+
   var roles = this.rolesForSize(teamSize);
   var roleIndexes = {};
   var result = [];
@@ -15,6 +19,42 @@ Formation.prototype.positions = function(state, side, teamSize) {
   }
 
   return result;
+};
+
+Formation.prototype.cornerAttackingPositions = function(side, teamSize) {
+  var roles = this.rolesForSize(teamSize);
+  var result = this.positions("attack", side, teamSize);
+  var coverIndex = this.cornerCoverIndex(teamSize);
+  var receivers = [];
+
+  for (var i = 0; i < roles.length; i++) {
+    if (roles[i] != "goalie" && i != coverIndex) {
+      receivers.push(i);
+    }
+  }
+
+  var goalX = (this.config.goalTopTopLeft.x + this.config.goalTopTopRight.x) / 2;
+  var targetY = side == "home" ?
+    this.config.fieldTop + this.config.cornerCrossDistance :
+    this.config.fieldBottom - this.config.cornerCrossDistance;
+  var spacing = this.config.cornerReceiverSpacing || 0;
+
+  for (var j = 0; j < receivers.length; j++) {
+    result[receivers[j]] = this.clampToField(new Vector2d(
+      goalX + this.lane(j, receivers.length) * spacing,
+      targetY
+    ));
+  }
+
+  return result;
+};
+
+Formation.prototype.cornerCoverIndex = function(teamSize) {
+  var roles = this.rolesForSize(teamSize);
+  for (var i = 0; i < roles.length; i++) {
+    if (roles[i] == "defender") return i;
+  }
+  return -1;
 };
 
 Formation.prototype.rolesForSize = function(teamSize) {

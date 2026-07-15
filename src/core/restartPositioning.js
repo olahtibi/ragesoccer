@@ -1,11 +1,15 @@
 var RestartPositioning = {
-  createScene: function(config, context, request, ballPosition, takerPosition, takerIndex) {
+  createScene: function(config, context, request, ballPosition, takerPosition, takerIndex, awardedState) {
     var formation = new Formation(config);
     var teams = [];
     for (var i = 0; i < context.teams.length; i++) {
       var team = context.teams[i];
       var awarded = team.side == request.awardedTo;
-      var positions = formation.positions(awarded ? "attack" : "defense", team.side, team.players.length);
+      var positions = formation.positions(
+        awarded ? (awardedState || "attack") : "defense",
+        team.side,
+        team.players.length
+      );
       if (awarded) {
         var selectedIndex = takerIndex == null ? this.closestPlayerIndex(team.players, ballPosition) : takerIndex;
         positions[selectedIndex] = takerPosition;

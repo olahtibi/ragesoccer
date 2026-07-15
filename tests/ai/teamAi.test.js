@@ -17,6 +17,15 @@ function attackBallIndex(ai) {
   return -1;
 }
 
+function attackBallCount(ai) {
+  var snapshots = ai.debugSnapshot();
+  var count = 0;
+  for (var i = 0; i < snapshots.length; i++) {
+    if (snapshots[i].command == "attackBall") count++;
+  }
+  return count;
+}
+
 test("TeamAi kickoff states are relative to each team", function() {
   var homeKickoff = makeFixture({ homeTeamSize: 2, awayTeamSize: 2 });
   assertEqual(homeKickoff.homeTeamAi.state, "kickoffUs");
@@ -124,4 +133,51 @@ test("TeamAi can run without window.game or input globals", function() {
 
   window.game = originalGame;
   assertEqual(attackBallIndex(fixture.awayTeamAi), 0);
+});
+
+test("TeamAi sends every corner receiver after the incoming cross", function() {
+  var fixture = makeFixture({ homeTeamSize: 1, awayTeamSize: 5 });
+  fixture.awayTeamAi.setRestartState("cornerUs");
+  fixture.ball.lastTouchedBy = "away";
+  fixture.ball.position.y = fixture.config.fieldBottom - 20;
+
+  update(fixture.awayTeamAi, false, true);
+
+  assertEqual(fixture.awayTeamAi.state, "cornerUs");
+  var snapshots = fixture.awayTeamAi.debugSnapshot();
+  assertEqual(snapshots[0].command, "moveToPosition");
+  assertEqual(snapshots[1].command, "moveToPosition");
+  assertEqual(snapshots[2].command, "attackBall");
+  assertEqual(snapshots[3].command, "attackBall");
+  assertEqual(snapshots[4].command, "attackBall");
+
+  fixture.ball.position.y = fixture.config.fieldBottom - fixture.config.cornerCrossDistance;
+  update(fixture.awayTeamAi, false, true);
+
+  assertEqual(fixture.awayTeamAi.state, "attack");
+  assertEqual(attackBallCount(fixture.awayTeamAi), 1);
+});
+
+test("TeamAi uses only the corner taker before the cross is kicked", function() {
+  var fixture = makeFixture({ homeTeamSize: 1, awayTeamSize: 5 });
+  fixture.awayTeamAi.setRestartState("cornerUs");
+  fixture.ball.position.x = fixture.awayPlayers[4].position.x;
+  fixture.ball.position.y = fixture.awayPlayers[4].position.y;
+
+  update(fixture.awayTeamAi, true, true);
+
+  assertEqual(attackBallCount(fixture.awayTeamAi), 1);
+  assertEqual(attackBallIndex(fixture.awayTeamAi), 4);
+});
+
+test("TeamAi releases the corner shape when an opponent intercepts", function() {
+  var fixture = makeFixture({ homeTeamSize: 1, awayTeamSize: 4 });
+  fixture.awayTeamAi.setRestartState("cornerUs");
+  fixture.ball.position.y = fixture.config.fieldBottom - 20;
+  fixture.ball.lastTouchedBy = "home";
+
+  update(fixture.awayTeamAi, false, true);
+
+  assertEqual(fixture.awayTeamAi.state, "attack");
+  assertTrue(attackBallIndex(fixture.awayTeamAi) >= 0);
 });

@@ -154,6 +154,11 @@ Formation positions are mirrored by side:
 - Home attacks toward the top goal.
 - Away attacks toward the bottom goal.
 
+For an attacking corner, the goalkeeper and one designated defender hold their
+normal attacking positions while the remaining outfield players spread across
+the configured cross depth. After the kick, every AI receiver pursues the
+incoming ball until it reaches that depth or the defending team touches it.
+
 `TeamAi` uses formation targets for every player not assigned to human control or direct ball attack.
 
 ## Math Conventions

@@ -19,9 +19,13 @@ TeamAi.prototype.update = function(context) {
   }
 
   context = context || {};
-  this.state = this.nextState(context.restartActive == true);
+  var restartActive = context.restartActive == true;
+  this.state = this.nextState(restartActive);
   var targets = this.formation.positions(this.state, this.team.side, this.team.players.length);
-  var closest = this.team.side == "home" ? this.team.humanPlayer : this.selectedBallAttacker();
+  var chasingCornerCross = this.state == "cornerUs" && !restartActive;
+  var closest = chasingCornerCross ?
+    (this.team.side == "home" ? this.team.humanPlayer : null) :
+    (this.team.side == "home" ? this.team.humanPlayer : this.selectedBallAttacker());
   var commandContext = {
     ball: this.ball,
     team: this.team,
@@ -39,6 +43,8 @@ TeamAi.prototype.update = function(context) {
       ai.player.velocity.x = 0;
       ai.player.velocity.y = 0;
       ai.setCommand("inactive", null);
+    } else if (chasingCornerCross && this.isCornerReceiver(i)) {
+      ai.setCommand("attackBall", null);
     } else if (this.team.side != "home" && ai.player === closest) {
       ai.setCommand("attackBall", null);
     } else {
@@ -46,6 +52,12 @@ TeamAi.prototype.update = function(context) {
     }
     ai.update(commandContext);
   }
+};
+
+TeamAi.prototype.isCornerReceiver = function(playerIndex) {
+  var roles = this.formation.rolesForSize(this.team.players.length);
+  return roles[playerIndex] != "goalie" &&
+    playerIndex != this.formation.cornerCoverIndex(this.team.players.length);
 };
 
 TeamAi.prototype.setRestartState = function(state) {
@@ -62,6 +74,10 @@ TeamAi.prototype.nextState = function(restartActive) {
     return this.state;
   }
 
+  if (this.state == "cornerUs" && !this.cornerAttackResolved()) {
+    return this.state;
+  }
+
   if (this.isBallInOwnHalf()) {
     return "defense";
   }
@@ -74,6 +90,17 @@ TeamAi.prototype.nextState = function(restartActive) {
     return this.state;
   }
   return "attack";
+};
+
+TeamAi.prototype.cornerAttackResolved = function() {
+  if (this.ball.lastTouchedBy != null && this.ball.lastTouchedBy != this.team.side) {
+    return true;
+  }
+
+  if (this.team.side == "home") {
+    return this.ball.position.y >= this.config.fieldTop + this.config.cornerCrossDistance;
+  }
+  return this.ball.position.y <= this.config.fieldBottom - this.config.cornerCrossDistance;
 };
 
 TeamAi.prototype.isBallInOwnHalf = function() {

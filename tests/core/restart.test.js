@@ -147,6 +147,31 @@ test("Corner restart gives the awarded AI team a central crossing target", funct
   assertEqual(fixture.game.restartController.attackTarget(fixture.homeTeam), null);
 });
 
+test("Corner restart never selects the goalkeeper or cover defender as taker", function() {
+  var fixture = makeFixture({ homeTeamSize: 4, awayTeamSize: 4 });
+  var corner = new Vector2d(fixture.config.fieldLeft, fixture.config.fieldTop);
+  fixture.homePlayers[0].position.x = corner.x;
+  fixture.homePlayers[0].position.y = corner.y;
+  fixture.homePlayers[1].position.x = corner.x + 1;
+  fixture.homePlayers[1].position.y = corner.y + 1;
+  fixture.homePlayers[2].position.x = corner.x + 40;
+  fixture.homePlayers[2].position.y = corner.y + 40;
+  fixture.homePlayers[3].position.x = corner.x + 80;
+  fixture.homePlayers[3].position.y = corner.y + 80;
+
+  fixture.game.beginRestart("corner", "home", {
+    boundary: "top",
+    position: corner
+  });
+
+  var scene = fixture.game.cutscene;
+  var homeScene = scene.teams[0];
+  assertTrue(MathLib.computeDistance(homeScene.positions[2], scene.ballPosition) < 20);
+  assertTrue(MathLib.computeDistance(homeScene.positions[0], scene.ballPosition) > 20);
+  assertTrue(MathLib.computeDistance(homeScene.positions[1], scene.ballPosition) > 20);
+  assertEqual(homeScene.positions[3].y, fixture.config.fieldTop + fixture.config.cornerCrossDistance);
+});
+
 test("Goal kick always positions the goalkeeper as the only nearby taker", function() {
   var fixture = makeFixture({ homeTeamSize: 3, awayTeamSize: 3 });
   var ballPosition = new Vector2d(

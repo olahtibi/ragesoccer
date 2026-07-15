@@ -61,6 +61,7 @@ var Configuration = function () {
   this.goalKickDistance = 25;
   this.goalKickTakerDistance = 20;
   this.cornerCrossDistance = 65;
+  this.cornerReceiverSpacing = 54;
   this.throwInSpeed = 180;
   this.throwInLoft = 90;
   this.centerCircleRadiusX = 62;

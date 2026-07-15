@@ -83,3 +83,36 @@ test("Formation keeps goalie near own goal when present", function() {
   assertTrue(home[0].y > config.aiCenterY);
   assertTrue(away[0].y < config.aiCenterY);
 });
+
+test("Formation sends corner receivers up while the goalie and one defender stay back", function() {
+  var config = makeConfig({ homeTeamSize: 5, awayTeamSize: 5 });
+  var formation = new Formation(config);
+  var homeAttack = formation.positions("attack", "home", 5);
+  var awayAttack = formation.positions("attack", "away", 5);
+  var homeCorner = formation.positions("cornerUs", "home", 5);
+  var awayCorner = formation.positions("cornerUs", "away", 5);
+
+  assertEqual(homeCorner[0].y, homeAttack[0].y);
+  assertEqual(homeCorner[1].y, homeAttack[1].y);
+  assertEqual(awayCorner[0].y, awayAttack[0].y);
+  assertEqual(awayCorner[1].y, awayAttack[1].y);
+
+  for (var i = 2; i < 5; i++) {
+    assertEqual(homeCorner[i].y, config.fieldTop + config.cornerCrossDistance);
+    assertEqual(awayCorner[i].y, config.fieldBottom - config.cornerCrossDistance);
+    assertEqual(homeCorner[i].x, awayCorner[i].x);
+  }
+
+  assertEqual(homeCorner[3].x - homeCorner[2].x, config.cornerReceiverSpacing);
+  assertEqual(homeCorner[4].x - homeCorner[3].x, config.cornerReceiverSpacing);
+});
+
+test("Formation supports a corner attack when no defender role exists", function() {
+  var config = makeConfig({ homeTeamSize: 2 });
+  var formation = new Formation(config);
+  var positions = formation.positions("cornerUs", "home", 2);
+
+  assertEqual(positions.length, 2);
+  assertEqual(formation.cornerCoverIndex(2), -1);
+  assertEqual(positions[1].y, config.fieldTop + config.cornerCrossDistance);
+});
