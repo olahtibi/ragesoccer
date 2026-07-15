@@ -100,21 +100,24 @@ Formation.prototype.positionForRole = function(state, side, role, index, count) 
   var centerX = this.config.initialBallPosition.x;
   var centerY = this.config.aiCenterY;
   var attackDir = side == "home" ? -1 : 1;
-  var progress = role == "defender" ? -150 : (role == "midfielder" ? 0 : 130);
+  var progress = role == "defender" ? this.config.formationDefenderProgress :
+    (role == "midfielder" ? this.config.formationMidfielderProgress :
+      this.config.formationStrikerProgress);
   var kickingSide = this.kickoffSideForState(state, side);
   var kickoffTaker = kickingSide != null && side == kickingSide &&
     role == "striker" && index == 0;
 
   if (state == "attack") {
-    progress += 55;
+    progress += this.config.formationStateShift;
   } else if (state == "defense") {
-    progress -= 55;
+    progress -= role == "defender" ? this.config.formationDefenderDefenseShift :
+      this.config.formationStateShift;
   } else if (kickingSide != null && role == "striker") {
     progress = side == kickingSide ?
       (kickoffTaker ? -this.config.kickoffTakerDistance : -20) :
-      this.nonKickingKickoffProgress();
+      this.nonKickingStrikerProgress(index, count);
   } else if (kickingSide != null && role == "midfielder") {
-    progress = this.nonKickingKickoffProgress();
+    progress = this.config.kickoffMidfielderProgress;
   }
 
   var x = kickoffTaker ? centerX : centerX + this.lane(index, count) * 90;
@@ -132,10 +135,13 @@ Formation.prototype.kickoffSideForState = function(state, side) {
   return null;
 };
 
-Formation.prototype.nonKickingKickoffProgress = function() {
+Formation.prototype.nonKickingStrikerProgress = function(index, count) {
+  var radiusX = this.config.centerCircleRadiusX || 1;
   var radiusY = this.config.centerCircleRadiusY || 0;
-  var clearance = this.config.playerRadius || 0;
-  return -(radiusY + clearance + 8);
+  var xOffset = this.lane(index, count) * 90;
+  var normalizedX = Math.min(1, Math.abs(xOffset) / radiusX);
+  var boundaryY = radiusY * Math.sqrt(Math.max(0, 1 - normalizedX * normalizedX));
+  return -(boundaryY + (this.config.playerRadius || 0) + 1);
 };
 
 Formation.prototype.goaliePosition = function(side) {

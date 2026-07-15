@@ -134,8 +134,57 @@ test("Formation keeps 11-player kickoff midfielders outside the center ellipse",
     assertTrue(outsideCenterEllipse(config, kicking[i]));
     assertTrue(outsideCenterEllipse(config, defending[i]));
   }
+  assertTrue(outsideCenterEllipse(config, defending[9]));
+  assertTrue(outsideCenterEllipse(config, defending[10]));
   assertEqual(kicking[9].x, config.initialBallPosition.x);
   assertEqual(kicking[9].y, config.aiCenterY + config.kickoffTakerDistance);
+});
+
+test("Formation gives every 11-player kickoff opponent a unique position", function() {
+  var config = makeConfig({ homeTeamSize: 11, awayTeamSize: 11 });
+  var formation = new Formation(config);
+  var home = formation.positions("kickoffOpponent", "home", 11);
+  var away = formation.positions("kickoffOpponent", "away", 11);
+
+  for (var i = 0; i < 11; i++) {
+    for (var j = i + 1; j < 11; j++) {
+      assertTrue(MathLib.computeDistance(home[i], home[j]) > config.playerRadius * 2);
+      assertTrue(MathLib.computeDistance(away[i], away[j]) > config.playerRadius * 2);
+    }
+  }
+});
+
+test("Formation separates kickoff striker and midfield lines", function() {
+  var config = makeConfig({ homeTeamSize: 11, awayTeamSize: 11 });
+  var formation = new Formation(config);
+  var homeKicking = formation.positions("kickoffUs", "home", 11);
+  var homeDefending = formation.positions("kickoffOpponent", "home", 11);
+  var awayKicking = formation.positions("kickoffUs", "away", 11);
+  var awayDefending = formation.positions("kickoffOpponent", "away", 11);
+
+  assertTrue(homeKicking[5].y - homeKicking[10].y >= 75);
+  assertTrue(homeDefending[5].y - homeDefending[9].y >= 60);
+  assertTrue(awayKicking[10].y - awayKicking[5].y >= 75);
+  assertTrue(awayDefending[9].y - awayDefending[5].y >= 60);
+});
+
+test("Formation keeps kickoff and defensive lines vertically sparse", function() {
+  var config = makeConfig({ homeTeamSize: 11, awayTeamSize: 11 });
+  var formation = new Formation(config);
+  var homeKickoff = formation.positions("kickoffUs", "home", 11);
+  var awayKickoff = formation.positions("kickoffUs", "away", 11);
+  var homeDefense = formation.positions("defense", "home", 11);
+  var awayDefense = formation.positions("defense", "away", 11);
+
+  assertTrue(homeKickoff[1].y - homeKickoff[5].y >= 100);
+  assertTrue(awayKickoff[5].y - awayKickoff[1].y >= 100);
+  assertTrue(homeDefense[1].y - homeDefense[5].y >= 160);
+  assertTrue(homeDefense[5].y - homeDefense[9].y >= 120);
+  assertTrue(awayDefense[5].y - awayDefense[1].y >= 160);
+  assertTrue(awayDefense[9].y - awayDefense[5].y >= 120);
+
+  assertTrue(config.goalieDistance + homeDefense[0].y - homeDefense[1].y >= 60);
+  assertTrue(config.goalieDistance + awayDefense[1].y - awayDefense[0].y >= 60);
 });
 
 test("Formation defense shifts toward own goal and attack shifts toward opponent goal", function() {

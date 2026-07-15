@@ -158,6 +158,11 @@ Formation positions are mirrored by side:
 - Home attacks toward the top goal.
 - Away attacks toward the bottom goal.
 
+Formation depth is intentionally sparse: defenders use a deeper base progress
+than midfielders, and their defensive-state shift is limited so the line stays
+clear of the goalkeeper. Kickoff midfielders use a separate depth halfway
+between the defensive and striker lines.
+
 The first striker is the dedicated kickoff taker. The taker stands centrally
 at `kickoffTakerDistance` behind the ball while any additional striker remains
 in a supporting lane.
