@@ -1,6 +1,7 @@
 var KickoffRestart = function(config) {
   this.config = config;
   this.formation = new Formation(config);
+  this.opponentAutoResumeAfterPositioning = true;
 };
 
 KickoffRestart.prototype.createScene = function(context, request) {

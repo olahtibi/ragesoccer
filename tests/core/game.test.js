@@ -112,10 +112,10 @@ test("An away goal updates the score and starts a home kickoff", function() {
   assertEqual(fixture.awayTeamAi.state, "kickoffOpponent");
 });
 
-test("A goal kickoff waits for fresh input after positioning", function() {
+test("A home goal kickoff waits for fresh input after positioning", function() {
   var fixture = makeFixture({ homeTeamSize: 1, awayTeamSize: 1 });
   fixture.ball.position.x = 336;
-  fixture.ball.position.y = 100;
+  fixture.ball.position.y = 758;
 
   fixture.game.updateScore();
   fixture.game.cutscene.clear(fixture.game);

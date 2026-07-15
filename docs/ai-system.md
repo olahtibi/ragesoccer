@@ -27,8 +27,10 @@ During restart positioning, `MatchFlow` selects player-only simulation. The
 cutscene moves players toward explicit targets and locks the ball while AI,
 human input, and ball physics remain inactive. Corners, goal kicks, and
 throw-ins become available when their taker arrives; unfinished players keep
-moving until the restart is taken. AI-owned restarts resume automatically at
-that point after `opponentRestartDelaySeconds` (one second by default). The
+moving until the restart is taken. AI-owned corners, goal kicks, and throw-ins
+resume automatically when the taker is ready after
+`opponentRestartDelaySeconds` (one second by default). AI-owned kickoffs use
+the same delay, but start counting only after every player is positioned. The
 restart strategy creates the scene; the cutscene does not
 understand formation or restart semantics.
 

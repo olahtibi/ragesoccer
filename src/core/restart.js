@@ -133,8 +133,9 @@ RestartController.prototype.simulationMode = function() {
 };
 
 RestartController.prototype.isDelayedOpponentRestart = function() {
-  return this.session != null && this.session.strategy.allowEarlyResume == true &&
-    this.session.request.awardedTo != "home";
+  return this.session != null && this.session.request.awardedTo != "home" &&
+    (this.session.strategy.allowEarlyResume == true ||
+      this.session.strategy.opponentAutoResumeAfterPositioning == true);
 };
 
 RestartController.prototype.canTeamMove = function(team) {
@@ -173,6 +174,11 @@ RestartController.prototype.updateAfterPhysics = function(context) {
   if (this.session == null) return;
   if (this.session.phase == "positioning") {
     this.cutscene.updateAfterPhysics(context.game);
+    if (this.session.phase == "waitingForInput" &&
+        this.session.strategy.opponentAutoResumeAfterPositioning == true) {
+      this.session.opponentReadyElapsed = 0;
+      return;
+    }
     this.resumeReadyRestart(context);
     return;
   }
@@ -189,10 +195,16 @@ RestartController.prototype.updateAfterPhysics = function(context) {
 };
 
 RestartController.prototype.resumeReadyRestart = function(context) {
-  if (this.session == null || this.session.strategy.allowEarlyResume != true) {
-    return false;
-  }
+  if (this.session == null) return false;
   if (this.session.request.awardedTo != "home") {
+    var canAutoResume = this.session.strategy.allowEarlyResume == true ||
+      this.session.strategy.opponentAutoResumeAfterPositioning == true;
+    if (!canAutoResume) return false;
+    if (this.session.strategy.opponentAutoResumeAfterPositioning == true &&
+        this.session.phase == "positioning") {
+      this.session.opponentReadyElapsed = 0;
+      return false;
+    }
     if (!this.canResume()) {
       this.session.opponentReadyElapsed = 0;
       return false;
@@ -202,6 +214,7 @@ RestartController.prototype.resumeReadyRestart = function(context) {
     if (this.session.opponentReadyElapsed < delay) return false;
     return this.resume(context, null);
   }
+  if (this.session.strategy.allowEarlyResume != true) return false;
   if (!this.canResume()) return false;
   if (context.humanController.hasMovementInput()) {
     return this.resume(context, context.humanController.inputDirection());

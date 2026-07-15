@@ -89,13 +89,21 @@ test("Touch input stores a world target and controls the selected player", funct
   assertTrue(fixture.homePlayers[1].velocity.y > 0);
 });
 
-test("Input starts an opponent kickoff without moving the frozen home team", function() {
+test("Opponent kickoff ignores input and starts after its configured delay", function() {
   var setupResult = setup({ kickoffSide: "away" });
 
   setupResult.input.handleKey({ keyCode: 39, type: "keydown" });
 
-  assertEqual(setupResult.game.restartController.phase(), "inProgress");
+  assertEqual(setupResult.game.restartController.phase(), "waitingForInput");
   assertEqual(setupResult.fixture.playerHome.velocity.x, 0);
+
+  setupResult.fixture.physics.lastDt = 0.5;
+  setupResult.game.restartController.updateAfterPhysics(setupResult.game.context());
+  assertEqual(setupResult.game.restartController.phase(), "waitingForInput");
+
+  setupResult.fixture.physics.lastDt = 0.5;
+  setupResult.game.restartController.updateAfterPhysics(setupResult.game.context());
+  assertEqual(setupResult.game.restartController.phase(), "inProgress");
 });
 
 test("Keyboard direction executes a human throw-in and clamps it inward", function() {

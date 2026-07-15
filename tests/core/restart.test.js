@@ -42,7 +42,7 @@ test("Initial kickoff waits for input without playing a cutscene", function() {
 
 test("Restart positioning progresses through waiting and in-progress phases", function() {
   var fixture = makeFixture({ homeTeamSize: 1, awayTeamSize: 1 });
-  fixture.game.beginRestart("kickoff", "away");
+  fixture.game.beginRestart("kickoff", "home");
 
   assertEqual(fixture.game.restartController.phase(), "positioning");
   assertEqual(fixture.game.matchFlow.simulationMode(), "playersOnly");
@@ -167,6 +167,31 @@ test("Opponent restart delay continues after every player finishes positioning",
   assertTrue(fixture.ball.velocity.z > 0);
 });
 
+test("Away kickoff delay starts only after every player finishes positioning", function() {
+  var fixture = makeFixture({ homeTeamSize: 4, awayTeamSize: 4 });
+  fixture.game.beginRestart("kickoff", "away");
+  var cutscene = fixture.game.cutscene;
+  var takerTarget = cutsceneTargetForPlayer(cutscene, cutscene.readyPlayer);
+  cutscene.readyPlayer.position.x = takerTarget.x;
+  cutscene.readyPlayer.position.y = takerTarget.y;
+
+  fixture.game.physics.lastDt = 1;
+  fixture.game.restartController.updateAfterPhysics(fixture.game.context());
+  assertEqual(fixture.game.restartController.phase(), "positioning");
+  assertEqual(fixture.game.resumeFromInput(new Vector2d(0, -1)), false);
+
+  cutscene.clear(fixture.game);
+  assertEqual(fixture.game.restartController.phase(), "waitingForInput");
+
+  fixture.game.physics.lastDt = 0.6;
+  fixture.game.restartController.updateAfterPhysics(fixture.game.context());
+  assertEqual(fixture.game.restartController.phase(), "waitingForInput");
+
+  fixture.game.physics.lastDt = 0.4;
+  fixture.game.restartController.updateAfterPhysics(fixture.game.context());
+  assertEqual(fixture.game.restartController.phase(), "inProgress");
+});
+
 test("Early away goal kick keeps the goalkeeper as designated taker", function() {
   var fixture = makeFixture({ homeTeamSize: 4, awayTeamSize: 4 });
   fixture.config.opponentRestartDelaySeconds = 0;
@@ -227,7 +252,8 @@ test("Held human input starts an early restart when the taker becomes ready", fu
 
 test("Kickoff assigns relative states and movement permission", function() {
   var fixture = makeFixture({ kickoffSide: "away" });
-  fixture.game.resumeFromInput();
+  fixture.config.opponentRestartDelaySeconds = 0;
+  fixture.game.restartController.updateAfterPhysics(fixture.game.context());
 
   assertEqual(fixture.homeTeamAi.state, "kickoffOpponent");
   assertEqual(fixture.awayTeamAi.state, "kickoffUs");
