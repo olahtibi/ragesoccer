@@ -127,6 +127,12 @@ test("attackBall keeps shoot commitment without relaxing entry accuracy", functi
   fixture.playerAway.position.y = fixture.ball.position.y - Math.cos(betweenTolerances) * 20;
   committedAi.update({ ball: fixture.ball });
   assertEqual(committedAi.debugSnapshot().state, "shoot");
+  assertTrue(committedAi.debugSnapshot().correctingAim);
+  assertNear(
+    MathLib.computeDistance(committedAi.tPos, fixture.ball.position),
+    fixture.config.aiAttackDetourRadius,
+    0.0001
+  );
 
   var freshPlayer = new Player(
     fixture.config.imgPlayerAway,
@@ -140,6 +146,21 @@ test("attackBall keeps shoot commitment without relaxing entry accuracy", functi
   freshAi.setCommand("attackBall", null);
   freshAi.update({ ball: fixture.ball });
   assertTrue(freshAi.debugSnapshot().state != "shoot");
+
+  var correctionTolerance = fixture.config.aiAttackAimCorrectionToleranceRadians;
+  var stillCorrecting = 0.12;
+  fixture.playerAway.position.x = fixture.ball.position.x + Math.sin(stillCorrecting) * 20;
+  fixture.playerAway.position.y = fixture.ball.position.y - Math.cos(stillCorrecting) * 20;
+  committedAi.update({ ball: fixture.ball });
+  assertEqual(committedAi.debugSnapshot().state, "shoot");
+  assertTrue(committedAi.debugSnapshot().correctingAim);
+
+  fixture.playerAway.position.x = fixture.ball.position.x + Math.sin(correctionTolerance / 2) * 20;
+  fixture.playerAway.position.y = fixture.ball.position.y - Math.cos(correctionTolerance / 2) * 20;
+  committedAi.update({ ball: fixture.ball });
+  assertEqual(committedAi.debugSnapshot().state, "shoot");
+  assertTrue(!committedAi.debugSnapshot().correctingAim);
+  assertTrue(committedAi.tPos.y > fixture.ball.position.y);
 
   var outsideReleaseTolerance = 0.35;
   fixture.playerAway.position.x = fixture.ball.position.x + Math.sin(outsideReleaseTolerance) * 20;
