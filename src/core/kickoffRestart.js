@@ -9,13 +9,24 @@ KickoffRestart.prototype.createScene = function(context, request) {
   for (var i = 0; i < context.teams.length; i++) {
     var team = context.teams[i];
     var state = this.teamAiState(team, request);
+    var takerIndex = -1;
     if (team.side == request.awardedTo) {
-      readyPlayer = team.players[this.formation.kickoffTakerIndex(team.players.length)];
+      takerIndex = this.formation.kickoffTakerIndex(team.players.length);
+      readyPlayer = team.players[takerIndex];
     }
+    var positions = RestartPositioning.randomizePositions(
+      this.config,
+      this.formation,
+      this.formation.positions(state, team.side, team.players.length),
+      request,
+      team.side,
+      takerIndex
+    );
+    positions = this.applyPositioningRules(positions, team.side, takerIndex);
     teams.push({
       side: team.side,
       players: team.players,
-      positions: this.formation.positions(state, team.side, team.players.length)
+      positions: positions
     });
   }
   return {
@@ -23,6 +34,35 @@ KickoffRestart.prototype.createScene = function(context, request) {
     teams: teams,
     readyPlayer: readyPlayer
   };
+};
+
+KickoffRestart.prototype.applyPositioningRules = function(positions, side, takerIndex) {
+  var result = [];
+  var centerX = this.config.initialBallPosition.x;
+  var centerY = this.config.aiCenterY;
+  var radiusX = this.config.centerCircleRadiusX + this.config.playerRadius + 1;
+  var radiusY = this.config.centerCircleRadiusY + this.config.playerRadius + 1;
+
+  for (var i = 0; i < positions.length; i++) {
+    if (i == takerIndex) {
+      result.push(positions[i]);
+      continue;
+    }
+    var target = positions[i];
+    var y = side == "home" ? Math.max(target.y, centerY + this.config.playerRadius) :
+      Math.min(target.y, centerY - this.config.playerRadius);
+    var dx = target.x - centerX;
+    var dy = y - centerY;
+    var ellipseDistance = dx * dx / (radiusX * radiusX) + dy * dy / (radiusY * radiusY);
+    if (ellipseDistance < 1) {
+      var scale = 1 / Math.sqrt(ellipseDistance || 0.0001);
+      target = new Vector2d(centerX + dx * scale, centerY + dy * scale);
+    } else {
+      target = new Vector2d(target.x, y);
+    }
+    result.push(RestartPositioning.clampToPlayingField(this.config, target));
+  }
+  return result;
 };
 
 KickoffRestart.prototype.teamAiState = function(team, request) {

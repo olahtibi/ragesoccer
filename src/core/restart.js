@@ -14,11 +14,15 @@ var RestartController = function(registry, cutscene) {
   this.registry = registry;
   this.cutscene = cutscene;
   this.session = null;
+  this.restartSequence = 0;
 };
 
 RestartController.prototype.begin = function(request, context, options) {
   var strategy = request == null ? null : this.registry.get(request.type);
   if (strategy == null) return false;
+
+  this.restartSequence++;
+  request.positioningSeed = this.restartSequence;
 
   context.humanController.clearInput();
   context.ball.heldBy = null;
@@ -42,8 +46,31 @@ RestartController.prototype.begin = function(request, context, options) {
       this.session = null;
       return false;
     }
+  } else if (options != null && options.positionImmediately == true) {
+    var immediateScene = strategy.createScene(context, request);
+    this.session.taker = immediateScene.readyPlayer || null;
+    this.session.positioningTeams = immediateScene.teams;
+    this.applySceneImmediately(context, immediateScene);
   }
   return true;
+};
+
+RestartController.prototype.applySceneImmediately = function(context, scene) {
+  context.ball.position.x = scene.ballPosition.x;
+  context.ball.position.y = scene.ballPosition.y;
+  context.ball.position.z = scene.ballPosition.z || 0;
+  context.ball.velocity.x = 0;
+  context.ball.velocity.y = 0;
+  context.ball.velocity.z = 0;
+  for (var t = 0; t < scene.teams.length; t++) {
+    var sceneTeam = scene.teams[t];
+    for (var i = 0; i < sceneTeam.players.length; i++) {
+      sceneTeam.players[i].position.x = sceneTeam.positions[i].x;
+      sceneTeam.players[i].position.y = sceneTeam.positions[i].y;
+      sceneTeam.players[i].velocity.x = 0;
+      sceneTeam.players[i].velocity.y = 0;
+    }
+  }
 };
 
 RestartController.prototype.finishPositioning = function(context) {

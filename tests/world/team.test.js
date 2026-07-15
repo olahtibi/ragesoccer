@@ -2,6 +2,7 @@ var testlib = require("../testlib");
 var makeFixture = require("../helpers").makeFixture;
 
 var test = testlib.test;
+var assertTrue = testlib.assertTrue;
 var assertEqual = testlib.assertEqual;
 
 test("Team owns players and score without constructing AI", function() {
@@ -20,7 +21,8 @@ test("Team creates relative home kickoff positions", function() {
   var away = formation.positions("kickoffOpponent", "away", 3);
 
   assertEqual(fixture.homePlayers[2].position.y, home[2].y);
-  assertEqual(fixture.awayPlayers[2].position.y, away[2].y);
+  assertTrue(Math.abs(fixture.awayPlayers[2].position.y - away[2].y) <=
+    fixture.config.restartPositionVariationY);
 });
 
 test("Team creates relative away kickoff positions", function() {
@@ -29,7 +31,8 @@ test("Team creates relative away kickoff positions", function() {
   var home = formation.positions("kickoffOpponent", "home", 3);
   var away = formation.positions("kickoffUs", "away", 3);
 
-  assertEqual(fixture.homePlayers[2].position.y, home[2].y);
+  assertTrue(Math.abs(fixture.homePlayers[2].position.y - home[2].y) <=
+    fixture.config.restartPositionVariationY);
   assertEqual(fixture.awayPlayers[2].position.y, away[2].y);
 });
 

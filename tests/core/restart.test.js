@@ -334,7 +334,10 @@ test("Corner restart never selects the goalkeeper or cover defender as taker", f
   assertTrue(MathLib.computeDistance(homeScene.positions[2], scene.ballPosition) < 20);
   assertTrue(MathLib.computeDistance(homeScene.positions[0], scene.ballPosition) > 20);
   assertTrue(MathLib.computeDistance(homeScene.positions[1], scene.ballPosition) > 20);
-  assertEqual(homeScene.positions[3].y, fixture.config.fieldTop + fixture.config.cornerCrossDistance);
+  assertTrue(Math.abs(
+    homeScene.positions[3].y -
+      (fixture.config.fieldTop + fixture.config.cornerCrossDistance)
+  ) <= fixture.config.restartPositionVariationY);
 });
 
 test("Goal kick always positions the goalkeeper as the only nearby taker", function() {
@@ -387,6 +390,84 @@ test("Kickoff scene exposes the dedicated first striker as taker", function() {
   var awayFixture = makeFixture({ homeTeamSize: 11, awayTeamSize: 11 });
   awayFixture.game.beginRestart("kickoff", "away");
   assertTrue(awayFixture.game.cutscene.readyPlayer === awayFixture.awayPlayers[9]);
+});
+
+test("Kickoff slightly varies non-takers while preserving legal positions", function() {
+  var fixture = makeFixture({ homeTeamSize: 11, awayTeamSize: 11 });
+  var strategy = new KickoffRestart(fixture.config);
+  var request = { awardedTo: "home", positioningSeed: 7 };
+  var scene = strategy.createScene(fixture.game.context(), request);
+  var formation = new Formation(fixture.config);
+  var takerIndex = formation.kickoffTakerIndex(11);
+  var exactHome = formation.positions("kickoffUs", "home", 11);
+  var sawVariation = false;
+
+  for (var teamIndex = 0; teamIndex < scene.teams.length; teamIndex++) {
+    var sceneTeam = scene.teams[teamIndex];
+    for (var i = 0; i < sceneTeam.positions.length; i++) {
+      var isTaker = sceneTeam.side == "home" && i == takerIndex;
+      if (isTaker) {
+        assertEqual(sceneTeam.positions[i].x, exactHome[i].x);
+        assertEqual(sceneTeam.positions[i].y, exactHome[i].y);
+        continue;
+      }
+      assertTrue(ellipseDistance(fixture.config, sceneTeam.positions[i]) >= 1);
+      if (sceneTeam.side == "home") {
+        assertTrue(sceneTeam.positions[i].y >=
+          fixture.config.aiCenterY + fixture.config.playerRadius);
+        if (sceneTeam.positions[i].x != exactHome[i].x ||
+            sceneTeam.positions[i].y != exactHome[i].y) {
+          sawVariation = true;
+        }
+      } else {
+        assertTrue(sceneTeam.positions[i].y <=
+          fixture.config.aiCenterY - fixture.config.playerRadius);
+      }
+    }
+  }
+  assertTrue(sawVariation);
+});
+
+test("Throw-in corner and goal-kick positioning changes with restart seed", function() {
+  var fixture = makeFixture({ homeTeamSize: 5, awayTeamSize: 5 });
+  var cases = [
+    {
+      strategy: new ThrowInRestart(fixture.config),
+      request: { awardedTo: "home", boundary: "left", position: new Vector2d(81, 400) }
+    },
+    {
+      strategy: new CornerRestart(fixture.config),
+      request: { awardedTo: "home", boundary: "top", position: new Vector2d(81, 113) }
+    },
+    {
+      strategy: new GoalKickRestart(fixture.config),
+      request: { awardedTo: "home", boundary: "bottom", position: new Vector2d(334, 753) }
+    }
+  ];
+
+  for (var caseIndex = 0; caseIndex < cases.length; caseIndex++) {
+    var entry = cases[caseIndex];
+    entry.request.positioningSeed = 20;
+    var first = entry.strategy.createScene(fixture.game.context(), entry.request);
+    entry.request.positioningSeed = 21;
+    var second = entry.strategy.createScene(fixture.game.context(), entry.request);
+    var sawVariation = false;
+
+    for (var teamIndex = 0; teamIndex < first.teams.length; teamIndex++) {
+      for (var i = 0; i < first.teams[teamIndex].positions.length; i++) {
+        var firstPlayer = first.teams[teamIndex].players[i];
+        var firstTarget = first.teams[teamIndex].positions[i];
+        var secondTarget = second.teams[teamIndex].positions[i];
+        if (firstPlayer === first.readyPlayer) {
+          assertEqual(firstTarget.x, secondTarget.x);
+          assertEqual(firstTarget.y, secondTarget.y);
+        } else if (firstTarget.x != secondTarget.x || firstTarget.y != secondTarget.y) {
+          sawVariation = true;
+        }
+      }
+    }
+    assertTrue(sawVariation);
+  }
 });
 
 test("Kickoff completes generically when its strategy condition is met", function() {

@@ -235,7 +235,7 @@ function createGame(config) {
   matchFlow.beginRestart(
     { type: "kickoff", awardedTo: config.kickoffSide },
     game.context(),
-    { skipPositioning: true }
+    { skipPositioning: true, positionImmediately: true }
   );
   return game;
 }

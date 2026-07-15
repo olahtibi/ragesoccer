@@ -32,6 +32,13 @@ that point after `opponentRestartDelaySeconds` (one second by default). The
 restart strategy creates the scene; the cutscene does not
 understand formation or restart semantics.
 
+Restart scenes add a small deterministic offset to every non-taker target.
+`RestartController` supplies an increasing seed, so successive kickoffs,
+throw-ins, corners, and goal kicks do not recreate identical lines while debug
+replays remain reproducible. Takers stay exact; kickoff targets are corrected
+back into the legal half and outside the center circle, and opponent-distance
+rules are applied after the variation.
+
 ## Team AI
 
 `src/ai/teamAi.js` owns team-level decision making.
