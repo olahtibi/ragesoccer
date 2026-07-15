@@ -1,37 +1,205 @@
 <!doctype html>
 <html>
 	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 		<title>RageSoccer Options</title>
 		<style>
+			:root {
+				color-scheme: dark;
+				font-family: Arial, Helvetica, sans-serif;
+			}
+
+			* {
+				box-sizing: border-box;
+			}
+
+			html {
+				min-height: 100%;
+			}
+
 			body {
-				font-family: Arial, sans-serif;
+				align-items: center;
+				background: #071312;
+				color: #f8fbf5;
+				display: flex;
+				justify-content: center;
 				margin: 0;
-				background: #1d2a1f;
-				color: white;
+				min-height: 100vh;
+				min-height: 100dvh;
+				overflow-x: hidden;
+				padding: clamp(16px, 4vw, 48px);
+				position: relative;
+			}
+
+			body::before,
+			body::after {
+				content: "";
+				inset: 0;
+				pointer-events: none;
+				position: fixed;
+			}
+
+			body::before {
+				background: #071312 url("assets/images/menu-background.jpg") center / cover no-repeat;
+				z-index: 0;
+			}
+
+			body::after {
+				background:
+					radial-gradient(circle at 50% 45%, rgba(8, 37, 30, 0.12), rgba(2, 10, 12, 0.58)),
+					linear-gradient(180deg, rgba(2, 10, 13, 0.12), rgba(2, 9, 10, 0.48));
+				z-index: 1;
 			}
 
 			main {
-				max-width: 360px;
-				margin: 48px auto;
-				padding: 24px;
+				backdrop-filter: blur(4px);
+				-webkit-backdrop-filter: blur(4px);
+				background: linear-gradient(145deg, rgba(7, 29, 27, 0.38), rgba(4, 17, 19, 0.48));
+				border: 1px solid rgba(214, 239, 213, 0.2);
+				border-radius: 24px;
+				box-shadow: 0 24px 70px rgba(0, 0, 0, 0.52), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+				max-width: 760px;
+				min-width: 0;
+				padding: clamp(22px, 4vw, 38px);
+				position: relative;
+				width: 100%;
+				z-index: 2;
+			}
+
+			.menu-header {
+				margin-bottom: clamp(22px, 3vw, 30px);
+				text-align: center;
+			}
+
+			.eyebrow {
+				color: #b9d98d;
+				font-size: 0.76rem;
+				font-weight: 700;
+				letter-spacing: 0.19em;
+				margin: 0 0 8px;
+				text-transform: uppercase;
+			}
+
+			h1 {
+				font-size: clamp(2.15rem, 7vw, 3.25rem);
+				letter-spacing: -0.045em;
+				line-height: 0.95;
+				margin: 0;
+				text-shadow: 0 3px 18px rgba(0, 0, 0, 0.45);
+			}
+
+			.subtitle {
+				color: #c6d3ce;
+				font-size: clamp(0.92rem, 2vw, 1.05rem);
+				line-height: 1.45;
+				margin: 12px auto 0;
+				max-width: 34rem;
+			}
+
+			.options-grid {
+				display: grid;
+				gap: 18px 20px;
+				grid-template-columns: repeat(2, minmax(0, 1fr));
+			}
+
+			.field {
+				min-width: 0;
 			}
 
 			label {
 				display: block;
-				margin: 16px 0 6px;
+				font-size: 0.86rem;
+				font-weight: 700;
+				letter-spacing: 0.02em;
+				margin: 0 0 7px;
 			}
 
 			select,
 			button {
-				box-sizing: border-box;
+				border-radius: 11px;
+				font: inherit;
 				width: 100%;
-				font-size: 18px;
-				padding: 10px;
+			}
+
+			select {
+				background: rgba(235, 245, 237, 0.09);
+				border: 1px solid rgba(226, 243, 229, 0.22);
+				color: #fff;
+				font-size: clamp(1rem, 1.8vw, 1.08rem);
+				min-height: 50px;
+				outline: none;
+				padding: 10px 12px;
+				transition: background-color 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
+			}
+
+			select:hover {
+				background: rgba(235, 245, 237, 0.13);
+				border-color: rgba(226, 243, 229, 0.36);
+			}
+
+			select:focus-visible,
+			button:focus-visible {
+				box-shadow: 0 0 0 4px rgba(255, 207, 90, 0.22);
+				outline: 2px solid #ffd05c;
+				outline-offset: 2px;
 			}
 
 			button {
-				margin-top: 24px;
+				background: linear-gradient(180deg, #a6db45, #70ad25);
+				border: 1px solid rgba(236, 255, 196, 0.72);
+				box-shadow: 0 10px 28px rgba(79, 149, 21, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.42);
+				color: #10200a;
 				cursor: pointer;
+				font-size: 1.08rem;
+				font-weight: 800;
+				grid-column: 1 / -1;
+				letter-spacing: 0.025em;
+				margin-top: 6px;
+				min-height: 54px;
+				padding: 12px 18px;
+				text-transform: uppercase;
+				transition: filter 140ms ease, transform 140ms ease, box-shadow 140ms ease;
+			}
+
+			button:hover {
+				box-shadow: 0 12px 32px rgba(79, 149, 21, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.48);
+				filter: brightness(1.08);
+				transform: translateY(-1px);
+			}
+
+			button:active {
+				box-shadow: 0 5px 16px rgba(79, 149, 21, 0.3);
+				transform: translateY(1px);
+			}
+
+			@media (max-width: 600px) {
+				body {
+					align-items: flex-start;
+					display: block;
+					padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+				}
+
+				main {
+					border-radius: 18px;
+					padding: 22px 18px;
+				}
+
+				.options-grid {
+					gap: 16px;
+					grid-template-columns: minmax(0, 1fr);
+				}
+
+				button {
+					margin-top: 4px;
+				}
+			}
+
+			@media (prefers-reduced-motion: reduce) {
+				select,
+				button {
+					transition: none;
+				}
 			}
 		</style>
 		<script>
@@ -50,9 +218,16 @@
 	</head>
 	<body>
 		<main>
-			<h1>RageSoccer</h1>
-			<label for="playerStrength">Player strength</label>
-			<select id="playerStrength">
+			<header class="menu-header">
+				<p class="eyebrow">Match setup</p>
+				<h1>RageSoccer</h1>
+				<p class="subtitle">Choose your sides, set the challenge, and take to the pitch.</p>
+			</header>
+			<form id="optionsForm" onsubmit="startGame(); return false;">
+				<div class="options-grid">
+					<div class="field">
+						<label for="playerStrength">Player strength</label>
+						<select id="playerStrength">
 				<option value="1">1 - Red Novices</option>
 				<option value="2" selected>2 - Crimson Rovers</option>
 				<option value="3">3 - Scarlet United</option>
@@ -63,10 +238,12 @@
 				<option value="8">8 - Ember County</option>
 				<option value="9">9 - Inferno FC</option>
 				<option value="10">10 - Red Titans</option>
-			</select>
+						</select>
+					</div>
 
-			<label for="opponentStrength">Opponent strength</label>
-			<select id="opponentStrength">
+					<div class="field">
+						<label for="opponentStrength">Opponent strength</label>
+						<select id="opponentStrength">
 				<option value="1">1 - Blue Novices</option>
 				<option value="2" selected>2 - Azure Rovers</option>
 				<option value="3">3 - Cobalt United</option>
@@ -77,10 +254,12 @@
 				<option value="8">8 - Sky County</option>
 				<option value="9">9 - Glacier FC</option>
 				<option value="10">10 - Blue Titans</option>
-			</select>
+						</select>
+					</div>
 
-			<label for="homeTeamSize">Player team size</label>
-			<select id="homeTeamSize">
+					<div class="field">
+						<label for="homeTeamSize">Player team size</label>
+						<select id="homeTeamSize">
 				<option value="1">1</option>
 				<option value="2">2</option>
 				<option value="3">3</option>
@@ -92,10 +271,12 @@
 				<option value="9">9</option>
 				<option value="10">10</option>
 				<option value="11" selected>11</option>
-			</select>
+						</select>
+					</div>
 
-			<label for="awayTeamSize">Opponent team size</label>
-			<select id="awayTeamSize">
+					<div class="field">
+						<label for="awayTeamSize">Opponent team size</label>
+						<select id="awayTeamSize">
 				<option value="1">1</option>
 				<option value="2">2</option>
 				<option value="3">3</option>
@@ -107,21 +288,28 @@
 				<option value="9">9</option>
 				<option value="10">10</option>
 				<option value="11" selected>11</option>
-			</select>
+						</select>
+					</div>
 
-			<label for="kickoffSide">Kickoff</label>
-			<select id="kickoffSide">
+					<div class="field">
+						<label for="kickoffSide">Kickoff</label>
+						<select id="kickoffSide">
 				<option value="home" selected>Player team</option>
 				<option value="away">Opponent team</option>
-			</select>
+						</select>
+					</div>
 
-			<label for="outOfPlayRestartsEnabled">Throw-ins, corners, and goal kicks</label>
-			<select id="outOfPlayRestartsEnabled">
+					<div class="field">
+						<label for="outOfPlayRestartsEnabled">Throw-ins, corners, and goal kicks</label>
+						<select id="outOfPlayRestartsEnabled">
 				<option value="true" selected>Enabled</option>
 				<option value="false">Disabled (reflective boundaries)</option>
-			</select>
+						</select>
+					</div>
 
-			<button type="button" onclick="startGame();">Start</button>
+					<button type="submit">Start match</button>
+				</div>
+			</form>
 		</main>
 	</body>
 </html>

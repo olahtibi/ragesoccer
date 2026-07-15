@@ -28,6 +28,12 @@ test("Options page contains strength and team-size controls", function() {
   assertTrue(html.indexOf('value="home" selected') !== -1);
   assertTrue(html.indexOf('value="away"') !== -1);
   assertTrue(html.indexOf("<style>") !== -1);
+  assertTrue(html.indexOf('name="viewport"') !== -1);
+  assertTrue(html.indexOf('assets/images/menu-background.jpg') !== -1);
+  assertTrue(html.indexOf('id="optionsForm"') !== -1);
+  assertTrue(html.indexOf('class="options-grid"') !== -1);
+  assertTrue(html.indexOf("@media (max-width: 600px)") !== -1);
+  assertTrue(html.indexOf("prefers-reduced-motion") !== -1);
   assertTrue(html.indexOf("1 - Red Novices") !== -1);
   assertTrue(html.indexOf("1 - Blue Novices") !== -1);
   assertTrue(html.indexOf("10 - Red Titans") !== -1);
