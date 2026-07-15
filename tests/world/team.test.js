@@ -32,3 +32,10 @@ test("Team creates relative away kickoff positions", function() {
   assertEqual(fixture.homePlayers[2].position.y, home[2].y);
   assertEqual(fixture.awayPlayers[2].position.y, away[2].y);
 });
+
+test("Team creates all eleven players in a full formation", function() {
+  var fixture = makeFixture({ homeTeamSize: 11, awayTeamSize: 11 });
+
+  assertEqual(fixture.homePlayers.length, 11);
+  assertEqual(fixture.awayPlayers.length, 11);
+});

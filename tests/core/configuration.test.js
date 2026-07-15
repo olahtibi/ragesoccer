@@ -26,8 +26,8 @@ test("Configuration defaults strength and team-size options", function() {
   window.location.search = originalSearch;
   assertEqual(config.playerStrength, 6);
   assertEqual(config.opponentStrength, 6);
-  assertEqual(config.homeTeamSize, 4);
-  assertEqual(config.awayTeamSize, 4);
+  assertEqual(config.homeTeamSize, 11);
+  assertEqual(config.awayTeamSize, 11);
   assertEqual(config.outOfPlayRestartsEnabled, true);
   assertEqual(config.kickoffTakerDistance, 8);
   assertNear(config.outOfPlayRestartDelaySeconds, 0.35, 0.0001);
@@ -54,7 +54,7 @@ test("Configuration parses and clamps game options from query string", function(
   assertEqual(config.playerStrength, 10);
   assertEqual(config.opponentStrength, 1);
   assertEqual(config.homeTeamSize, 5);
-  assertEqual(config.awayTeamSize, 5);
+  assertEqual(config.awayTeamSize, 11);
   assertEqual(config.kickoffSide, "away");
   assertEqual(config.outOfPlayRestartsEnabled, false);
 });
@@ -68,7 +68,7 @@ test("Configuration falls back for invalid query options", function() {
   window.location.search = originalSearch;
   assertEqual(config.playerStrength, 6);
   assertEqual(config.opponentStrength, 6);
-  assertEqual(config.homeTeamSize, 4);
-  assertEqual(config.awayTeamSize, 4);
+  assertEqual(config.homeTeamSize, 11);
+  assertEqual(config.awayTeamSize, 11);
   assertEqual(config.outOfPlayRestartsEnabled, true);
 });

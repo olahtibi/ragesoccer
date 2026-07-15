@@ -71,9 +71,15 @@ Formation.prototype.rolesForSize = function(teamSize) {
     2: ["goalie", "striker"],
     3: ["goalie", "defender", "striker"],
     4: ["goalie", "defender", "defender", "striker"],
-    5: ["goalie", "defender", "defender", "striker", "striker"]
+    5: ["goalie", "defender", "defender", "striker", "striker"],
+    6: ["goalie", "defender", "defender", "midfielder", "striker", "striker"],
+    7: ["goalie", "defender", "defender", "midfielder", "midfielder", "striker", "striker"],
+    8: ["goalie", "defender", "defender", "defender", "midfielder", "midfielder", "striker", "striker"],
+    9: ["goalie", "defender", "defender", "defender", "midfielder", "midfielder", "midfielder", "striker", "striker"],
+    10: ["goalie", "defender", "defender", "defender", "defender", "midfielder", "midfielder", "midfielder", "striker", "striker"],
+    11: ["goalie", "defender", "defender", "defender", "defender", "midfielder", "midfielder", "midfielder", "midfielder", "striker", "striker"]
   };
-  return sizes[teamSize] || sizes[Math.max(1, Math.min(5, teamSize))];
+  return sizes[teamSize] || sizes[Math.max(1, Math.min(11, teamSize))];
 };
 
 Formation.prototype.roleCount = function(roles, role) {
@@ -94,7 +100,7 @@ Formation.prototype.positionForRole = function(state, side, role, index, count) 
   var centerX = this.config.initialBallPosition.x;
   var centerY = this.config.aiCenterY;
   var attackDir = side == "home" ? -1 : 1;
-  var progress = role == "defender" ? -150 : 130;
+  var progress = role == "defender" ? -150 : (role == "midfielder" ? 0 : 130);
   var kickingSide = this.kickoffSideForState(state, side);
   var kickoffTaker = kickingSide != null && side == kickingSide &&
     role == "striker" && index == 0;
@@ -107,6 +113,8 @@ Formation.prototype.positionForRole = function(state, side, role, index, count) 
     progress = side == kickingSide ?
       (kickoffTaker ? -this.config.kickoffTakerDistance : -20) :
       this.nonKickingKickoffProgress();
+  } else if (kickingSide != null && role == "midfielder") {
+    progress = this.nonKickingKickoffProgress();
   }
 
   var x = kickoffTaker ? centerX : centerX + this.lane(index, count) * 90;

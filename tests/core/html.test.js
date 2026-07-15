@@ -18,6 +18,9 @@ test("Options page contains strength and team-size controls", function() {
   assertTrue(html.indexOf('id="opponentStrength"') !== -1);
   assertTrue(html.indexOf('id="homeTeamSize"') !== -1);
   assertTrue(html.indexOf('id="awayTeamSize"') !== -1);
+  assertTrue(html.indexOf('<option value="6">6</option>') !== -1);
+  assertTrue(html.indexOf('<option value="10">10</option>') !== -1);
+  assertTrue(html.split('value="11" selected').length - 1 === 2);
   assertTrue(html.indexOf('id="kickoffSide"') !== -1);
   assertTrue(html.indexOf('id="outOfPlayRestartsEnabled"') !== -1);
   assertTrue(html.indexOf('"outOfPlayRestartsEnabled="') !== -1);

@@ -151,7 +151,7 @@ When adding a command, expose only useful public/debug data from `debugSnapshot(
 
 ## Formation
 
-`src/ai/formation.js` maps team state, side, and team size to target positions. It supports team sizes from 1 to 5.
+`src/ai/formation.js` maps team state, side, and team size to target positions. It supports team sizes from 1 to 11. A full team uses a 1-4-4-2 role layout, with balanced defender and midfielder lines added progressively for sizes 6 through 10.
 
 Formation positions are mirrored by side:
 

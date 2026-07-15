@@ -9,7 +9,7 @@ test("Formation returns one position per player for supported team sizes", funct
   var config = makeConfig();
   var formation = new Formation(config);
 
-  for (var size = 1; size <= 5; size++) {
+  for (var size = 1; size <= 11; size++) {
     assertEqual(formation.positions("attack", "home", size).length, size);
     assertEqual(formation.positions("defense", "away", size).length, size);
   }
@@ -82,11 +82,60 @@ test("Formation gives one 5v5 striker a dedicated close kickoff position", funct
 
 test("Formation identifies the first striker as kickoff taker for every team size", function() {
   var formation = new Formation(makeConfig());
-  var expected = [0, 1, 2, 3, 3];
+  var expected = [0, 1, 2, 3, 3, 4, 5, 6, 7, 8, 9];
 
-  for (var size = 1; size <= 5; size++) {
+  for (var size = 1; size <= 11; size++) {
     assertEqual(formation.kickoffTakerIndex(size), expected[size - 1]);
   }
+});
+
+test("Formation builds balanced roles through a full 4-4-2", function() {
+  var formation = new Formation(makeConfig());
+  var expected = {
+    6: "goalie,defender,defender,midfielder,striker,striker",
+    7: "goalie,defender,defender,midfielder,midfielder,striker,striker",
+    8: "goalie,defender,defender,defender,midfielder,midfielder,striker,striker",
+    9: "goalie,defender,defender,defender,midfielder,midfielder,midfielder,striker,striker",
+    10: "goalie,defender,defender,defender,defender,midfielder,midfielder,midfielder,striker,striker",
+    11: "goalie,defender,defender,defender,defender,midfielder,midfielder,midfielder,midfielder,striker,striker"
+  };
+
+  for (var size = 6; size <= 11; size++) {
+    assertEqual(formation.rolesForSize(size).join(","), expected[size]);
+  }
+  var full = formation.rolesForSize(11);
+  assertEqual(formation.roleCount(full, "goalie"), 1);
+  assertEqual(formation.roleCount(full, "defender"), 4);
+  assertEqual(formation.roleCount(full, "midfielder"), 4);
+  assertEqual(formation.roleCount(full, "striker"), 2);
+});
+
+test("Formation mirrors the 11-player midfield and shifts it with team state", function() {
+  var config = makeConfig({ homeTeamSize: 11, awayTeamSize: 11 });
+  var formation = new Formation(config);
+  var homeAttack = formation.positions("attack", "home", 11);
+  var homeDefense = formation.positions("defense", "home", 11);
+  var awayAttack = formation.positions("attack", "away", 11);
+
+  for (var i = 5; i <= 8; i++) {
+    assertEqual(homeAttack[i].x, awayAttack[i].x);
+    assertEqual(homeAttack[i].y + awayAttack[i].y, config.aiCenterY * 2);
+    assertTrue(homeAttack[i].y < homeDefense[i].y);
+  }
+});
+
+test("Formation keeps 11-player kickoff midfielders outside the center ellipse", function() {
+  var config = makeConfig({ homeTeamSize: 11, awayTeamSize: 11 });
+  var formation = new Formation(config);
+  var kicking = formation.positions("kickoffUs", "home", 11);
+  var defending = formation.positions("kickoffOpponent", "away", 11);
+
+  for (var i = 5; i <= 8; i++) {
+    assertTrue(outsideCenterEllipse(config, kicking[i]));
+    assertTrue(outsideCenterEllipse(config, defending[i]));
+  }
+  assertEqual(kicking[9].x, config.initialBallPosition.x);
+  assertEqual(kicking[9].y, config.aiCenterY + config.kickoffTakerDistance);
 });
 
 test("Formation defense shifts toward own goal and attack shifts toward opponent goal", function() {
@@ -144,4 +193,17 @@ test("Formation supports a corner attack when no defender role exists", function
   assertEqual(positions.length, 2);
   assertEqual(formation.cornerCoverIndex(2), -1);
   assertEqual(positions[1].y, config.fieldTop + config.cornerCrossDistance);
+});
+
+test("Formation sends nine 11-player corner receivers up", function() {
+  var config = makeConfig({ homeTeamSize: 11 });
+  var formation = new Formation(config);
+  var attack = formation.positions("attack", "home", 11);
+  var corner = formation.positions("cornerUs", "home", 11);
+
+  assertEqual(corner[0].y, attack[0].y);
+  assertEqual(corner[1].y, attack[1].y);
+  for (var i = 2; i < 11; i++) {
+    assertEqual(corner[i].y, config.fieldTop + config.cornerCrossDistance);
+  }
 });

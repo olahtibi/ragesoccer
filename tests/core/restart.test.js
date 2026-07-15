@@ -380,13 +380,13 @@ test("Kickoff clamps the human player to the center ellipse", function() {
 });
 
 test("Kickoff scene exposes the dedicated first striker as taker", function() {
-  var homeFixture = makeFixture({ homeTeamSize: 5, awayTeamSize: 5 });
+  var homeFixture = makeFixture({ homeTeamSize: 11, awayTeamSize: 11 });
   homeFixture.game.beginRestart("kickoff", "home");
-  assertTrue(homeFixture.game.cutscene.readyPlayer === homeFixture.homePlayers[3]);
+  assertTrue(homeFixture.game.cutscene.readyPlayer === homeFixture.homePlayers[9]);
 
-  var awayFixture = makeFixture({ homeTeamSize: 5, awayTeamSize: 5 });
+  var awayFixture = makeFixture({ homeTeamSize: 11, awayTeamSize: 11 });
   awayFixture.game.beginRestart("kickoff", "away");
-  assertTrue(awayFixture.game.cutscene.readyPlayer === awayFixture.awayPlayers[3]);
+  assertTrue(awayFixture.game.cutscene.readyPlayer === awayFixture.awayPlayers[9]);
 });
 
 test("Kickoff completes generically when its strategy condition is met", function() {

@@ -48,6 +48,20 @@ test("Physics advances every player in the stadium", function() {
   }
 });
 
+test("Physics advances a full 22-player match", function() {
+  var fixture = makeFixture({ homeTeamSize: 11, awayTeamSize: 11 });
+  assertEqual(fixture.stadium.players.length, 22);
+  for (var i = 0; i < fixture.stadium.players.length; i++) {
+    fixture.stadium.players[i].velocity.x = 10;
+  }
+
+  fixture.physics.updatePlayerPosition(0.5);
+
+  for (var j = 0; j < fixture.stadium.players.length; j++) {
+    assertNear(fixture.stadium.players[j].stepDistance, 1, 0.0001);
+  }
+});
+
 test("Physics ball friction reduces horizontal velocity", function() {
   var fixture = makeFixture();
   fixture.ball.velocity.x = 100;
