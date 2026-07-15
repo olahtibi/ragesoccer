@@ -18,6 +18,7 @@ var Player = function (imgPlayer, position, playerSpriteWidth, playerSpriteHeigh
     this.animationIdleSeconds = 0;
     this.animationLastTimeMs = null;
     this.animationDirectionResponseRate = 18;
+    this.animationDirectionConfidenceThreshold = 0.75;
     this.animationIdleGraceSeconds = 0.05;
     // Walk-cycle state advanced by Physics.updatePlayerPosition in step with
     // distance actually travelled (not wall-clock time), so the animation
@@ -122,7 +123,11 @@ Player.prototype.updateAnimation = function(nowMs) {
         this.animationDirectionY += (direction.y - this.animationDirectionY) * blend;
     }
 
-    if(MathLib.vectorLength(this.animationDirectionX, this.animationDirectionY) > 0.0001) {
+    var directionConfidence = MathLib.vectorLength(
+        this.animationDirectionX,
+        this.animationDirectionY
+    );
+    if(directionConfidence >= this.animationDirectionConfidenceThreshold) {
         var animationFacing = this.facingForDirection(
             this.animationDirectionX,
             this.animationDirectionY
