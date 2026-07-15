@@ -168,7 +168,7 @@ the next animation frame. `MatchFlow` exposes a generic simulation mode:
 - `none`: paused or waiting for restart input; reset the physics clock.
 - `playersOnly`: a positioning cutscene moves players while the ball is locked.
 - `full`: update AI, apply human input, run physics, enforce rules, and detect
-  goals.
+  goals or balls leaving play.
 
 For a full simulation frame, the order is:
 
@@ -177,7 +177,8 @@ For a full simulation frame, the order is:
 3. Apply human movement intent.
 4. Advance physics.
 5. Let `MatchFlow` update the active restart after physics.
-6. Detect and apply scoring results.
+6. Detect and apply scoring results, then detect out-of-play results if no goal
+   occurred.
 7. Record a debug snapshot.
 
 The order is part of the architecture, not an incidental implementation detail.
@@ -231,21 +232,38 @@ Strategy.prototype.teamAiState = function(team, request) {};
 Strategy.prototype.canTeamMove = function(team, request) {};
 Strategy.prototype.enforceRules = function(context, request) {};
 Strategy.prototype.isComplete = function(context, request) {};
+// Optional: interpret generic directional input when play resumes.
+Strategy.prototype.resume = function(context, request, direction) {};
 ```
 
-`KickoffRestart` is the first implementation. It positions the ball and teams,
+`KickoffRestart` positions the ball and teams,
 assigns `kickoffUs` or `kickoffOpponent` relative to each team, restricts which
 team may move, enforces the center-circle rule, and completes once the ball
 exceeds the configured minimum velocity.
 
+`ThrowInRestart`, `CornerRestart`, and `GoalKickRestart` reuse the same lifecycle
+and shared set-piece positioning. Throw-ins interpret generic directional input
+as an inward lofted throw. Corners and goal kicks return to ordinary
+player-to-ball contact after positioning.
+
+`BoundaryDetector` reports the first pitch edge crossed, its crossing position,
+and the ball's last-touch side. `Game` gives goals priority, then converts a
+touchline exit to a throw-in or an end-line exit to either a corner or goal kick.
+The detector does not own restart policy.
+
+The `outOfPlayRestartsEnabled` option controls the three restart types as one
+bundle. It defaults to enabled. When disabled, physics preserves the original
+reflective pitch boundaries and no out-of-play requests are created.
+
 ### Adding another restart
 
-To add a throw-in, corner, or goal kick:
+To add another restart:
 
 1. Create one strategy implementing the restart policy methods.
 2. Add any required relative team AI states and formation behavior.
 3. Register the strategy type in the composition root.
-4. Have the relevant rule detector return a restart request.
+4. Have the relevant rule detector return occurrence facts and let `Game` create
+   the restart request.
 5. Pass that request to `MatchFlow.beginRestart()` through `Game`.
 6. Add strategy and lifecycle integration tests.
 

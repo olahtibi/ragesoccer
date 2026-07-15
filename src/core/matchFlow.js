@@ -26,9 +26,9 @@ MatchFlow.prototype.resume = function() {
   this.stateBeforePause = null;
 };
 
-MatchFlow.prototype.resumeFromInput = function() {
+MatchFlow.prototype.resumeFromInput = function(context, direction) {
   if (this.state == "restart") {
-    return this.restartController.resume();
+    return this.restartController.resume(context, direction);
   }
   return this.state == "normalPlay";
 };

@@ -11,6 +11,7 @@ test("Game composes explicit controllers without putting them on Stadium", funct
   assertEqual(fixture.game.teamAis.length, 2);
   assertTrue(fixture.game.humanController !== null);
   assertTrue(fixture.game.restartController !== null);
+  assertTrue(fixture.game.boundaryDetector !== null);
   assertEqual(fixture.stadium.updateAi, undefined);
 });
 
@@ -26,12 +27,27 @@ test("Full simulation updates AI human input physics restart and score in order"
   fixture.game.humanController.update = function() { order.push("human"); };
   fixture.game.physics.update = function() { order.push("physics"); };
   fixture.game.matchFlow.updateAfterPhysics = function() { order.push("rules"); };
-  fixture.game.updateScore = function() { order.push("score"); };
+  fixture.game.updateScore = function() { order.push("score"); return false; };
+  fixture.game.updateOutOfPlay = function() { order.push("out"); };
   fixture.game.debugLog.record = function() { order.push("debug"); };
 
   fixture.game.update();
 
-  assertEqual(order.join(","), "ai,human,physics,rules,score,debug");
+  assertEqual(order.join(","), "ai,human,physics,rules,score,out,debug");
+});
+
+test("A goal result takes priority over out-of-play detection", function() {
+  var fixture = makeFixture();
+  var outUpdates = 0;
+  fixture.game.matchFlow.state = "normalPlay";
+  fixture.game.physics.update = function() {};
+  fixture.game.goalDetector.update = function() { return "home"; };
+  fixture.game.updateOutOfPlay = function() { outUpdates++; };
+
+  fixture.game.update();
+
+  assertEqual(fixture.homeTeam.score, 1);
+  assertEqual(outUpdates, 0);
 });
 
 test("Positioning simulation updates cutscene around player-only physics", function() {
@@ -101,6 +117,70 @@ test("A goal kickoff waits for fresh input after positioning", function() {
 
   assertEqual(fixture.game.restartController.phase(), "waitingForInput");
   assertEqual(fixture.game.matchFlow.simulationMode(), "none");
+});
+
+test("A touchline exit starts a throw-in for the team that did not touch last", function() {
+  var fixture = makeFixture();
+  fixture.ball.lastTouchedBy = "home";
+  fixture.ball.position.x = fixture.config.fieldRight + fixture.config.ballRadius + 1;
+
+  fixture.game.updateOutOfPlay();
+
+  assertEqual(fixture.game.restartController.type(), "throwIn");
+  assertEqual(fixture.game.restartController.phase(), "positioning");
+  assertEqual(fixture.homeTeamAi.state, "throwInOpponent");
+  assertEqual(fixture.awayTeamAi.state, "throwInUs");
+});
+
+test("Top end-line exits choose goal kick or corner from last touch", function() {
+  var goalKick = makeFixture();
+  goalKick.ball.lastTouchedBy = "home";
+  goalKick.ball.position.y = goalKick.config.fieldTop - goalKick.config.ballRadius - 1;
+  goalKick.game.updateOutOfPlay();
+
+  assertEqual(goalKick.game.restartController.type(), "goalKick");
+  assertEqual(goalKick.awayTeamAi.state, "goalKickUs");
+
+  var corner = makeFixture();
+  corner.ball.lastTouchedBy = "away";
+  corner.ball.position.x = corner.config.fieldLeft + 20;
+  corner.ball.position.y = corner.config.fieldTop - corner.config.ballRadius - 1;
+  corner.game.updateOutOfPlay();
+
+  assertEqual(corner.game.restartController.type(), "corner");
+  assertEqual(corner.homeTeamAi.state, "cornerUs");
+});
+
+test("Bottom end-line exits choose goal kick or corner from last touch", function() {
+  var goalKick = makeFixture();
+  goalKick.ball.lastTouchedBy = "away";
+  goalKick.ball.position.y = goalKick.config.fieldBottom + goalKick.config.ballRadius + 1;
+  goalKick.game.updateOutOfPlay();
+
+  assertEqual(goalKick.game.restartController.type(), "goalKick");
+  assertEqual(goalKick.homeTeamAi.state, "goalKickUs");
+
+  var corner = makeFixture();
+  corner.ball.lastTouchedBy = "home";
+  corner.ball.position.x = corner.config.fieldRight - 20;
+  corner.ball.position.y = corner.config.fieldBottom + corner.config.ballRadius + 1;
+  corner.game.updateOutOfPlay();
+
+  assertEqual(corner.game.restartController.type(), "corner");
+  assertEqual(corner.awayTeamAi.state, "cornerUs");
+});
+
+test("An exit without last-touch ownership restores and stops the ball", function() {
+  var fixture = makeFixture();
+  var startX = fixture.ball.position.x;
+  fixture.ball.position.x = fixture.config.fieldRight + fixture.config.ballRadius + 1;
+  fixture.ball.velocity.x = 100;
+
+  fixture.game.updateOutOfPlay();
+
+  assertEqual(fixture.game.restartController.phase(), "waitingForInput");
+  assertEqual(fixture.ball.position.x, startX);
+  assertEqual(fixture.ball.velocity.x, 0);
 });
 
 test("Render frame delegates update and render before scheduling", function() {

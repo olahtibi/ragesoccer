@@ -15,6 +15,7 @@ Team.prototype.createPlayers = function() {
 
   for (var i = 0; i < positions.length; i++) {
     var player = new Player(img, positions[i], this.config.playerSpriteWidth, this.config.playerSpriteHeight, this.config.playerSpriteCenterX, this.config.playerSpriteCenterY);
+    player.teamSide = this.side;
     if (this.side == "away") {
       player.facingY = 1;
     }

@@ -21,7 +21,10 @@ BrowserInput.prototype.handleTouch = function(event) {
   this.game.debugLog.recordTouchEvent(target);
   this.game.humanController.selectPlayer();
   this.game.humanController.setTouchTarget(target);
-  this.game.resumeFromInput();
+  this.game.resumeFromInput(new Vector2d(
+    target.x - this.game.stadium.ball.position.x,
+    target.y - this.game.stadium.ball.position.y
+  ));
   this.applyHumanInput();
 };
 
@@ -29,7 +32,9 @@ BrowserInput.prototype.handleKey = function(event) {
   this.game.debugLog.recordKeyEvent(event);
   this.game.humanController.setKey(event.keyCode, event.type == "keydown");
   if (event.type == "keydown") this.handleCommand(event.keyCode);
-  if (this.game.humanController.hasMovementInput()) this.game.resumeFromInput();
+  if (this.game.humanController.hasMovementInput()) {
+    this.game.resumeFromInput(this.game.humanController.inputDirection());
+  }
   this.applyHumanInput();
 };
 

@@ -5,6 +5,7 @@ var Ball = function (imgBall, ballRadius, position) {
   this.velocity = new Vector3d(0, 0, 0)
   this.kickDirection = new Vector2d(0, 0)
   this.phaseIndex = 0;
+  this.lastTouchedBy = null;
   // Accumulated distance rolled since the last sprite phase change.
   // Used by the physics loop to advance the sprite in proportion to travel.
   this.rollDistance = 0;

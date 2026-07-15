@@ -104,7 +104,8 @@ DebugLog.prototype.snapshot = function(game, frame, time) {
 DebugLog.prototype.ballSnapshot = function(ball) {
   return {
     pos: this.vectorSnapshot(ball.position),
-    vel: this.vectorSnapshot(ball.velocity)
+    vel: this.vectorSnapshot(ball.velocity),
+    lastTouchedBy: ball.lastTouchedBy
   };
 };
 

@@ -42,6 +42,9 @@ Team state is one of:
 Restart states are assigned by the active restart strategy and are relative to
 each team. They are preserved while `MatchFlow` reports an active restart. When
 the restart completes, `TeamAi` returns to normal attack/defense transitions.
+The relative state names include `kickoffUs`/`kickoffOpponent`,
+`throwInUs`/`throwInOpponent`, `cornerUs`/`cornerOpponent`, and
+`goalKickUs`/`goalKickOpponent`.
 Formation targets come from `src/ai/formation.js`:
 
 ```js

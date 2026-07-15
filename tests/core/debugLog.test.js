@@ -77,6 +77,7 @@ test("DebugLog snapshot includes ball, players, and AI commands states and targe
   setup.fixture.config.debugLogEveryNFrames = 1;
   setup.fixture.ball.position.x = 12.345;
   setup.fixture.ball.velocity.y = -6.789;
+  setup.fixture.ball.lastTouchedBy = "away";
   setup.game.matchFlow.state = "normalPlay";
   setup.fixture.ball.position.x = setup.fixture.awayPlayers[0].position.x + 20;
   setup.fixture.ball.position.y = setup.fixture.awayPlayers[0].position.y;
@@ -88,6 +89,7 @@ test("DebugLog snapshot includes ball, players, and AI commands states and targe
   assertEqual(snapshot.dt, 0);
   assertEqual(snapshot.ball.pos.x, setup.game.debugLog.round(setup.fixture.ball.position.x));
   assertEqual(snapshot.ball.vel.y, -6.79);
+  assertEqual(snapshot.ball.lastTouchedBy, "away");
   assertEqual(snapshot.players.length, 6);
   assertEqual(snapshot.players[0].team, "home");
   assertEqual(snapshot.players[0].i, 0);

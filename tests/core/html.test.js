@@ -19,6 +19,8 @@ test("Options page contains strength and team-size controls", function() {
   assertTrue(html.indexOf('id="homeTeamSize"') !== -1);
   assertTrue(html.indexOf('id="awayTeamSize"') !== -1);
   assertTrue(html.indexOf('id="kickoffSide"') !== -1);
+  assertTrue(html.indexOf('id="outOfPlayRestartsEnabled"') !== -1);
+  assertTrue(html.indexOf('"outOfPlayRestartsEnabled="') !== -1);
   assertTrue(html.indexOf('"kickoffSide="') !== -1);
   assertTrue(html.indexOf('value="home" selected') !== -1);
   assertTrue(html.indexOf('value="away"') !== -1);
@@ -42,6 +44,10 @@ test("Game page contains canvas assets scripts and boot hook", function() {
   assertTrue(html.indexOf('src="assets/images/pitch.jpg"') !== -1);
   assertTrue(html.indexOf('src="src/core/configuration.js') !== -1);
   assertTrue(html.indexOf('src="src/core/cutscene.js') !== -1);
+  assertTrue(html.indexOf('src="src/world/boundaryDetector.js') !== -1);
+  assertTrue(html.indexOf('src="src/core/throwInRestart.js') !== -1);
+  assertTrue(html.indexOf('src="src/core/cornerRestart.js') !== -1);
+  assertTrue(html.indexOf('src="src/core/goalKickRestart.js') !== -1);
   assertTrue(html.indexOf('src="src/ai/commands/commandRegistry.js') !== -1);
   assertTrue(html.indexOf('src="src/input/io.js') !== -1);
 });

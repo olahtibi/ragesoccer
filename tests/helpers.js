@@ -53,6 +53,7 @@ function loadGameScripts() {
     "src/world/ball.js",
     "src/world/player.js",
     "src/world/goalDetector.js",
+    "src/world/boundaryDetector.js",
     "src/ai/formation.js",
     "src/ai/commands/inactiveCommand.js",
     "src/ai/commands/moveToPositionCommand.js",
@@ -67,7 +68,11 @@ function loadGameScripts() {
     "src/core/cutscene.js",
     "src/input/humanController.js",
     "src/core/restart.js",
+    "src/core/restartPositioning.js",
     "src/core/kickoffRestart.js",
+    "src/core/throwInRestart.js",
+    "src/core/cornerRestart.js",
+    "src/core/goalKickRestart.js",
     "src/core/matchFlow.js",
     "src/input/io.js",
     "src/core/game.js"
@@ -84,6 +89,8 @@ function makeConfig(options) {
   config.playerStrength = options.playerStrength != null ? options.playerStrength : config.playerStrength;
   config.opponentStrength = options.opponentStrength != null ? options.opponentStrength : config.opponentStrength;
   config.kickoffSide = options.kickoffSide != null ? options.kickoffSide : config.kickoffSide;
+  config.outOfPlayRestartsEnabled = options.outOfPlayRestartsEnabled != null ?
+    options.outOfPlayRestartsEnabled : config.outOfPlayRestartsEnabled;
   config.playerVelocity = config.teamVelocity("home");
   return config;
 }
@@ -108,6 +115,7 @@ function makeFixture(options) {
     homePlayers: homeTeam.players,
     awayPlayers: awayTeam.players,
     goalDetector: goalDetector,
+    boundaryDetector: game.boundaryDetector,
     stadium: stadium,
     physics: physics,
     teamAis: game.teamAis,
@@ -151,8 +159,12 @@ function applyReplayEvent(event, game, input) {
   }
 
   if (event.type === "touch") {
-    game.humanController.setTouchTarget(new Vector2d(event.target.x, event.target.y));
-    game.resumeFromInput();
+    var target = new Vector2d(event.target.x, event.target.y);
+    game.humanController.setTouchTarget(target);
+    game.resumeFromInput(new Vector2d(
+      target.x - game.stadium.ball.position.x,
+      target.y - game.stadium.ball.position.y
+    ));
   }
 }
 
@@ -165,7 +177,7 @@ function advanceReplayFrame(game, dt) {
   game.physics.resolveBallPlayerContacts();
   game.physics.updateBallPosition(dt);
   game.matchFlow.updateAfterPhysics(game.context());
-  game.updateScore();
+  if (!game.updateScore()) game.updateOutOfPlay();
 }
 
 module.exports = {

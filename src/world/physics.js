@@ -110,6 +110,7 @@ Physics.prototype.resolveBallPlayerContacts = function() {
     if (d2 >= contactDist2) {
       continue;
     }
+    ball.lastTouchedBy = p.teamSide;
     // Contact normal (unit vector from player toward ball).
     var d = Math.sqrt(d2);
     var nx, ny;
@@ -207,7 +208,9 @@ Physics.prototype.updateBallPosition = function(dt) {
 
   var moveArray = [ball.velocity.x * dt, ball.velocity.y * dt];
 
-  this.checkBoxCollision(moveArray);
+  if (!this.config.outOfPlayRestartsEnabled) {
+    this.checkBoxCollision(moveArray);
+  }
   this.checkGoalCollision(moveArray);
 
   ball.position.x += moveArray[0];

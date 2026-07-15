@@ -6,6 +6,10 @@ Supported platforms:
 - PC: Use arrow keys to control player
 - Mobile: Touch screen to control player
 
+The options page can enable throw-ins, corners, and goal kicks as one bundle or
+restore the original reflective boundaries. During a throw-in, arrow or touch
+direction launches the throw back into play.
+
 Play:
 https://olahtibi.github.io/ragesoccer/
 

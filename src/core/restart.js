@@ -50,8 +50,12 @@ RestartController.prototype.assignTeamAiStates = function(context) {
   }
 };
 
-RestartController.prototype.resume = function() {
+RestartController.prototype.resume = function(context, direction) {
   if (this.session == null || this.session.phase != "waitingForInput") return false;
+  if (this.session.strategy.resume != null &&
+      this.session.strategy.resume(context, this.session.request, direction) == false) {
+    return false;
+  }
   this.session.phase = "inProgress";
   return true;
 };

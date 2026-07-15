@@ -6,6 +6,7 @@ var Game = function(options) {
   this.camera = options.camera;
   this.physics = options.physics;
   this.goalDetector = options.goalDetector;
+  this.boundaryDetector = options.boundaryDetector;
   this.humanController = options.humanController;
   this.cutscene = options.cutscene;
   this.restartController = options.restartController;
@@ -37,12 +38,17 @@ Game.prototype.togglePause = function() {
   }
 };
 
-Game.prototype.resumeFromInput = function() {
-  return this.matchFlow.resumeFromInput();
+Game.prototype.resumeFromInput = function(direction) {
+  return this.matchFlow.resumeFromInput(this.context(), direction);
 };
 
-Game.prototype.beginRestart = function(type, awardedTo) {
-  return this.matchFlow.beginRestart({ type: type, awardedTo: awardedTo }, this.context());
+Game.prototype.beginRestart = function(type, awardedTo, details) {
+  var request = {};
+  details = details || {};
+  for (var key in details) request[key] = details[key];
+  request.type = type;
+  request.awardedTo = awardedTo;
+  return this.matchFlow.beginRestart(request, this.context());
 };
 
 Game.prototype.updateAi = function() {
@@ -71,14 +77,14 @@ Game.prototype.update = function() {
     this.humanController.update(canMove);
     this.physics.update();
     this.matchFlow.updateAfterPhysics(context);
-    this.updateScore();
+    if (!this.updateScore()) this.updateOutOfPlay();
   }
   this.debugLog.record(this);
 };
 
 Game.prototype.updateScore = function() {
   var scoredBy = this.goalDetector.update();
-  if (scoredBy == null) return;
+  if (scoredBy == null) return false;
   var scoringTeam = null;
   var concedingTeam = null;
   for (var i = 0; i < this.teams.length; i++) {
@@ -88,9 +94,46 @@ Game.prototype.updateScore = function() {
       concedingTeam = this.teams[i];
     }
   }
-  if (scoringTeam == null || concedingTeam == null) return;
+  if (scoringTeam == null || concedingTeam == null) return false;
   scoringTeam.score++;
   this.beginRestart("kickoff", concedingTeam.side);
+  return true;
+};
+
+Game.prototype.updateOutOfPlay = function() {
+  var event = this.boundaryDetector.update();
+  if (event == null) return false;
+  if (event.lastTouchedBy == null) {
+    this.stadium.ball.position.x = event.lastInBounds.x;
+    this.stadium.ball.position.y = event.lastInBounds.y;
+    this.stadium.ball.position.z = 0;
+    this.stadium.ball.velocity.x = 0;
+    this.stadium.ball.velocity.y = 0;
+    this.stadium.ball.velocity.z = 0;
+    this.boundaryDetector.reset();
+    return false;
+  }
+
+  var awardedTo;
+  var type;
+  if (event.boundary == "left" || event.boundary == "right") {
+    type = "throwIn";
+    awardedTo = event.lastTouchedBy == "home" ? "away" : "home";
+  } else {
+    var defendingSide = event.boundary == "top" ? "away" : "home";
+    var attackingSide = defendingSide == "home" ? "away" : "home";
+    if (event.lastTouchedBy == attackingSide) {
+      type = "goalKick";
+      awardedTo = defendingSide;
+    } else {
+      type = "corner";
+      awardedTo = attackingSide;
+    }
+  }
+  return this.beginRestart(type, awardedTo, {
+    boundary: event.boundary,
+    position: event.position
+  });
 };
 
 Game.prototype.render = function(ctx) {
@@ -119,10 +162,14 @@ function createGame(config) {
   var camera = new Camera(config, stadium);
   var physics = new Physics(config, stadium);
   var goalDetector = new GoalDetector(config, ball);
+  var boundaryDetector = new BoundaryDetector(config, ball);
   var humanController = new HumanController(config, homeTeam, ball);
   var cutscene = new CutsceneController(config);
   var registry = new RestartRegistry();
   registry.register("kickoff", new KickoffRestart(config));
+  registry.register("throwIn", new ThrowInRestart(config));
+  registry.register("corner", new CornerRestart(config));
+  registry.register("goalKick", new GoalKickRestart(config));
   var restartController = new RestartController(registry, cutscene);
   var matchFlow = new MatchFlow(restartController);
   var game = new Game({
@@ -133,6 +180,7 @@ function createGame(config) {
     camera: camera,
     physics: physics,
     goalDetector: goalDetector,
+    boundaryDetector: boundaryDetector,
     humanController: humanController,
     cutscene: cutscene,
     restartController: restartController,

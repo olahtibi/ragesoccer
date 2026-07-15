@@ -32,6 +32,17 @@ HumanController.prototype.hasMovementInput = function() {
   return this.keys[37] || this.keys[38] || this.keys[39] || this.keys[40];
 };
 
+HumanController.prototype.inputDirection = function() {
+  var x = 0;
+  var y = 0;
+  if (this.keys[37]) x--;
+  if (this.keys[39]) x++;
+  if (this.keys[38]) y--;
+  if (this.keys[40]) y++;
+  if (x == 0 && y == 0) return null;
+  return MathLib.normalizeVector(x, y, 0, -1);
+};
+
 HumanController.prototype.selectPlayer = function() {
   var closest = this.closestPlayerToBall();
   var current = this.team.humanPlayer;

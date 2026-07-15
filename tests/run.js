@@ -6,6 +6,7 @@ var testlib = require("./testlib");
   { name: "Configuration", path: "./core/configuration.test" },
   { name: "MathLib", path: "./math/mathlib.test" },
   { name: "GoalDetector", path: "./world/goalDetector.test" },
+  { name: "BoundaryDetector", path: "./world/boundaryDetector.test" },
   { name: "Player", path: "./world/player.test" },
   { name: "Physics", path: "./world/physics.test" },
   { name: "Formation", path: "./ai/formation.test" },

@@ -107,6 +107,31 @@ test("Physics ball-player contact kicks the ball outward", function() {
   assertTrue(fixture.ball.velocity.x > 0);
   assertTrue(fixture.ball.velocity.z > 0);
   assertNear(fixture.ball.position.x, 106.01, 0.0001);
+  assertEqual(fixture.ball.lastTouchedBy, "home");
+});
+
+test("Disabled out-of-play restarts preserve reflective pitch boundaries", function() {
+  var fixture = makeFixture({ outOfPlayRestartsEnabled: false });
+  fixture.ball.position.x = fixture.config.boxTopLeft.x + 1;
+  fixture.ball.position.y = fixture.config.aiCenterY;
+  fixture.ball.velocity.x = -100;
+
+  fixture.physics.updateBallPosition(0.1);
+
+  assertTrue(fixture.ball.velocity.x > 0);
+  assertTrue(fixture.ball.position.x > fixture.config.boxTopLeft.x);
+});
+
+test("Enabled out-of-play restarts allow the ball to cross pitch boundaries", function() {
+  var fixture = makeFixture({ outOfPlayRestartsEnabled: true });
+  fixture.ball.position.x = fixture.config.fieldLeft + 1;
+  fixture.ball.position.y = fixture.config.aiCenterY;
+  fixture.ball.velocity.x = -100;
+
+  fixture.physics.updateBallPosition(0.1);
+
+  assertTrue(fixture.ball.velocity.x < 0);
+  assertTrue(fixture.ball.position.x < fixture.config.fieldLeft);
 });
 
 test("Physics player-only update advances players without touching the ball", function() {

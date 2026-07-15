@@ -98,6 +98,41 @@ test("Input starts an opponent kickoff without moving the frozen home team", fun
   assertEqual(setupResult.fixture.playerHome.velocity.x, 0);
 });
 
+test("Keyboard direction executes a human throw-in and clamps it inward", function() {
+  var setupResult = setup();
+  setupResult.game.beginRestart("throwIn", "home", {
+    boundary: "left",
+    position: new Vector2d(setupResult.fixture.config.fieldLeft, setupResult.fixture.config.aiCenterY)
+  });
+  setupResult.game.cutscene.updateBeforePhysics(setupResult.game);
+  setupResult.game.cutscene.clear(setupResult.game);
+
+  setupResult.input.handleKey({ keyCode: 37, type: "keydown" });
+
+  assertEqual(setupResult.game.restartController.phase(), "inProgress");
+  assertTrue(setupResult.fixture.ball.velocity.x > 0);
+  assertTrue(setupResult.fixture.ball.velocity.z > 0);
+});
+
+test("Touch direction executes a human throw-in and clamps it inward", function() {
+  var setupResult = setup();
+  setupResult.game.beginRestart("throwIn", "home", {
+    boundary: "right",
+    position: new Vector2d(setupResult.fixture.config.fieldRight, setupResult.fixture.config.aiCenterY)
+  });
+  setupResult.game.cutscene.updateBeforePhysics(setupResult.game);
+  setupResult.game.cutscene.clear(setupResult.game);
+  var scale = setupResult.fixture.config.computeScaleBy();
+
+  setupResult.input.handleTouch({ touches: [{
+    clientX: (setupResult.fixture.config.fieldRight + 100) * scale,
+    clientY: setupResult.fixture.config.aiCenterY * scale
+  }] });
+
+  assertEqual(setupResult.game.restartController.phase(), "inProgress");
+  assertTrue(setupResult.fixture.ball.velocity.x < 0);
+});
+
 test("J and K do not start restarts", function() {
   var setupResult = setup();
 

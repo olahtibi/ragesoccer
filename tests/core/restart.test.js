@@ -71,6 +71,54 @@ test("Kickoff assigns relative states and movement permission", function() {
   assertEqual(fixture.game.restartController.canTeamMove(fixture.awayTeam), true);
 });
 
+test("Throw-in uses fresh directional input to launch a lofted inward throw", function() {
+  var fixture = makeFixture();
+  fixture.game.beginRestart("throwIn", "home", {
+    boundary: "left",
+    position: new Vector2d(fixture.config.fieldLeft, fixture.config.aiCenterY)
+  });
+  fixture.game.cutscene.updateBeforePhysics(fixture.game);
+  fixture.game.cutscene.clear(fixture.game);
+
+  fixture.game.resumeFromInput(new Vector2d(-1, 0));
+
+  assertEqual(fixture.game.restartController.phase(), "inProgress");
+  assertTrue(fixture.ball.velocity.x > 0);
+  assertTrue(fixture.ball.velocity.z > 0);
+  assertEqual(fixture.ball.lastTouchedBy, "home");
+});
+
+test("Away throw-in chooses an automatic inward attacking direction", function() {
+  var fixture = makeFixture();
+  fixture.game.beginRestart("throwIn", "away", {
+    boundary: "right",
+    position: new Vector2d(fixture.config.fieldRight, fixture.config.aiCenterY)
+  });
+  fixture.game.cutscene.updateBeforePhysics(fixture.game);
+  fixture.game.cutscene.clear(fixture.game);
+
+  fixture.game.resumeFromInput(new Vector2d(0, -1));
+
+  assertTrue(fixture.ball.velocity.x < 0);
+  assertTrue(fixture.ball.velocity.y > 0);
+  assertEqual(fixture.ball.lastTouchedBy, "away");
+});
+
+test("Set-piece positioning keeps opponents outside the restart distance", function() {
+  var fixture = makeFixture({ homeTeamSize: 4, awayTeamSize: 4 });
+  fixture.game.beginRestart("corner", "home", {
+    boundary: "top",
+    position: new Vector2d(fixture.config.fieldLeft, fixture.config.fieldTop)
+  });
+  var ballPosition = fixture.game.cutscene.ballPosition;
+  var awayScene = fixture.game.cutscene.teams[1];
+
+  for (var i = 0; i < awayScene.positions.length; i++) {
+    assertTrue(MathLib.computeDistance(awayScene.positions[i], ballPosition) >=
+      fixture.config.restartOpponentDistance - 0.0001);
+  }
+});
+
 test("Kickoff clamps the human player to the center ellipse", function() {
   var fixture = makeFixture();
   fixture.game.resumeFromInput();
