@@ -1,6 +1,7 @@
 var ThrowInRestart = function(config) {
   this.config = config;
   this.launched = false;
+  this.taker = null;
 };
 
 ThrowInRestart.prototype.ballPosition = function(request) {
@@ -18,6 +19,8 @@ ThrowInRestart.prototype.createScene = function(context, request) {
   var offset = this.config.playerRadius + this.config.ballRadius + 2;
   var takerX = request.boundary == "left" ? this.config.fieldLeft - offset :
     this.config.fieldRight + offset;
+  this.taker = this.findTaker(context, request, ballPosition);
+  context.ball.heldBy = this.taker;
   return RestartPositioning.createScene(
     this.config,
     context,
@@ -25,6 +28,22 @@ ThrowInRestart.prototype.createScene = function(context, request) {
     ballPosition,
     new Vector2d(takerX, ballPosition.y)
   );
+};
+
+ThrowInRestart.prototype.findTaker = function(context, request, ballPosition) {
+  for (var i = 0; i < context.teams.length; i++) {
+    if (context.teams[i].side == request.awardedTo) {
+      var team = context.teams[i];
+      return team.players[RestartPositioning.closestPlayerIndex(team.players, ballPosition)];
+    }
+  }
+  return null;
+};
+
+ThrowInRestart.prototype.onPositioned = function(context, request) {
+  if (this.taker == null) return;
+  this.taker.facingX = request.boundary == "left" ? 1 : -1;
+  this.taker.facingY = 0;
 };
 
 ThrowInRestart.prototype.teamAiState = function(team, request) {
@@ -49,6 +68,11 @@ ThrowInRestart.prototype.resume = function(context, request, direction) {
     if (dx * inwardX < 0.35) dx = inwardX * 0.35;
   }
   var normalized = MathLib.normalizeVector(dx, dy, inwardX, attackY);
+  var heldPosition = context.ball.heldPosition();
+  context.ball.position.x = heldPosition.x;
+  context.ball.position.y = heldPosition.y;
+  context.ball.position.z = 0;
+  context.ball.heldBy = null;
   context.ball.velocity.x = normalized.x * this.config.throwInSpeed;
   context.ball.velocity.y = normalized.y * this.config.throwInSpeed;
   context.ball.velocity.z = this.config.throwInLoft;

@@ -12,13 +12,14 @@ var Stadium = function (imgStadium, ball, homeTeam, awayTeam) {
 
 Stadium.prototype.draw = function(ctx) {  
   ctx.drawImage(this.imgStadium, 0, 0);
-  this.ball.draw(ctx);
+  if (this.ball.heldBy == null) this.ball.draw(ctx);
   for (var i = 0; i < this.players.length; i++) {
     if (this.players[i] === this.homeTeam.humanPlayer) {
       this.drawHumanPlayerMarker(ctx, this.players[i]);
     }
     this.players[i].draw(ctx);
   }
+  if (this.ball.heldBy != null) this.ball.draw(ctx);
 };
 
 Stadium.prototype.drawHumanPlayerMarker = function(ctx, player) {

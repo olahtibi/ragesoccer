@@ -21,6 +21,7 @@ RestartController.prototype.begin = function(request, context, options) {
   if (strategy == null) return false;
 
   context.humanController.clearInput();
+  context.ball.heldBy = null;
   this.session = {
     request: request,
     strategy: strategy,
@@ -33,6 +34,7 @@ RestartController.prototype.begin = function(request, context, options) {
     var scene = strategy.createScene(context, request);
     scene.onComplete = function() {
       controller.session.phase = "waitingForInput";
+      if (strategy.onPositioned != null) strategy.onPositioned(context, request);
       context.humanController.selectPlayer();
     };
     if (!this.cutscene.play(scene)) {

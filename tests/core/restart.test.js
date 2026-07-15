@@ -80,12 +80,23 @@ test("Throw-in uses fresh directional input to launch a lofted inward throw", fu
   fixture.game.cutscene.updateBeforePhysics(fixture.game);
   fixture.game.cutscene.clear(fixture.game);
 
+  var taker = fixture.ball.heldBy;
+  var heldPosition = fixture.ball.heldPosition();
+  assertTrue(taker !== null);
+  assertEqual(taker.facingX, 1);
+  assertEqual(taker.facingY, 0);
+  assertTrue(heldPosition.x > taker.position.x);
+  assertTrue(heldPosition.y < taker.position.y);
+
   fixture.game.resumeFromInput(new Vector2d(-1, 0));
 
   assertEqual(fixture.game.restartController.phase(), "inProgress");
   assertTrue(fixture.ball.velocity.x > 0);
   assertTrue(fixture.ball.velocity.z > 0);
   assertEqual(fixture.ball.lastTouchedBy, "home");
+  assertEqual(fixture.ball.heldBy, null);
+  assertEqual(fixture.ball.position.x, heldPosition.x);
+  assertEqual(fixture.ball.position.y, heldPosition.y);
 });
 
 test("Away throw-in chooses an automatic inward attacking direction", function() {
@@ -96,6 +107,9 @@ test("Away throw-in chooses an automatic inward attacking direction", function()
   });
   fixture.game.cutscene.updateBeforePhysics(fixture.game);
   fixture.game.cutscene.clear(fixture.game);
+
+  assertEqual(fixture.ball.heldBy.facingX, -1);
+  assertEqual(fixture.ball.heldBy.facingY, 0);
 
   fixture.game.resumeFromInput(new Vector2d(0, -1));
 
