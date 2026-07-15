@@ -55,6 +55,7 @@ var Configuration = function () {
   this.aiTargetDeadband = 2;
   this.kickoffSide = "home";
   this.outOfPlayRestartsEnabled = true;
+  this.outOfPlayRestartDelaySeconds = 0.35;
   this.restartOpponentDistance = 45;
   this.restartPlacementClearance = 1;
   this.goalKickDistance = 25;

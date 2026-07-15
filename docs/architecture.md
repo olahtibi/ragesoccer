@@ -251,7 +251,9 @@ shooting directly at goal.
 `BoundaryDetector` reports the first pitch edge crossed, its crossing position,
 and the ball's last-touch side. `Game` gives goals priority, then converts a
 touchline exit to a throw-in or an end-line exit to either a corner or goal kick.
-The detector does not own restart policy.
+The detector does not own restart policy. Before positioning begins, a short
+configurable dead-ball delay freezes the players but continues ball-only physics
+so the ball visibly carries beyond the line instead of snapping back immediately.
 
 The `outOfPlayRestartsEnabled` option controls the three restart types as one
 bundle. It defaults to enabled. When disabled, physics preserves the original

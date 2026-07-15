@@ -169,6 +169,12 @@ function applyReplayEvent(event, game, input) {
 }
 
 function advanceReplayFrame(game, dt) {
+  if (game.isOutOfPlayPending()) {
+    game.physics.lastDt = dt;
+    game.physics.updateBallPosition(dt);
+    game.updatePendingOutOfPlay();
+    return;
+  }
   game.updateAi();
   var canMove = !game.matchFlow.isRestartActive() || game.restartController.canTeamMove(game.teams[0]);
   game.humanController.update(canMove);

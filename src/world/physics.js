@@ -35,6 +35,15 @@ Physics.prototype.updatePlayersOnly = function() {
   this.updateStats(currentTime);
 };
 
+Physics.prototype.updateBallOnly = function() {
+  var currentTime = new Date().getTime();
+  var dt = this.computeDt(currentTime);
+  if (dt == null) return;
+  this.lastDt = dt;
+  this.updateBallPosition(dt);
+  this.updateStats(currentTime);
+};
+
 Physics.prototype.computeDt = function(currentTime) {
   var dt = (currentTime - this.lastUpdated) / 1000.0;
   // Clamp dt so a paused/backgrounded tab doesn't teleport bodies on resume.

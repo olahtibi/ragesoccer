@@ -12,6 +12,7 @@ var Game = function(options) {
   this.restartController = options.restartController;
   this.matchFlow = options.matchFlow;
   this.debugLog = options.debugLog;
+  this.pendingOutOfPlay = null;
 };
 
 Game.prototype.context = function() {
@@ -39,7 +40,12 @@ Game.prototype.togglePause = function() {
 };
 
 Game.prototype.resumeFromInput = function(direction) {
+  if (this.isOutOfPlayPending()) return false;
   return this.matchFlow.resumeFromInput(this.context(), direction);
+};
+
+Game.prototype.isOutOfPlayPending = function() {
+  return this.pendingOutOfPlay != null;
 };
 
 Game.prototype.beginRestart = function(type, awardedTo, details) {
@@ -66,6 +72,16 @@ Game.prototype.updateAi = function() {
 
 Game.prototype.update = function() {
   var context = this.context();
+  if (this.isOutOfPlayPending()) {
+    if (this.isPaused()) {
+      this.physics.resetClock();
+    } else {
+      this.physics.updateBallOnly();
+      this.updatePendingOutOfPlay();
+    }
+    this.debugLog.record(this);
+    return;
+  }
   var mode = this.matchFlow.simulationMode();
   if (mode == "none") {
     this.physics.resetClock();
@@ -116,6 +132,28 @@ Game.prototype.updateOutOfPlay = function() {
     return false;
   }
 
+  this.pendingOutOfPlay = { event: event, elapsed: 0 };
+  this.stopPlayersForOutOfPlay();
+  return true;
+};
+
+Game.prototype.stopPlayersForOutOfPlay = function() {
+  for (var i = 0; i < this.stadium.players.length; i++) {
+    this.stadium.players[i].velocity.x = 0;
+    this.stadium.players[i].velocity.y = 0;
+  }
+};
+
+Game.prototype.updatePendingOutOfPlay = function() {
+  if (!this.isOutOfPlayPending()) return false;
+  this.pendingOutOfPlay.elapsed += this.physics.lastDt || 0;
+  if (this.pendingOutOfPlay.elapsed < this.config.outOfPlayRestartDelaySeconds) return false;
+  var event = this.pendingOutOfPlay.event;
+  this.pendingOutOfPlay = null;
+  return this.beginOutOfPlayRestart(event);
+};
+
+Game.prototype.beginOutOfPlayRestart = function(event) {
   var awardedTo;
   var type;
   if (event.boundary == "left" || event.boundary == "right") {
