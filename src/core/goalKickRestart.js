@@ -1,5 +1,6 @@
 var GoalKickRestart = function(config) {
   this.config = config;
+  this.allowEarlyResume = true;
 };
 
 GoalKickRestart.prototype.ballPosition = function(request) {

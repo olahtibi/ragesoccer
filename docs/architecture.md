@@ -79,6 +79,10 @@ positioning -> waitingForInput -> inProgress -> complete
 They differ in ball placement, formations, movement permissions, enforcement,
 and completion conditions. `RestartController` implements the common lifecycle;
 strategy objects such as `KickoffRestart` implement the variable rules.
+Corners, goal kicks, and throw-ins may transition directly from positioning to
+in-progress once their taker arrives. Cancelling the remaining positioning does
+not snap unfinished players to their targets. AI-owned restarts take this early
+transition automatically; kickoffs retain the full lifecycle above.
 
 **Benefit:** future restart mechanics reuse tested lifecycle behavior without
 growing a central conditional. Each mechanic can be developed and tested as a
@@ -97,7 +101,8 @@ goal -> positioning -> waitingForInput -> inProgress -> normalPlay
 
 Starting any restart clears held keyboard input, the active touch target, and
 the controlled player's velocity. This ensures that play resumes only from
-fresh input after positioning completes.
+fresh input once the restart taker is ready. Kickoffs still wait for complete
+positioning.
 
 The project deliberately avoids a generic observer or event bus at its current
 scale. Broadcast events make execution order and ownership harder to see, and

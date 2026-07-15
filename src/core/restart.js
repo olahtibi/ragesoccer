@@ -32,10 +32,10 @@ RestartController.prototype.begin = function(request, context, options) {
   if (this.session.phase == "positioning") {
     var controller = this;
     var scene = strategy.createScene(context, request);
+    this.session.taker = scene.readyPlayer || null;
+    this.session.positioningTeams = scene.teams;
     scene.onComplete = function() {
-      controller.session.phase = "waitingForInput";
-      if (strategy.onPositioned != null) strategy.onPositioned(context, request);
-      context.humanController.selectPlayer();
+      controller.finishPositioning(context);
     };
     if (!this.cutscene.play(scene)) {
       this.session = null;
@@ -43,6 +43,17 @@ RestartController.prototype.begin = function(request, context, options) {
     }
   }
   return true;
+};
+
+RestartController.prototype.finishPositioning = function(context) {
+  if (this.session == null) return;
+  this.session.phase = "waitingForInput";
+  if (this.session.strategy.onPositioned != null) {
+    this.session.strategy.onPositioned(context, this.session.request);
+  }
+  var humanTaker = this.session.taker != null && this.session.taker.teamSide == "home" ?
+    this.session.taker : null;
+  context.humanController.selectPlayer(humanTaker);
 };
 
 RestartController.prototype.assignTeamAiStates = function(context) {
@@ -53,13 +64,25 @@ RestartController.prototype.assignTeamAiStates = function(context) {
 };
 
 RestartController.prototype.resume = function(context, direction) {
-  if (this.session == null || this.session.phase != "waitingForInput") return false;
+  if (!this.canResume()) return false;
+  if (this.session.phase == "positioning") {
+    this.cutscene.cancel(context.game);
+    this.finishPositioning(context);
+  }
   if (this.session.strategy.resume != null &&
       this.session.strategy.resume(context, this.session.request, direction) == false) {
     return false;
   }
   this.session.phase = "inProgress";
   return true;
+};
+
+RestartController.prototype.canResume = function() {
+  if (this.session == null) return false;
+  if (this.session.phase == "waitingForInput") return true;
+  return this.session.phase == "positioning" &&
+    this.session.strategy.allowEarlyResume == true &&
+    this.cutscene.isReadyForInput();
 };
 
 RestartController.prototype.simulationMode = function() {
@@ -79,6 +102,22 @@ RestartController.prototype.attackTarget = function(team) {
   return this.session.strategy.attackTarget(team, this.session.request);
 };
 
+RestartController.prototype.taker = function(team) {
+  if (this.session == null || this.session.taker == null ||
+      this.session.taker.teamSide != team.side) return null;
+  return this.session.taker;
+};
+
+RestartController.prototype.positioningTargets = function(team) {
+  if (this.session == null || this.session.positioningTeams == null) return null;
+  for (var i = 0; i < this.session.positioningTeams.length; i++) {
+    if (this.session.positioningTeams[i].side == team.side) {
+      return this.session.positioningTeams[i].positions;
+    }
+  }
+  return null;
+};
+
 RestartController.prototype.updateBeforePhysics = function(context) {
   if (this.session != null && this.session.phase == "positioning") {
     this.cutscene.updateBeforePhysics(context.game);
@@ -89,6 +128,7 @@ RestartController.prototype.updateAfterPhysics = function(context) {
   if (this.session == null) return;
   if (this.session.phase == "positioning") {
     this.cutscene.updateAfterPhysics(context.game);
+    this.resumeReadyRestart(context);
     return;
   }
   if (this.session.phase != "inProgress") return;
@@ -97,6 +137,19 @@ RestartController.prototype.updateAfterPhysics = function(context) {
   if (this.session.strategy.isComplete(context, this.session.request)) {
     this.session.phase = "complete";
   }
+};
+
+RestartController.prototype.resumeReadyRestart = function(context) {
+  if (this.session == null || this.session.strategy.allowEarlyResume != true || !this.canResume()) {
+    return false;
+  }
+  if (this.session.request.awardedTo != "home") {
+    return this.resume(context, null);
+  }
+  if (context.humanController.hasMovementInput()) {
+    return this.resume(context, context.humanController.inputDirection());
+  }
+  return false;
 };
 
 RestartController.prototype.isComplete = function() {

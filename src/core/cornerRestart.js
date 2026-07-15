@@ -1,5 +1,6 @@
 var CornerRestart = function(config) {
   this.config = config;
+  this.allowEarlyResume = true;
 };
 
 CornerRestart.prototype.ballPosition = function(request) {

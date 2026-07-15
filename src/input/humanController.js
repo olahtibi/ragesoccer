@@ -43,7 +43,17 @@ HumanController.prototype.inputDirection = function() {
   return MathLib.normalizeVector(x, y, 0, -1);
 };
 
-HumanController.prototype.selectPlayer = function() {
+HumanController.prototype.selectPlayer = function(preferredPlayer) {
+  if (preferredPlayer != null) {
+    var selected = this.team.humanPlayer;
+    if (selected != null && selected !== preferredPlayer) {
+      selected.velocity.x = 0;
+      selected.velocity.y = 0;
+    }
+    this.team.humanPlayer = preferredPlayer;
+    return preferredPlayer;
+  }
+
   var closest = this.closestPlayerToBall();
   var current = this.team.humanPlayer;
   if (current != null && closest !== current) {

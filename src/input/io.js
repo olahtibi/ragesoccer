@@ -12,7 +12,8 @@ BrowserInput.prototype.attach = function() {
 };
 
 BrowserInput.prototype.handleTouch = function(event) {
-  if (this.game.matchFlow.simulationMode() == "playersOnly" || this.game.isPaused() ||
+  if ((this.game.matchFlow.simulationMode() == "playersOnly" &&
+      !this.game.restartController.canResume()) || this.game.isPaused() ||
       this.game.isOutOfPlayPending()) return;
   var scaleBy = this.game.config.computeScaleBy();
   var target = new Vector2d(

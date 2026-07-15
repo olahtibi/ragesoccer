@@ -25,8 +25,11 @@ zeros AI velocity before human control applies the final velocity.
 
 During restart positioning, `MatchFlow` selects player-only simulation. The
 cutscene moves players toward explicit targets and locks the ball while AI,
-human input, and ball physics remain inactive. The restart strategy creates the
-scene; the cutscene does not understand formation or restart semantics.
+human input, and ball physics remain inactive. Corners, goal kicks, and
+throw-ins become available when their taker arrives; unfinished players keep
+moving until the restart is taken. AI-owned restarts resume automatically at
+that point. The restart strategy creates the scene; the cutscene does not
+understand formation or restart semantics.
 
 ## Team AI
 

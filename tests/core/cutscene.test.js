@@ -159,3 +159,53 @@ test("Cutscene ignores pre-cutscene velocity when moving players to targets", fu
   assertEqual(fixture.awayPlayers[0].position.y, 100);
   assertTrue(fixture.awayPlayers[0].velocity.x > 0);
 });
+
+test("Cutscene becomes ready when its taker arrives before other players", function() {
+  var fixture = makeFixture({ homeTeamSize: 2, awayTeamSize: 1 });
+  var game = makeCutsceneGame(fixture);
+  var takerTarget = new Vector2d(120, 100);
+  fixture.homePlayers[0].position.x = takerTarget.x;
+  fixture.homePlayers[0].position.y = takerTarget.y;
+  fixture.homePlayers[1].position.x = 300;
+  fixture.homePlayers[1].position.y = 300;
+
+  game.cutscene.play({
+    ballPosition: fixture.config.initialBallPosition,
+    readyPlayer: fixture.homePlayers[0],
+    teams: [{
+      side: "home",
+      players: fixture.homePlayers,
+      positions: [takerTarget, new Vector2d(400, 400)]
+    }]
+  });
+
+  assertEqual(game.cutscene.isReadyForInput(), true);
+  assertEqual(game.cutscene.isActive(), true);
+});
+
+test("Cancelling a ready cutscene does not snap unfinished players", function() {
+  var fixture = makeFixture({ homeTeamSize: 2, awayTeamSize: 1 });
+  var game = makeCutsceneGame(fixture);
+  var completed = false;
+  fixture.homePlayers[0].position.x = 120;
+  fixture.homePlayers[0].position.y = 100;
+  fixture.homePlayers[1].position.x = 300;
+  fixture.homePlayers[1].position.y = 300;
+
+  game.cutscene.play({
+    ballPosition: fixture.config.initialBallPosition,
+    readyPlayer: fixture.homePlayers[0],
+    onComplete: function() { completed = true; },
+    teams: [{
+      side: "home",
+      players: fixture.homePlayers,
+      positions: [new Vector2d(120, 100), new Vector2d(400, 400)]
+    }]
+  });
+  game.cutscene.cancel(game);
+
+  assertEqual(game.cutscene.isActive(), false);
+  assertEqual(fixture.homePlayers[1].position.x, 300);
+  assertEqual(fixture.homePlayers[1].position.y, 300);
+  assertEqual(completed, false);
+});

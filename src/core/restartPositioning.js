@@ -2,6 +2,7 @@ var RestartPositioning = {
   createScene: function(config, context, request, ballPosition, takerPosition, takerIndex, awardedState) {
     var formation = new Formation(config);
     var teams = [];
+    var readyPlayer = null;
     for (var i = 0; i < context.teams.length; i++) {
       var team = context.teams[i];
       var awarded = team.side == request.awardedTo;
@@ -13,12 +14,13 @@ var RestartPositioning = {
       if (awarded) {
         var selectedIndex = takerIndex == null ? this.closestPlayerIndex(team.players, ballPosition) : takerIndex;
         positions[selectedIndex] = takerPosition;
+        readyPlayer = team.players[selectedIndex];
       } else {
         positions = this.applyOpponentDistance(config, formation, positions, ballPosition);
       }
       teams.push({ side: team.side, players: team.players, positions: positions });
     }
-    return { ballPosition: ballPosition, teams: teams };
+    return { ballPosition: ballPosition, teams: teams, readyPlayer: readyPlayer };
   },
 
   closestPlayerIndex: function(players, position) {

@@ -1,5 +1,6 @@
 var ThrowInRestart = function(config) {
   this.config = config;
+  this.allowEarlyResume = true;
   this.launched = false;
   this.taker = null;
 };

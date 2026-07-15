@@ -64,6 +64,10 @@ Game.prototype.updateAi = function() {
     teamAi.update({
       restartActive: this.matchFlow.isRestartActive(),
       canMove: !this.matchFlow.isRestartActive() || this.restartController.canTeamMove(teamAi.team),
+      restartTaker: this.matchFlow.isRestartActive() ?
+        this.restartController.taker(teamAi.team) : null,
+      positioningTargets: this.matchFlow.isRestartActive() ?
+        this.restartController.positioningTargets(teamAi.team) : null,
       attackTarget: this.matchFlow.isRestartActive() ?
         this.restartController.attackTarget(teamAi.team) : null
     });

@@ -133,6 +133,33 @@ test("Touch direction executes a human throw-in and clamps it inward", function(
   assertTrue(setupResult.fixture.ball.velocity.x < 0);
 });
 
+test("Touch executes a throw-in when the taker is ready before positioning completes", function() {
+  var setupResult = setup({ homeTeamSize: 4, awayTeamSize: 4 });
+  setupResult.game.beginRestart("throwIn", "home", {
+    boundary: "right",
+    position: new Vector2d(setupResult.fixture.config.fieldRight, setupResult.fixture.config.aiCenterY)
+  });
+  var cutscene = setupResult.game.cutscene;
+  for (var t = 0; t < cutscene.teams.length; t++) {
+    for (var i = 0; i < cutscene.teams[t].players.length; i++) {
+      if (cutscene.teams[t].players[i] === cutscene.readyPlayer) {
+        cutscene.readyPlayer.position.x = cutscene.teams[t].positions[i].x;
+        cutscene.readyPlayer.position.y = cutscene.teams[t].positions[i].y;
+      }
+    }
+  }
+  var scale = setupResult.fixture.config.computeScaleBy();
+
+  setupResult.input.handleTouch({ touches: [{
+    clientX: (setupResult.fixture.config.fieldRight + 100) * scale,
+    clientY: setupResult.fixture.config.aiCenterY * scale
+  }] });
+
+  assertEqual(setupResult.game.restartController.phase(), "inProgress");
+  assertEqual(cutscene.isActive(), false);
+  assertTrue(setupResult.fixture.ball.velocity.x < 0);
+});
+
 test("J and K do not start restarts", function() {
   var setupResult = setup();
 

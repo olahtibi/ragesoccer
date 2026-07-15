@@ -21,11 +21,13 @@ TeamAi.prototype.update = function(context) {
   context = context || {};
   var restartActive = context.restartActive == true;
   this.state = this.nextState(restartActive);
-  var targets = this.formation.positions(this.state, this.team.side, this.team.players.length);
+  var targets = context.positioningTargets ||
+    this.formation.positions(this.state, this.team.side, this.team.players.length);
   var chasingCornerCross = this.state == "cornerUs" && !restartActive;
   var closest = chasingCornerCross ?
     (this.team.side == "home" ? this.team.humanPlayer : null) :
-    (this.team.side == "home" ? this.team.humanPlayer : this.selectedBallAttacker());
+    (this.team.side == "home" ? this.team.humanPlayer :
+      (context.restartTaker || this.selectedBallAttacker()));
   var commandContext = {
     ball: this.ball,
     team: this.team,

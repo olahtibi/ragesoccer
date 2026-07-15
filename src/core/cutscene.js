@@ -3,6 +3,7 @@ var CutsceneController = function(config) {
   this.active = false;
   this.ballPosition = null;
   this.teams = [];
+  this.readyPlayer = null;
   this.onComplete = null;
 };
 
@@ -18,9 +19,24 @@ CutsceneController.prototype.play = function(options) {
   this.active = true;
   this.ballPosition = new Vector3d(options.ballPosition.x, options.ballPosition.y, options.ballPosition.z || 0);
   this.teams = options.teams;
+  this.readyPlayer = options.readyPlayer || null;
   this.onComplete = typeof options.onComplete == "function" ? options.onComplete : null;
   this.stopPlayers();
   return true;
+};
+
+CutsceneController.prototype.isReadyForInput = function() {
+  if (!this.active || this.readyPlayer == null) return false;
+  for (var t = 0; t < this.teams.length; t++) {
+    var team = this.teams[t];
+    for (var i = 0; i < team.players.length; i++) {
+      if (team.players[i] === this.readyPlayer) {
+        return MathLib.computeDistance(this.readyPlayer.position, team.positions[i]) <=
+          this.config.cutsceneArrivedRadius;
+      }
+    }
+  }
+  return false;
 };
 
 CutsceneController.prototype.validRestartOptions = function(options) {
@@ -129,6 +145,7 @@ CutsceneController.prototype.clear = function(game) {
   this.active = false;
   this.ballPosition = null;
   this.teams = [];
+  this.readyPlayer = null;
   this.onComplete = null;
   if (game != null && game.camera != null && game.camera.clearFocusTarget != null) {
     game.camera.clearFocusTarget();
@@ -136,4 +153,9 @@ CutsceneController.prototype.clear = function(game) {
   if (onComplete != null) {
     onComplete(game);
   }
+};
+
+CutsceneController.prototype.cancel = function(game) {
+  this.onComplete = null;
+  this.clear(game);
 };
