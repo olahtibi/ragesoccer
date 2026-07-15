@@ -62,6 +62,7 @@ Game.prototype.updateAi = function() {
   for (var i = 0; i < this.teamAis.length; i++) {
     var teamAi = this.teamAis[i];
     teamAi.update({
+      deltaSeconds: this.physics.lastDt,
       restartActive: this.matchFlow.isRestartActive(),
       canMove: !this.matchFlow.isRestartActive() || this.restartController.canTeamMove(teamAi.team),
       restartTaker: this.matchFlow.isRestartActive() ?

@@ -8,5 +8,5 @@ MoveToPositionCommand.prototype.update = function(ai) {
     return;
   }
 
-  this.state = ai.moveTo(ai.target);
+  this.state = ai.moveToFormationPosition(ai.target);
 };

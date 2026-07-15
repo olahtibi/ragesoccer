@@ -55,6 +55,19 @@ Formation targets come from `src/ai/formation.js`:
 var targets = this.formation.positions(this.state, this.team.side, this.team.players.length);
 ```
 
+During ordinary attack and defense, `TeamAi` turns those fixed anchors into
+bounded open-play targets. Each outfield player has a deterministic movement
+profile with a small formation-only pace difference, positional bias, and
+target response rate. Each outfield anchor also wanders laterally and in depth
+on its own deterministic interval, while flexing toward the ball by a slightly
+different amount. Nearby teammates separate gently. Target smoothing uses
+frame delta, so the shape continually breathes without per-frame jitter or
+replay drift.
+
+Goalkeepers and restart positioning use the exact formation or restart targets.
+The active `attackBall` player also retains the team-strength pace; personal
+pace and arrival easing apply only to `moveToPosition`.
+
 For each player, `TeamAi.update()` assigns a command:
 
 - Home team closest selected player: `inactive`
@@ -82,6 +95,8 @@ assigns that player `inactive`; human input writes movement later in the frame.
 Shared helpers include:
 
 - `moveTo(target)`: sets velocity toward a target and returns `moving` or `stopped`.
+- `moveToFormationPosition(target)`: applies the player's formation pace,
+  target deadband, and arrival easing while moving toward a formation target.
 - `stop()`: zeros player velocity and returns `stopped`.
 - `toOpponentGoal(ballPosition)`: returns a normalized vector from the ball toward the opponent goal.
 - `isAlignedBehindBall(ballPosition, toGoal)`: checks attack alignment using radians.

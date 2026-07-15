@@ -8,6 +8,7 @@ var IndividualAi = function(config, team, player) {
   this.tPos = null;
   this.commands = createIndividualAiCommandRegistry();
   this.activeCommand = this.commands[this.command];
+  this.formationPaceMultiplier = 1;
 };
 
 IndividualAi.prototype.setCommand = function(command, target) {
@@ -70,6 +71,32 @@ IndividualAi.prototype.moveTo = function(target) {
   }
 
   var speed = this.config.teamVelocity(this.team.side);
+  this.player.velocity.x = dx / distance * speed;
+  this.player.velocity.y = dy / distance * speed;
+  return "moving";
+};
+
+IndividualAi.prototype.moveToFormationPosition = function(target) {
+  this.sPos = this.player.position;
+  this.tPos = target;
+
+  var dx = target.x - this.player.position.x;
+  var dy = target.y - this.player.position.y;
+  var distance = MathLib.vectorLength(dx, dy);
+  var deadband = this.config.aiTargetDeadband || this.config.aiTargetReachedRadius;
+  if (distance <= deadband) {
+    return this.stop();
+  }
+
+  var arrivalRadius = this.config.aiArrivalSlowRadius || 0;
+  var arrivalFactor = 1;
+  if (arrivalRadius > 0 && distance < arrivalRadius) {
+    var minFactor = this.config.aiArrivalMinSpeedFactor || 0;
+    arrivalFactor = minFactor + (1 - minFactor) * distance / arrivalRadius;
+  }
+
+  var speed = this.config.teamVelocity(this.team.side) *
+    this.formationPaceMultiplier * arrivalFactor;
   this.player.velocity.x = dx / distance * speed;
   this.player.velocity.y = dy / distance * speed;
   return "moving";

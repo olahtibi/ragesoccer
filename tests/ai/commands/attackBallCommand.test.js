@@ -90,3 +90,22 @@ test("attackBall keeps detour direction across updates", function() {
   assertEqual(ai.debugSnapshot().state, "detour");
   assertEqual(ai.debugSnapshot().attackOrbitDir, orbitDir);
 });
+
+test("attackBall ignores the formation pace multiplier", function() {
+  var fixture = makeFixture();
+  var ai = new IndividualAi(fixture.config, fixture.awayTeam, fixture.playerAway);
+  fixture.playerAway.position.x = 100;
+  fixture.playerAway.position.y = 100;
+  fixture.ball.position.x = 200;
+  fixture.ball.position.y = 100;
+  ai.formationPaceMultiplier = 0.92;
+
+  ai.setCommand("attackBall", null);
+  ai.update({ ball: fixture.ball });
+
+  assertNear(
+    MathLib.vectorLength(fixture.playerAway.velocity.x, fixture.playerAway.velocity.y),
+    fixture.config.teamVelocity("away"),
+    0.0001
+  );
+});
