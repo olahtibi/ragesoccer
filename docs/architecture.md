@@ -244,7 +244,9 @@ exceeds the configured minimum velocity.
 `ThrowInRestart`, `CornerRestart`, and `GoalKickRestart` reuse the same lifecycle
 and shared set-piece positioning. Throw-ins interpret generic directional input
 as an inward lofted throw. Corners and goal kicks return to ordinary
-player-to-ball contact after positioning.
+player-to-ball contact after positioning. A corner also supplies the awarded
+team AI with a central penalty-area target so its taker crosses instead of
+shooting directly at goal.
 
 `BoundaryDetector` reports the first pitch edge crossed, its crossing position,
 and the ball's last-touch side. `Game` gives goals priority, then converts a

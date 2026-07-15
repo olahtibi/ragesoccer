@@ -72,6 +72,11 @@ RestartController.prototype.canTeamMove = function(team) {
   return this.session.strategy.canTeamMove(team, this.session.request);
 };
 
+RestartController.prototype.attackTarget = function(team) {
+  if (this.session == null || this.session.strategy.attackTarget == null) return null;
+  return this.session.strategy.attackTarget(team, this.session.request);
+};
+
 RestartController.prototype.updateBeforePhysics = function(context) {
   if (this.session != null && this.session.phase == "positioning") {
     this.cutscene.updateBeforePhysics(context.game);

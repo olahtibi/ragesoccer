@@ -37,6 +37,15 @@ CornerRestart.prototype.canTeamMove = function(team, request) {
   return team.side == request.awardedTo;
 };
 
+CornerRestart.prototype.attackTarget = function(team, request) {
+  if (team.side != request.awardedTo) return null;
+  return new Vector2d(
+    this.config.initialBallPosition.x,
+    request.awardedTo == "home" ? this.config.fieldTop + this.config.cornerCrossDistance :
+      this.config.fieldBottom - this.config.cornerCrossDistance
+  );
+};
+
 CornerRestart.prototype.enforceRules = function() {};
 
 CornerRestart.prototype.isComplete = function(context) {

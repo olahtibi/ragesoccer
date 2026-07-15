@@ -25,7 +25,8 @@ TeamAi.prototype.update = function(context) {
   var commandContext = {
     ball: this.ball,
     team: this.team,
-    opponentTeam: this.opponentTeam
+    opponentTeam: this.opponentTeam,
+    attackTarget: context.attackTarget || null
   };
 
   for (var i = 0; i < this._individualAis.length; i++) {

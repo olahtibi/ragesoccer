@@ -57,7 +57,9 @@ Game.prototype.updateAi = function() {
     var teamAi = this.teamAis[i];
     teamAi.update({
       restartActive: this.matchFlow.isRestartActive(),
-      canMove: !this.matchFlow.isRestartActive() || this.restartController.canTeamMove(teamAi.team)
+      canMove: !this.matchFlow.isRestartActive() || this.restartController.canTeamMove(teamAi.team),
+      attackTarget: this.matchFlow.isRestartActive() ?
+        this.restartController.attackTarget(teamAi.team) : null
     });
   }
 };

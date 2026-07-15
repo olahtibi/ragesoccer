@@ -15,27 +15,33 @@ AttackBallCommand.prototype.update = function(ai, context) {
 
 AttackBallCommand.prototype.attackBallTarget = function(ai, context) {
   var ball = context.ball;
-  var toGoal = ai.toOpponentGoal(ball.position);
-  var aligned = ai.isAlignedBehindBall(ball.position, toGoal);
+  var toTarget = context.attackTarget == null ? ai.toOpponentGoal(ball.position) :
+    MathLib.normalizeVector(
+      context.attackTarget.x - ball.position.x,
+      context.attackTarget.y - ball.position.y,
+      0,
+      ai.team.side == "home" ? -1 : 1
+    );
+  var aligned = ai.isAlignedBehindBall(ball.position, toTarget);
   if (aligned) {
     this.attackOrbitDir = 0;
     this.state = "shoot";
     return new Vector2d(
-      ball.position.x + toGoal.x * ai.config.aiAttackRunThroughDistance,
-      ball.position.y + toGoal.y * ai.config.aiAttackRunThroughDistance
+      ball.position.x + toTarget.x * ai.config.aiAttackRunThroughDistance,
+      ball.position.y + toTarget.y * ai.config.aiAttackRunThroughDistance
     );
   }
 
   if (MathLib.computeDistance(ai.player.position, ball.position) <= ai.config.aiAttackCloseDistance) {
     this.state = "detour";
-    return this.attackDetourTarget(ai, ball.position, toGoal);
+    return this.attackDetourTarget(ai, ball.position, toTarget);
   }
 
   this.attackOrbitDir = 0;
   this.state = "approach";
   return new Vector2d(
-    ball.position.x - toGoal.x * ai.config.aiAttackSetupDistance,
-    ball.position.y - toGoal.y * ai.config.aiAttackSetupDistance
+    ball.position.x - toTarget.x * ai.config.aiAttackSetupDistance,
+    ball.position.y - toTarget.y * ai.config.aiAttackSetupDistance
   );
 };
 

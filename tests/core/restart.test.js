@@ -119,6 +119,20 @@ test("Set-piece positioning keeps opponents outside the restart distance", funct
   }
 });
 
+test("Corner restart gives the awarded AI team a central crossing target", function() {
+  var fixture = makeFixture();
+  fixture.game.beginRestart("corner", "away", {
+    boundary: "bottom",
+    position: new Vector2d(fixture.config.fieldRight, fixture.config.fieldBottom)
+  });
+
+  var target = fixture.game.restartController.attackTarget(fixture.awayTeam);
+
+  assertEqual(target.x, fixture.config.initialBallPosition.x);
+  assertEqual(target.y, fixture.config.fieldBottom - fixture.config.cornerCrossDistance);
+  assertEqual(fixture.game.restartController.attackTarget(fixture.homeTeam), null);
+});
+
 test("Kickoff clamps the human player to the center ellipse", function() {
   var fixture = makeFixture();
   fixture.game.resumeFromInput();
