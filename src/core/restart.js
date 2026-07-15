@@ -25,6 +25,7 @@ RestartController.prototype.begin = function(request, context, options) {
   this.session = {
     request: request,
     strategy: strategy,
+    opponentReadyElapsed: 0,
     phase: options != null && options.skipPositioning ? "waitingForInput" : "positioning"
   };
   this.assignTeamAiStates(context);
@@ -85,11 +86,28 @@ RestartController.prototype.canResume = function() {
     this.cutscene.isReadyForInput();
 };
 
+RestartController.prototype.canResumeFromInput = function() {
+  return !this.isDelayedOpponentRestart() && this.canResume();
+};
+
+RestartController.prototype.resumeFromInput = function(context, direction) {
+  if (!this.canResumeFromInput()) return false;
+  return this.resume(context, direction);
+};
+
 RestartController.prototype.simulationMode = function() {
   if (this.session == null) return "full";
   if (this.session.phase == "positioning") return "playersOnly";
   if (this.session.phase == "inProgress") return "full";
+  if (this.session.phase == "waitingForInput" && this.isDelayedOpponentRestart()) {
+    return "playersOnly";
+  }
   return "none";
+};
+
+RestartController.prototype.isDelayedOpponentRestart = function() {
+  return this.session != null && this.session.strategy.allowEarlyResume == true &&
+    this.session.request.awardedTo != "home";
 };
 
 RestartController.prototype.canTeamMove = function(team) {
@@ -131,6 +149,10 @@ RestartController.prototype.updateAfterPhysics = function(context) {
     this.resumeReadyRestart(context);
     return;
   }
+  if (this.session.phase == "waitingForInput") {
+    this.resumeReadyRestart(context);
+    return;
+  }
   if (this.session.phase != "inProgress") return;
 
   this.session.strategy.enforceRules(context, this.session.request);
@@ -140,12 +162,20 @@ RestartController.prototype.updateAfterPhysics = function(context) {
 };
 
 RestartController.prototype.resumeReadyRestart = function(context) {
-  if (this.session == null || this.session.strategy.allowEarlyResume != true || !this.canResume()) {
+  if (this.session == null || this.session.strategy.allowEarlyResume != true) {
     return false;
   }
   if (this.session.request.awardedTo != "home") {
+    if (!this.canResume()) {
+      this.session.opponentReadyElapsed = 0;
+      return false;
+    }
+    this.session.opponentReadyElapsed += context.game.physics.lastDt || 0;
+    var delay = Math.max(0, context.config.opponentRestartDelaySeconds || 0);
+    if (this.session.opponentReadyElapsed < delay) return false;
     return this.resume(context, null);
   }
+  if (!this.canResume()) return false;
   if (context.humanController.hasMovementInput()) {
     return this.resume(context, context.humanController.inputDirection());
   }

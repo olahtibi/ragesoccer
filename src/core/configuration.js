@@ -56,6 +56,7 @@ var Configuration = function () {
   this.kickoffSide = "home";
   this.outOfPlayRestartsEnabled = true;
   this.outOfPlayRestartDelaySeconds = 0.35;
+  this.opponentRestartDelaySeconds = 1;
   this.restartOpponentDistance = 45;
   this.restartPlacementClearance = 1;
   this.goalKickDistance = 25;

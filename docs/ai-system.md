@@ -28,7 +28,8 @@ cutscene moves players toward explicit targets and locks the ball while AI,
 human input, and ball physics remain inactive. Corners, goal kicks, and
 throw-ins become available when their taker arrives; unfinished players keep
 moving until the restart is taken. AI-owned restarts resume automatically at
-that point. The restart strategy creates the scene; the cutscene does not
+that point after `opponentRestartDelaySeconds` (one second by default). The
+restart strategy creates the scene; the cutscene does not
 understand formation or restart semantics.
 
 ## Team AI

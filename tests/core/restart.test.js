@@ -121,7 +121,7 @@ test("Early home restart selects the designated taker over a closer teammate", f
   assertTrue(fixture.homeTeam.humanPlayer === taker);
 });
 
-test("Away corner starts automatically as soon as its taker is ready", function() {
+test("Away corner waits for the configured delay after its taker is ready", function() {
   var fixture = makeFixture({ homeTeamSize: 4, awayTeamSize: 4 });
   fixture.game.beginRestart("corner", "away", {
     boundary: "bottom",
@@ -132,14 +132,44 @@ test("Away corner starts automatically as soon as its taker is ready", function(
   cutscene.readyPlayer.position.x = target.x;
   cutscene.readyPlayer.position.y = target.y;
 
+  assertEqual(fixture.game.resumeFromInput(new Vector2d(0, -1)), false);
+
+  fixture.game.physics.lastDt = 0.4;
+  fixture.game.restartController.updateAfterPhysics(fixture.game.context());
+
+  assertEqual(fixture.game.restartController.phase(), "positioning");
+
+  fixture.game.physics.lastDt = 0.6;
   fixture.game.restartController.updateAfterPhysics(fixture.game.context());
 
   assertEqual(fixture.game.restartController.phase(), "inProgress");
   assertEqual(cutscene.isActive(), false);
 });
 
+test("Opponent restart delay continues after every player finishes positioning", function() {
+  var fixture = makeFixture({ homeTeamSize: 4, awayTeamSize: 4 });
+  fixture.game.beginRestart("throwIn", "away", {
+    boundary: "right",
+    position: new Vector2d(fixture.config.fieldRight, fixture.config.aiCenterY)
+  });
+  fixture.game.cutscene.clear(fixture.game);
+
+  assertEqual(fixture.game.restartController.phase(), "waitingForInput");
+  assertEqual(fixture.game.matchFlow.simulationMode(), "playersOnly");
+
+  fixture.game.physics.lastDt = 0.5;
+  fixture.game.restartController.updateAfterPhysics(fixture.game.context());
+  assertEqual(fixture.game.restartController.phase(), "waitingForInput");
+
+  fixture.game.physics.lastDt = 0.5;
+  fixture.game.restartController.updateAfterPhysics(fixture.game.context());
+  assertEqual(fixture.game.restartController.phase(), "inProgress");
+  assertTrue(fixture.ball.velocity.z > 0);
+});
+
 test("Early away goal kick keeps the goalkeeper as designated taker", function() {
   var fixture = makeFixture({ homeTeamSize: 4, awayTeamSize: 4 });
+  fixture.config.opponentRestartDelaySeconds = 0;
   fixture.game.beginRestart("goalKick", "away", {
     boundary: "top",
     position: new Vector2d(fixture.config.initialBallPosition.x, fixture.config.fieldTop)
@@ -160,6 +190,7 @@ test("Early away goal kick keeps the goalkeeper as designated taker", function()
 
 test("Away throw-in launches automatically when its taker is ready", function() {
   var fixture = makeFixture({ homeTeamSize: 4, awayTeamSize: 4 });
+  fixture.config.opponentRestartDelaySeconds = 0;
   fixture.game.beginRestart("throwIn", "away", {
     boundary: "right",
     position: new Vector2d(fixture.config.fieldRight, fixture.config.aiCenterY)
@@ -234,6 +265,7 @@ test("Throw-in uses fresh directional input to launch a lofted inward throw", fu
 
 test("Away throw-in chooses an automatic inward attacking direction", function() {
   var fixture = makeFixture();
+  fixture.config.opponentRestartDelaySeconds = 0;
   fixture.game.beginRestart("throwIn", "away", {
     boundary: "right",
     position: new Vector2d(fixture.config.fieldRight, fixture.config.aiCenterY)
@@ -244,7 +276,7 @@ test("Away throw-in chooses an automatic inward attacking direction", function()
   assertEqual(fixture.ball.heldBy.facingX, -1);
   assertEqual(fixture.ball.heldBy.facingY, 0);
 
-  fixture.game.resumeFromInput(new Vector2d(0, -1));
+  fixture.game.restartController.updateAfterPhysics(fixture.game.context());
 
   assertTrue(fixture.ball.velocity.x < 0);
   assertTrue(fixture.ball.velocity.y > 0);

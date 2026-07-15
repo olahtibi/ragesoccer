@@ -82,7 +82,8 @@ strategy objects such as `KickoffRestart` implement the variable rules.
 Corners, goal kicks, and throw-ins may transition directly from positioning to
 in-progress once their taker arrives. Cancelling the remaining positioning does
 not snap unfinished players to their targets. AI-owned restarts take this early
-transition automatically; kickoffs retain the full lifecycle above.
+transition automatically after the configured opponent restart delay; kickoffs
+retain the full lifecycle above.
 
 **Benefit:** future restart mechanics reuse tested lifecycle behavior without
 growing a central conditional. Each mechanic can be developed and tested as a
