@@ -20,6 +20,7 @@ RestartController.prototype.begin = function(request, context, options) {
   var strategy = request == null ? null : this.registry.get(request.type);
   if (strategy == null) return false;
 
+  context.humanController.clearInput();
   this.session = {
     request: request,
     strategy: strategy,

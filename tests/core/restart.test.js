@@ -46,6 +46,21 @@ test("Restart positioning progresses through waiting and in-progress phases", fu
   assertEqual(fixture.game.matchFlow.simulationMode(), "full");
 });
 
+test("Beginning a restart clears keyboard touch and controlled-player velocity", function() {
+  var fixture = makeFixture();
+  fixture.game.humanController.setKey(39, true);
+  fixture.game.humanController.setTouchTarget(new Vector2d(400, 400));
+  fixture.homeTeam.humanPlayer.velocity.x = 10;
+  fixture.homeTeam.humanPlayer.velocity.y = -10;
+
+  fixture.game.beginRestart("kickoff", "away");
+
+  assertEqual(fixture.game.humanController.keys[39], undefined);
+  assertEqual(fixture.game.humanController.touchTarget, null);
+  assertEqual(fixture.homeTeam.humanPlayer.velocity.x, 0);
+  assertEqual(fixture.homeTeam.humanPlayer.velocity.y, 0);
+});
+
 test("Kickoff assigns relative states and movement permission", function() {
   var fixture = makeFixture({ kickoffSide: "away" });
   fixture.game.resumeFromInput();

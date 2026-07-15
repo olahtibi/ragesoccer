@@ -60,7 +60,7 @@ test("Paused and waiting states reset the physics clock", function() {
   assertEqual(resets, 2);
 });
 
-test("Game applies detector results to team-owned scores once", function() {
+test("A home goal updates the score and starts an away kickoff once", function() {
   var fixture = makeFixture();
   fixture.ball.position.x = 336;
   fixture.ball.position.y = 100;
@@ -70,6 +70,37 @@ test("Game applies detector results to team-owned scores once", function() {
 
   assertEqual(fixture.homeTeam.score, 1);
   assertEqual(fixture.awayTeam.score, 0);
+  assertEqual(fixture.game.restartController.type(), "kickoff");
+  assertEqual(fixture.game.restartController.phase(), "positioning");
+  assertEqual(fixture.homeTeamAi.state, "kickoffOpponent");
+  assertEqual(fixture.awayTeamAi.state, "kickoffUs");
+});
+
+test("An away goal updates the score and starts a home kickoff", function() {
+  var fixture = makeFixture();
+  fixture.ball.position.x = 336;
+  fixture.ball.position.y = 758;
+
+  fixture.game.updateScore();
+
+  assertEqual(fixture.homeTeam.score, 0);
+  assertEqual(fixture.awayTeam.score, 1);
+  assertEqual(fixture.game.restartController.type(), "kickoff");
+  assertEqual(fixture.game.restartController.phase(), "positioning");
+  assertEqual(fixture.homeTeamAi.state, "kickoffUs");
+  assertEqual(fixture.awayTeamAi.state, "kickoffOpponent");
+});
+
+test("A goal kickoff waits for fresh input after positioning", function() {
+  var fixture = makeFixture({ homeTeamSize: 1, awayTeamSize: 1 });
+  fixture.ball.position.x = 336;
+  fixture.ball.position.y = 100;
+
+  fixture.game.updateScore();
+  fixture.game.cutscene.clear(fixture.game);
+
+  assertEqual(fixture.game.restartController.phase(), "waitingForInput");
+  assertEqual(fixture.game.matchFlow.simulationMode(), "none");
 });
 
 test("Render frame delegates update and render before scheduling", function() {

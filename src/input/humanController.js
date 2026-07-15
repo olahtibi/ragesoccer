@@ -19,6 +19,15 @@ HumanController.prototype.setTouchTarget = function(target) {
   this.touchTarget = target;
 };
 
+HumanController.prototype.clearInput = function() {
+  this.keys = {};
+  this.touchTarget = null;
+  var player = this.player();
+  if (player == null) return;
+  player.velocity.x = 0;
+  player.velocity.y = 0;
+};
+
 HumanController.prototype.hasMovementInput = function() {
   return this.keys[37] || this.keys[38] || this.keys[39] || this.keys[40];
 };

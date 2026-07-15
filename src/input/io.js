@@ -42,8 +42,6 @@ BrowserInput.prototype.applyHumanInput = function() {
 };
 
 BrowserInput.prototype.handleCommand = function(keyCode) {
-  if (keyCode == 74) this.game.beginRestart("kickoff", "home");
-  if (keyCode == 75) this.game.beginRestart("kickoff", "away");
   if (keyCode == 70) this.game.camera.showStats = !this.game.camera.showStats;
   if (keyCode == 81) this.game.config.viewportRatio /= 1.2;
   if (keyCode == 87) this.game.config.viewportRatio *= 1.2;

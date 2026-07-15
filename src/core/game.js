@@ -79,12 +79,18 @@ Game.prototype.update = function() {
 Game.prototype.updateScore = function() {
   var scoredBy = this.goalDetector.update();
   if (scoredBy == null) return;
+  var scoringTeam = null;
+  var concedingTeam = null;
   for (var i = 0; i < this.teams.length; i++) {
     if (this.teams[i].side == scoredBy) {
-      this.teams[i].score++;
-      return;
+      scoringTeam = this.teams[i];
+    } else {
+      concedingTeam = this.teams[i];
     }
   }
+  if (scoringTeam == null || concedingTeam == null) return;
+  scoringTeam.score++;
+  this.beginRestart("kickoff", concedingTeam.side);
 };
 
 Game.prototype.render = function(ctx) {

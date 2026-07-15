@@ -98,21 +98,19 @@ test("Input starts an opponent kickoff without moving the frozen home team", fun
   assertEqual(setupResult.fixture.playerHome.velocity.x, 0);
 });
 
-test("J and K request kickoff through the generic Game API", function() {
-  var setupResult = setup({ homeTeamSize: 3, awayTeamSize: 3 });
+test("J and K do not start restarts", function() {
+  var setupResult = setup();
 
+  setupResult.input.handleKey({ keyCode: 74, type: "keydown" });
   setupResult.input.handleKey({ keyCode: 75, type: "keydown" });
 
-  assertEqual(setupResult.game.restartController.type(), "kickoff");
-  assertEqual(setupResult.game.restartController.phase(), "positioning");
-  assertEqual(setupResult.game.cutscene.isActive(), true);
-  assertEqual(setupResult.fixture.homeTeamAi.state, "kickoffOpponent");
-  assertEqual(setupResult.fixture.awayTeamAi.state, "kickoffUs");
+  assertEqual(setupResult.game.restartController.phase(), "waitingForInput");
+  assertEqual(setupResult.game.cutscene.isActive(), false);
 });
 
 test("Restart positioning selects the newly closest human player on completion", function() {
   var setupResult = setup({ homeTeamSize: 4, awayTeamSize: 4, kickoffSide: "away" });
-  setupResult.input.handleKey({ keyCode: 74, type: "keydown" });
+  setupResult.game.beginRestart("kickoff", "home");
   var cutscene = setupResult.game.cutscene;
   for (var i = 0; i < cutscene.teams[0].players.length; i++) {
     cutscene.teams[0].players[i].position.x = cutscene.teams[0].positions[i].x;
@@ -128,7 +126,7 @@ test("Slash pauses and resumes while preserving restart positioning", function()
   var setupResult = setup();
   setupResult.fixture.config.debug = true;
   setupResult.game.debugLog.dump = function() {};
-  setupResult.input.handleKey({ keyCode: 74, type: "keydown" });
+  setupResult.game.beginRestart("kickoff", "home");
 
   setupResult.input.handleKey({ keyCode: 191, type: "keydown" });
   assertEqual(setupResult.game.matchFlow.state, "paused");

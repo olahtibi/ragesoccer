@@ -88,7 +88,16 @@ cohesive unit.
 
 Rule detectors return values to their caller. For example,
 `GoalDetector.update()` returns the scoring side, and `Game` applies that result
-to the appropriate team.
+to the appropriate team. A detected goal also begins a kickoff awarded to the
+team that conceded, using the standard restart lifecycle:
+
+```text
+goal -> positioning -> waitingForInput -> inProgress -> normalPlay
+```
+
+Starting any restart clears held keyboard input, the active touch target, and
+the controlled player's velocity. This ensures that play resumes only from
+fresh input after positioning completes.
 
 The project deliberately avoids a generic observer or event bus at its current
 scale. Broadcast events make execution order and ownership harder to see, and
