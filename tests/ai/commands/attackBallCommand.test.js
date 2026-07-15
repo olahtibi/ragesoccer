@@ -26,6 +26,22 @@ test("attackBall shoots through ball when aligned behind it", function() {
   assertNear(fixture.ball.velocity.y, 0, 0.0001);
 });
 
+test("attackBall aims through a supplied set-piece target", function() {
+  var fixture = makeFixture();
+  var ai = new IndividualAi(fixture.config, fixture.awayTeam, fixture.playerAway);
+  fixture.playerAway.position.x = 80;
+  fixture.playerAway.position.y = 100;
+  fixture.ball.position.x = 100;
+  fixture.ball.position.y = 100;
+
+  ai.setCommand("attackBall", null);
+  ai.update({ ball: fixture.ball, attackTarget: new Vector2d(200, 100) });
+
+  assertEqual(ai.debugSnapshot().state, "shoot");
+  assertTrue(ai.tPos.x > fixture.ball.position.x);
+  assertNear(ai.tPos.y, fixture.ball.position.y, 0.0001);
+});
+
 test("attackBall approaches behind-ball setup point when far and not aligned", function() {
   var fixture = makeFixture();
   var ai = new IndividualAi(fixture.config, fixture.awayTeam, fixture.playerAway);

@@ -6,280 +6,210 @@ var assertTrue = testlib.assertTrue;
 var assertEqual = testlib.assertEqual;
 var assertNear = testlib.assertNear;
 
-function makeInputGame(fixture) {
-  var game = new Game(fixture.config, fixture.stadium, {}, fixture.physics);
-  game.camera = {
-    position: new Vector2d(0, 0),
-    showStats: false
+function setup(options) {
+  var fixture = makeFixture(options);
+  fixture.game.camera.position.x = 0;
+  fixture.game.camera.position.y = 0;
+  return {
+    fixture: fixture,
+    game: fixture.game,
+    input: new BrowserInput(fixture.game, window)
   };
-  window.game = game;
-  window.keyMap = {};
-  game.debugLog.events = [];
-  return game;
 }
 
-function selectHumanWithTeamAi(game) {
-  game.started = true;
-  game.updateAi();
-}
+test("Keyboard input selects and controls the player closest to the ball", function() {
+  var setupResult = setup({ homeTeamSize: 2, awayTeamSize: 1, playerStrength: 10 });
+  var fixture = setupResult.fixture;
+  fixture.ball.position.x = fixture.homePlayers[1].position.x;
+  fixture.ball.position.y = fixture.homePlayers[1].position.y;
 
-test("Keyboard input controls the home player closest to the ball", function() {
-  var fixture = makeFixture({ homeTeamSize: 2, awayTeamSize: 1, playerStrength: 10 });
-  var game = makeInputGame(fixture);
-  fixture.ball.position.x = fixture.stadium.homePlayers[1].position.x;
-  fixture.ball.position.y = fixture.stadium.homePlayers[1].position.y;
-  selectHumanWithTeamAi(game);
+  setupResult.input.handleKey({ keyCode: 39, type: "keydown" });
 
-  checkInput({ keyCode: 39, type: "keydown" });
-
-  assertTrue(fixture.stadium.humanPlayer === fixture.stadium.homePlayers[1]);
-  assertEqual(fixture.stadium.homePlayers[0].velocity.x, 0);
-  assertEqual(fixture.stadium.homePlayers[0].velocity.y, 0);
-  assertEqual(fixture.stadium.homePlayers[1].velocity.x, fixture.config.teamVelocity("home"));
+  assertTrue(fixture.homeTeam.humanPlayer === fixture.homePlayers[1]);
+  assertEqual(fixture.homePlayers[1].velocity.x, fixture.config.teamVelocity("home"));
 });
 
-test("Keyboard diagonal input normalizes selected player velocity", function() {
-  var fixture = makeFixture({ homeTeamSize: 2, awayTeamSize: 1, playerStrength: 10 });
-  var game = makeInputGame(fixture);
-  fixture.ball.position.x = fixture.stadium.homePlayers[1].position.x;
-  fixture.ball.position.y = fixture.stadium.homePlayers[1].position.y;
-  selectHumanWithTeamAi(game);
+test("Human selection keeps the current player within the hysteresis margin", function() {
+  var setupResult = setup({ homeTeamSize: 2, awayTeamSize: 1 });
+  var fixture = setupResult.fixture;
+  fixture.config.humanSwitchHysteresisDistance = 20;
+  fixture.homePlayers[0].position.x = 100;
+  fixture.homePlayers[1].position.x = 112;
+  fixture.homePlayers[0].position.y = fixture.homePlayers[1].position.y = 100;
+  fixture.ball.position.x = 120;
+  fixture.ball.position.y = 100;
 
-  checkInput({ keyCode: 39, type: "keydown" });
-  checkInput({ keyCode: 40, type: "keydown" });
+  fixture.game.humanController.selectPlayer();
 
-  assertNear(fixture.stadium.homePlayers[1].velocity.x, fixture.config.teamVelocity("home") / Math.sqrt(2), 0.0001);
-  assertNear(fixture.stadium.homePlayers[1].velocity.y, fixture.config.teamVelocity("home") / Math.sqrt(2), 0.0001);
+  assertTrue(fixture.homeTeam.humanPlayer === fixture.homePlayers[0]);
 });
 
-test("Touch input controls the home player closest to the ball", function() {
-  var fixture = makeFixture({ homeTeamSize: 2, awayTeamSize: 1, playerStrength: 10 });
-  var game = makeInputGame(fixture);
-  fixture.ball.position.x = fixture.stadium.homePlayers[1].position.x;
-  fixture.ball.position.y = fixture.stadium.homePlayers[1].position.y;
-  selectHumanWithTeamAi(game);
-  var scaleBy = fixture.config.computeScaleBy();
+test("Human selection switches and stops the old player outside hysteresis", function() {
+  var setupResult = setup({ homeTeamSize: 2, awayTeamSize: 1 });
+  var fixture = setupResult.fixture;
+  fixture.config.humanSwitchHysteresisDistance = 20;
+  fixture.homePlayers[0].position.x = 100;
+  fixture.homePlayers[1].position.x = 140;
+  fixture.homePlayers[0].position.y = fixture.homePlayers[1].position.y = 100;
+  fixture.homePlayers[0].velocity.x = 10;
+  fixture.ball.position.x = 140;
+  fixture.ball.position.y = 100;
 
-  touchHandler({
-    touches: [
-      {
-        clientX: fixture.stadium.homePlayers[1].position.x * scaleBy,
-        clientY: (fixture.stadium.homePlayers[1].position.y + 50) * scaleBy
-      }
-    ]
+  fixture.game.humanController.selectPlayer();
+
+  assertTrue(fixture.homeTeam.humanPlayer === fixture.homePlayers[1]);
+  assertEqual(fixture.homePlayers[0].velocity.x, 0);
+});
+
+test("Keyboard diagonal input normalizes velocity", function() {
+  var setupResult = setup({ playerStrength: 10 });
+  setupResult.input.handleKey({ keyCode: 39, type: "keydown" });
+  setupResult.input.handleKey({ keyCode: 40, type: "keydown" });
+
+  assertNear(setupResult.fixture.playerHome.velocity.x,
+    setupResult.fixture.config.teamVelocity("home") / Math.sqrt(2), 0.0001);
+  assertNear(setupResult.fixture.playerHome.velocity.y,
+    setupResult.fixture.config.teamVelocity("home") / Math.sqrt(2), 0.0001);
+});
+
+test("Touch input stores a world target and controls the selected player", function() {
+  var setupResult = setup({ homeTeamSize: 2, awayTeamSize: 1, playerStrength: 10 });
+  var fixture = setupResult.fixture;
+  fixture.ball.position.x = fixture.homePlayers[1].position.x;
+  fixture.ball.position.y = fixture.homePlayers[1].position.y;
+  var scale = fixture.config.computeScaleBy();
+
+  setupResult.input.handleTouch({ touches: [{
+    clientX: fixture.homePlayers[1].position.x * scale,
+    clientY: (fixture.homePlayers[1].position.y + 50) * scale
+  }] });
+
+  assertTrue(fixture.homeTeam.humanPlayer === fixture.homePlayers[1]);
+  assertNear(fixture.game.humanController.touchTarget.y, fixture.homePlayers[1].position.y + 50, 0.0001);
+  assertTrue(fixture.homePlayers[1].velocity.y > 0);
+});
+
+test("Input starts an opponent kickoff without moving the frozen home team", function() {
+  var setupResult = setup({ kickoffSide: "away" });
+
+  setupResult.input.handleKey({ keyCode: 39, type: "keydown" });
+
+  assertEqual(setupResult.game.restartController.phase(), "inProgress");
+  assertEqual(setupResult.fixture.playerHome.velocity.x, 0);
+});
+
+test("Keyboard direction executes a human throw-in and clamps it inward", function() {
+  var setupResult = setup();
+  setupResult.game.beginRestart("throwIn", "home", {
+    boundary: "left",
+    position: new Vector2d(setupResult.fixture.config.fieldLeft, setupResult.fixture.config.aiCenterY)
   });
+  setupResult.game.cutscene.updateBeforePhysics(setupResult.game);
+  setupResult.game.cutscene.clear(setupResult.game);
 
-  assertTrue(fixture.stadium.humanPlayer === fixture.stadium.homePlayers[1]);
-  assertNear(fixture.stadium.homePlayers[1].velocity.y, fixture.config.teamVelocity("home"), 0.0001);
-  assertNear(game.touchTarget.x, fixture.stadium.homePlayers[1].position.x, 0.0001);
-  assertNear(game.touchTarget.y, fixture.stadium.homePlayers[1].position.y + 50, 0.0001);
+  setupResult.input.handleKey({ keyCode: 37, type: "keydown" });
+
+  assertEqual(setupResult.game.restartController.phase(), "inProgress");
+  assertTrue(setupResult.fixture.ball.velocity.x > 0);
+  assertTrue(setupResult.fixture.ball.velocity.z > 0);
 });
 
-test("Keyboard input starts opponent kickoff without moving frozen home player", function() {
-  var fixture = makeFixture({ homeTeamSize: 1, awayTeamSize: 1, kickoffSide: "away" });
-  var game = makeInputGame(fixture);
-
-  checkInput({ keyCode: 39, type: "keydown" });
-
-  assertEqual(game.started, true);
-  assertEqual(fixture.stadium.humanPlayer.velocity.x, 0);
-  assertEqual(fixture.stadium.humanPlayer.velocity.y, 0);
-});
-
-test("Touch input starts opponent kickoff without moving frozen home player", function() {
-  var fixture = makeFixture({ homeTeamSize: 1, awayTeamSize: 1, kickoffSide: "away" });
-  var game = makeInputGame(fixture);
-
-  touchHandler({
-    touches: [
-      {
-        clientX: 100,
-        clientY: 100
-      }
-    ]
+test("Touch direction executes a human throw-in and clamps it inward", function() {
+  var setupResult = setup();
+  setupResult.game.beginRestart("throwIn", "home", {
+    boundary: "right",
+    position: new Vector2d(setupResult.fixture.config.fieldRight, setupResult.fixture.config.aiCenterY)
   });
+  setupResult.game.cutscene.updateBeforePhysics(setupResult.game);
+  setupResult.game.cutscene.clear(setupResult.game);
+  var scale = setupResult.fixture.config.computeScaleBy();
 
-  assertEqual(game.started, true);
-  assertEqual(game.touchTarget, null);
-  assertEqual(fixture.stadium.humanPlayer.velocity.x, 0);
-  assertEqual(fixture.stadium.humanPlayer.velocity.y, 0);
+  setupResult.input.handleTouch({ touches: [{
+    clientX: (setupResult.fixture.config.fieldRight + 100) * scale,
+    clientY: setupResult.fixture.config.aiCenterY * scale
+  }] });
+
+  assertEqual(setupResult.game.restartController.phase(), "inProgress");
+  assertTrue(setupResult.fixture.ball.velocity.x < 0);
 });
 
-test("J starts a home kickoff cutscene with formation targets", function() {
-  var fixture = makeFixture({ homeTeamSize: 3, awayTeamSize: 3, kickoffSide: "away" });
-  var game = makeInputGame(fixture);
-  var formation = new Formation(fixture.config);
-  var homeTargets = formation.positions("kickoffUs", "home", 3);
-  var awayTargets = formation.positions("kickoffUs", "away", 3);
+test("J and K do not start restarts", function() {
+  var setupResult = setup();
 
-  checkInput({ keyCode: 74, type: "keydown" });
+  setupResult.input.handleKey({ keyCode: 74, type: "keydown" });
+  setupResult.input.handleKey({ keyCode: 75, type: "keydown" });
 
-  assertEqual(game.cutscene.isActive(), true);
-  assertEqual(game.cutscene.ballPosition.x, fixture.config.initialBallPosition.x);
-  assertEqual(fixture.stadium.currentKickoffState(), "kickoffOpponent");
-  assertEqual(game.cutscene.teams[0].positions[2].x, homeTargets[2].x);
-  assertEqual(game.cutscene.teams[0].positions[2].y, homeTargets[2].y);
-  assertEqual(game.cutscene.teams[1].positions[2].x, awayTargets[2].x);
-  assertEqual(game.cutscene.teams[1].positions[2].y, awayTargets[2].y);
-
-  game.cutscene.clear(game);
-
-  assertEqual(fixture.stadium.currentKickoffState(), "kickoffUs");
-  assertEqual(fixture.homeTeam.teamAi.state, "kickoffUs");
-  assertEqual(fixture.awayTeam.teamAi.state, "kickoffUs");
-  assertEqual(fixture.stadium.isTeamFrozenForKickoff("away"), true);
+  assertEqual(setupResult.game.restartController.phase(), "waitingForInput");
+  assertEqual(setupResult.game.cutscene.isActive(), false);
 });
 
-test("K starts an away kickoff cutscene with formation targets", function() {
-  var fixture = makeFixture({ homeTeamSize: 3, awayTeamSize: 3 });
-  var game = makeInputGame(fixture);
-  var formation = new Formation(fixture.config);
-  var homeTargets = formation.positions("kickoffOpponent", "home", 3);
-  var awayTargets = formation.positions("kickoffOpponent", "away", 3);
-
-  checkInput({ keyCode: 75, type: "keydown" });
-
-  assertEqual(game.cutscene.isActive(), true);
-  assertEqual(fixture.stadium.currentKickoffState(), "kickoffUs");
-  assertEqual(game.cutscene.teams[0].positions[2].x, homeTargets[2].x);
-  assertEqual(game.cutscene.teams[0].positions[2].y, homeTargets[2].y);
-  assertEqual(game.cutscene.teams[1].positions[2].x, awayTargets[2].x);
-  assertEqual(game.cutscene.teams[1].positions[2].y, awayTargets[2].y);
-
-  game.cutscene.clear(game);
-
-  assertEqual(fixture.stadium.currentKickoffState(), "kickoffOpponent");
-  assertEqual(fixture.homeTeam.teamAi.state, "kickoffOpponent");
-  assertEqual(fixture.awayTeam.teamAi.state, "kickoffOpponent");
-  assertEqual(fixture.stadium.isTeamFrozenForKickoff("home"), true);
-});
-
-test("J completion selects the positioned kickoff player before kickoff clamp", function() {
-  var fixture = makeFixture({ homeTeamSize: 4, awayTeamSize: 4, kickoffSide: "away" });
-  var game = makeInputGame(fixture);
-  fixture.homePlayers[1].position.x = fixture.config.initialBallPosition.x;
-  fixture.homePlayers[1].position.y = fixture.config.aiCenterY;
-
-  checkInput({ keyCode: 74, type: "keydown" });
-  var nonKickoffTarget = game.cutscene.teams[0].positions[1];
-  for (var i = 0; i < game.cutscene.teams[0].players.length; i++) {
-    game.cutscene.teams[0].players[i].position.x = game.cutscene.teams[0].positions[i].x;
-    game.cutscene.teams[0].players[i].position.y = game.cutscene.teams[0].positions[i].y;
+test("Restart positioning selects the newly closest human player on completion", function() {
+  var setupResult = setup({ homeTeamSize: 4, awayTeamSize: 4, kickoffSide: "away" });
+  setupResult.game.beginRestart("kickoff", "home");
+  var cutscene = setupResult.game.cutscene;
+  for (var i = 0; i < cutscene.teams[0].players.length; i++) {
+    cutscene.teams[0].players[i].position.x = cutscene.teams[0].positions[i].x;
+    cutscene.teams[0].players[i].position.y = cutscene.teams[0].positions[i].y;
   }
-  game.cutscene.clear(game);
-  fixture.stadium.updateKickoff();
 
-  assertTrue(fixture.stadium.humanPlayer === fixture.homePlayers[3]);
-  assertEqual(fixture.homePlayers[1].position.x, nonKickoffTarget.x);
-  assertEqual(fixture.homePlayers[1].position.y, nonKickoffTarget.y);
+  cutscene.clear(setupResult.game);
+
+  assertTrue(setupResult.fixture.homeTeam.humanPlayer === setupResult.fixture.homePlayers[3]);
 });
 
-test("Slash toggles pause while cutscene is active", function() {
-  var fixture = makeFixture();
-  var game = makeInputGame(fixture);
-  fixture.config.debug = true;
-  game.debugLog.dump = function() {};
-  game.cutscene.startRestart({
-    ballPosition: fixture.config.initialBallPosition,
-    teams: [
-      {
-        side: "home",
-        players: fixture.homePlayers,
-        positions: [fixture.homePlayers[0].position]
-      }
-    ]
-  });
+test("Slash pauses and resumes while preserving restart positioning", function() {
+  var setupResult = setup();
+  setupResult.fixture.config.debug = true;
+  setupResult.game.debugLog.dump = function() {};
+  setupResult.game.beginRestart("kickoff", "home");
 
-  checkInput({ keyCode: 191, type: "keydown" });
+  setupResult.input.handleKey({ keyCode: 191, type: "keydown" });
+  assertEqual(setupResult.game.matchFlow.state, "paused");
 
-  assertTrue(game.isPaused());
+  setupResult.input.handleKey({ keyCode: 191, type: "keydown" });
+  assertEqual(setupResult.game.matchFlow.state, "restart");
+  assertEqual(setupResult.game.restartController.phase(), "positioning");
 });
 
-test("Slash does not pause or dump logs when debug is disabled", function() {
-  var fixture = makeFixture();
-  var game = makeInputGame(fixture);
-  var dumped = false;
-  fixture.config.debug = false;
-  game.debugLog.dump = function() {
-    dumped = true;
-  };
+test("Slash is disabled when debug logging is disabled", function() {
+  var setupResult = setup();
+  setupResult.fixture.config.debug = false;
 
-  checkInput({ keyCode: 191, type: "keydown" });
+  setupResult.input.handleKey({ keyCode: 191, type: "keydown" });
 
-  assertEqual(game.isPaused(), false);
-  assertEqual(dumped, false);
+  assertEqual(setupResult.game.isPaused(), false);
 });
 
-test("Slash toggles pause and dumps logs when debug is enabled", function() {
-  var fixture = makeFixture();
-  var game = makeInputGame(fixture);
-  var dumped = false;
-  fixture.config.debug = true;
-  game.debugLog.dump = function() {
-    dumped = true;
-  };
+test("Input events are recorded only when debugging is enabled", function() {
+  var setupResult = setup();
+  setupResult.fixture.config.debug = false;
+  setupResult.input.handleKey({ keyCode: 39, type: "keydown" });
+  assertEqual(setupResult.game.debugLog.events.length, 0);
 
-  checkInput({ keyCode: 191, type: "keydown" });
-
-  assertTrue(game.isPaused());
-  assertEqual(dumped, true);
+  setupResult.fixture.config.debug = true;
+  setupResult.input.handleKey({ keyCode: 39, type: "keyup" });
+  assertEqual(setupResult.game.debugLog.events.length, 1);
+  assertEqual(setupResult.game.debugLog.events[0].type, "keyup");
 });
 
-test("Input handlers record debug events only when debug is enabled", function() {
-  var fixture = makeFixture({ homeTeamSize: 2, awayTeamSize: 1 });
-  var game = makeInputGame(fixture);
-  fixture.config.debug = false;
+test("Touch debug events use world coordinates", function() {
+  var setupResult = setup();
+  setupResult.fixture.config.debug = true;
+  setupResult.game.camera.position.x = -10;
+  setupResult.game.camera.position.y = -20;
+  var scale = setupResult.fixture.config.computeScaleBy();
 
-  checkInput({ keyCode: 39, type: "keydown" });
+  setupResult.input.handleTouch({ touches: [{ clientX: 30 * scale, clientY: 40 * scale }] });
 
-  assertEqual(game.debugLog.events.length, 0);
-
-  window.keyMap = {};
-  game.debugLog.events = [];
-  fixture.config.debug = true;
-  checkInput({ keyCode: 39, type: "keydown" });
-  checkInput({ keyCode: 39, type: "keyup" });
-
-  assertEqual(game.debugLog.events.length, 2);
-  assertEqual(game.debugLog.events[0].type, "keydown");
-  assertEqual(game.debugLog.events[0].keyCode, 39);
-  assertEqual(game.debugLog.events[1].type, "keyup");
+  assertEqual(setupResult.game.debugLog.events[0].target.x, 40);
+  assertEqual(setupResult.game.debugLog.events[0].target.y, 60);
 });
 
-test("Q and W zoom viewport in and out", function() {
-  var fixture = makeFixture();
-  var game = makeInputGame(fixture);
-  var originalRatio = game.config.viewportRatio;
-
-  checkInput({ keyCode: 81, type: "keydown" });
-
-  assertEqual(game.config.viewportRatio, originalRatio / 1.2);
-
-  checkInput({ keyCode: 81, type: "keyup" });
-  checkInput({ keyCode: 87, type: "keydown" });
-
-  assertNear(game.config.viewportRatio, originalRatio, 0.0001);
-});
-
-test("Touch handler records debug touch target in world coordinates", function() {
-  var fixture = makeFixture({ homeTeamSize: 2, awayTeamSize: 1 });
-  var game = makeInputGame(fixture);
-  var scaleBy = fixture.config.computeScaleBy();
-  fixture.config.debug = true;
-  game.camera.position.x = -10;
-  game.camera.position.y = -20;
-
-  touchHandler({
-    touches: [
-      {
-        clientX: 30 * scaleBy,
-        clientY: 40 * scaleBy
-      }
-    ]
-  });
-
-  assertEqual(game.debugLog.events.length, 1);
-  assertEqual(game.debugLog.events[0].type, "touch");
-  assertEqual(game.debugLog.events[0].target.x, 40);
-  assertEqual(game.debugLog.events[0].target.y, 60);
+test("Q and W change the viewport ratio", function() {
+  var setupResult = setup();
+  var ratio = setupResult.fixture.config.viewportRatio;
+  setupResult.input.handleKey({ keyCode: 81, type: "keydown" });
+  assertEqual(setupResult.fixture.config.viewportRatio, ratio / 1.2);
+  setupResult.input.handleKey({ keyCode: 87, type: "keydown" });
+  assertNear(setupResult.fixture.config.viewportRatio, ratio, 0.0001);
 });

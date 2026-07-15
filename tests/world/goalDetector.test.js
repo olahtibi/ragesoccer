@@ -9,10 +9,9 @@ test("GoalDetector scores home when ball enters top goal", function() {
   fixture.ball.position.x = 336;
   fixture.ball.position.y = 100;
 
-  fixture.goalDetector.update();
+  var scoredBy = fixture.goalDetector.update();
 
-  assertEqual(fixture.goalDetector.homeScore, 1);
-  assertEqual(fixture.goalDetector.awayScore, 0);
+  assertEqual(scoredBy, "home");
   assertEqual(fixture.goalDetector.state, "goal");
 });
 
@@ -21,10 +20,9 @@ test("GoalDetector scores away when ball enters bottom goal", function() {
   fixture.ball.position.x = 336;
   fixture.ball.position.y = 758;
 
-  fixture.goalDetector.update();
+  var scoredBy = fixture.goalDetector.update();
 
-  assertEqual(fixture.goalDetector.homeScore, 0);
-  assertEqual(fixture.goalDetector.awayScore, 1);
+  assertEqual(scoredBy, "away");
   assertEqual(fixture.goalDetector.state, "goal");
 });
 
@@ -33,10 +31,11 @@ test("GoalDetector does not double-count a ball that remains inside a goal", fun
   fixture.ball.position.x = 336;
   fixture.ball.position.y = 100;
 
-  fixture.goalDetector.update();
-  fixture.goalDetector.update();
+  var first = fixture.goalDetector.update();
+  var second = fixture.goalDetector.update();
 
-  assertEqual(fixture.goalDetector.homeScore, 1);
+  assertEqual(first, "home");
+  assertEqual(second, null);
 });
 
 test("GoalDetector resets after the ball exits the goals", function() {

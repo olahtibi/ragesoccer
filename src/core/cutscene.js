@@ -10,7 +10,7 @@ CutsceneController.prototype.isActive = function() {
   return this.active == true;
 };
 
-CutsceneController.prototype.startRestart = function(options) {
+CutsceneController.prototype.play = function(options) {
   if (!this.validRestartOptions(options)) {
     return false;
   }

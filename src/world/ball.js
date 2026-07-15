@@ -5,12 +5,27 @@ var Ball = function (imgBall, ballRadius, position) {
   this.velocity = new Vector3d(0, 0, 0)
   this.kickDirection = new Vector2d(0, 0)
   this.phaseIndex = 0;
+  this.lastTouchedBy = null;
+  this.heldBy = null;
   // Accumulated distance rolled since the last sprite phase change.
   // Used by the physics loop to advance the sprite in proportion to travel.
   this.rollDistance = 0;
 };
 
 Ball.prototype.draw = function(ctx) {
+    if(this.heldBy != null) {
+        var held = this.heldPosition();
+        var heldSize = this.ballRadius * 2;
+        ctx.drawImage(
+            this.imgBall,
+            this.phaseIndex * heldSize, 0,
+            heldSize, heldSize,
+            held.x - this.ballRadius,
+            held.y - this.ballRadius,
+            heldSize, heldSize
+        );
+        return;
+    }
     var size = this.ballRadius * 2;
     ctx.drawImage(
         this.imgBall, 
@@ -29,3 +44,14 @@ Ball.prototype.draw = function(ctx) {
         size, size
     );
 }
+
+Ball.prototype.heldPosition = function() {
+    if(this.heldBy == null) {
+        return new Vector3d(this.position.x, this.position.y, this.position.z);
+    }
+    return new Vector3d(
+        this.heldBy.position.x + this.heldBy.facingX * 5,
+        this.heldBy.position.y - 8,
+        0
+    );
+};

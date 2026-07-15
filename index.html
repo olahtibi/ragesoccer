@@ -41,9 +41,10 @@
 					"opponentStrength=" + encodeURIComponent(document.getElementById("opponentStrength").value),
 					"homeTeamSize=" + encodeURIComponent(document.getElementById("homeTeamSize").value),
 					"awayTeamSize=" + encodeURIComponent(document.getElementById("awayTeamSize").value),
-					"kickoffSide=" + encodeURIComponent(document.getElementById("kickoffSide").value)
+					"kickoffSide=" + encodeURIComponent(document.getElementById("kickoffSide").value),
+					"outOfPlayRestartsEnabled=" + encodeURIComponent(document.getElementById("outOfPlayRestartsEnabled").value)
 				];
-				window.location.href = "game.html?v=0021&" + params.join("&");
+				window.location.href = "game.html?v=0028&" + params.join("&");
 			}
 		</script>
 	</head>
@@ -100,6 +101,12 @@
 			<select id="kickoffSide">
 				<option value="home" selected>Player team</option>
 				<option value="away">Opponent team</option>
+			</select>
+
+			<label for="outOfPlayRestartsEnabled">Throw-ins, corners, and goal kicks</label>
+			<select id="outOfPlayRestartsEnabled">
+				<option value="true" selected>Enabled</option>
+				<option value="false">Disabled (reflective boundaries)</option>
 			</select>
 
 			<button type="button" onclick="startGame();">Start</button>

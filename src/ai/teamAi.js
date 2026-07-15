@@ -1,10 +1,10 @@
-var TeamAi = function(config, stadium, team, opponentTeam) {
+var TeamAi = function(config, team, opponentTeam, ball) {
   this.config = config;
-  this.stadium = stadium;
   this.team = team;
   this.opponentTeam = opponentTeam;
+  this.ball = ball;
   this.formation = new Formation(config);
-  this.state = config.kickoffSide == "away" ? "kickoffOpponent" : "kickoffUs";
+  this.state = config.kickoffSide == team.side ? "kickoffUs" : "kickoffOpponent";
   this.ballAttacker = null;
   this._individualAis = [];
 
@@ -13,46 +13,43 @@ var TeamAi = function(config, stadium, team, opponentTeam) {
   }
 };
 
-TeamAi.prototype.update = function() {
-  if (!this.config.teamAiEnabled || !this.shouldUpdate()) {
+TeamAi.prototype.update = function(context) {
+  if (!this.config.teamAiEnabled) {
     return;
   }
 
-  this.state = this.nextState();
+  context = context || {};
+  this.state = this.nextState(context.restartActive == true);
   var targets = this.formation.positions(this.state, this.team.side, this.team.players.length);
-  var closest = this.team.side == "home" ? this.selectedHumanPlayer() : this.selectedBallAttacker();
-  var activeHumanControl = this.team.side == "home" && this.hasActiveHumanControl();
-  var frozenForKickoff = this.stadium.isTeamFrozenForKickoff(this.team.side);
-  var context = {
-    ball: this.stadium.ball,
+  var closest = this.team.side == "home" ? this.team.humanPlayer : this.selectedBallAttacker();
+  var commandContext = {
+    ball: this.ball,
     team: this.team,
-    opponentTeam: this.opponentTeam
+    opponentTeam: this.opponentTeam,
+    attackTarget: context.attackTarget || null
   };
 
   for (var i = 0; i < this._individualAis.length; i++) {
     var ai = this._individualAis[i];
-    if (frozenForKickoff) {
+    if (context.canMove == false) {
       ai.player.velocity.x = 0;
       ai.player.velocity.y = 0;
       ai.setCommand("inactive", null);
     } else if (this.team.side == "home" && ai.player === closest) {
-      this.team.humanPlayer = ai.player;
-      if (!activeHumanControl) {
-        ai.player.velocity.x = 0;
-        ai.player.velocity.y = 0;
-      }
+      ai.player.velocity.x = 0;
+      ai.player.velocity.y = 0;
       ai.setCommand("inactive", null);
     } else if (this.team.side != "home" && ai.player === closest) {
       ai.setCommand("attackBall", null);
     } else {
       ai.setCommand("moveToPosition", targets[i]);
     }
-    ai.update(context);
+    ai.update(commandContext);
   }
 };
 
-TeamAi.prototype.setKickoffState = function(state) {
-  if (state != "kickoffUs" && state != "kickoffOpponent") {
+TeamAi.prototype.setRestartState = function(state) {
+  if (typeof state != "string" || state.length == 0) {
     return false;
   }
   this.state = state;
@@ -60,28 +57,8 @@ TeamAi.prototype.setKickoffState = function(state) {
   return true;
 };
 
-TeamAi.prototype.shouldUpdate = function() {
-  if (typeof window == "undefined" || window.game == null) {
-    return true;
-  }
-  return window.game.started == true && !window.game.isPaused();
-};
-
-TeamAi.prototype.hasActiveHumanControl = function() {
-  if (typeof window == "undefined" || window.game == null) {
-    return false;
-  }
-  if (window.game.touchTarget != null) {
-    return true;
-  }
-  if (typeof hasMovementInput == "function" && hasMovementInput()) {
-    return true;
-  }
-  return false;
-};
-
-TeamAi.prototype.nextState = function() {
-  if (this.isKickoffState() && !this.stadium.isKickoffComplete()) {
+TeamAi.prototype.nextState = function(restartActive) {
+  if (restartActive) {
     return this.state;
   }
 
@@ -99,12 +76,8 @@ TeamAi.prototype.nextState = function() {
   return "attack";
 };
 
-TeamAi.prototype.isKickoffState = function() {
-  return this.state == "kickoffUs" || this.state == "kickoffOpponent";
-};
-
 TeamAi.prototype.isBallInOwnHalf = function() {
-  var y = this.stadium.ball.position.y;
+  var y = this.ball.position.y;
   if (this.team.side == "home") {
     return y > this.config.aiCenterY;
   }
@@ -112,7 +85,7 @@ TeamAi.prototype.isBallInOwnHalf = function() {
 };
 
 TeamAi.prototype.isBallInOpponentHalf = function() {
-  var y = this.stadium.ball.position.y;
+  var y = this.ball.position.y;
   if (this.team.side == "home") {
     return y < this.config.aiCenterY;
   }
@@ -124,7 +97,7 @@ TeamAi.prototype.closestPlayerToBall = function() {
   var closestDistance = Infinity;
   for (var i = 0; i < this.team.players.length; i++) {
     var player = this.team.players[i];
-    var distance = MathLib.computeDistance(player.position, this.stadium.ball.position);
+    var distance = MathLib.computeDistance(player.position, this.ball.position);
     if (distance < closestDistance) {
       closest = player;
       closestDistance = distance;
@@ -133,25 +106,11 @@ TeamAi.prototype.closestPlayerToBall = function() {
   return closest;
 };
 
-TeamAi.prototype.selectedHumanPlayer = function() {
-  var closest = this.closestPlayerToBall();
-  var current = this.team.humanPlayer;
-  if (current != null && closest !== current) {
-    var currentDistance = MathLib.computeDistance(current.position, this.stadium.ball.position);
-    var closestDistance = MathLib.computeDistance(closest.position, this.stadium.ball.position);
-    var hysteresis = this.config.humanSwitchHysteresisDistance || 0;
-    if (currentDistance <= closestDistance + hysteresis) {
-      return current;
-    }
-  }
-  return closest;
-};
-
 TeamAi.prototype.selectedBallAttacker = function() {
   var closest = this.closestPlayerToBall();
   if (this.ballAttacker != null && closest !== this.ballAttacker) {
-    var currentDistance = MathLib.computeDistance(this.ballAttacker.position, this.stadium.ball.position);
-    var closestDistance = MathLib.computeDistance(closest.position, this.stadium.ball.position);
+    var currentDistance = MathLib.computeDistance(this.ballAttacker.position, this.ball.position);
+    var closestDistance = MathLib.computeDistance(closest.position, this.ball.position);
     var hysteresis = this.config.aiAttackerSwitchHysteresisDistance || 0;
     if (currentDistance <= closestDistance + hysteresis) {
       return this.ballAttacker;

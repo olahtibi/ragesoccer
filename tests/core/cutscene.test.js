@@ -6,7 +6,7 @@ var assertTrue = testlib.assertTrue;
 var assertEqual = testlib.assertEqual;
 
 function makeCutsceneGame(fixture) {
-  var game = new Game(fixture.config, fixture.stadium, {}, fixture.physics);
+  var game = fixture.game;
   window.game = game;
   return game;
 }
@@ -16,7 +16,7 @@ test("Cutscene starts inactive and rejects invalid restart options", function() 
   var game = makeCutsceneGame(fixture);
 
   assertEqual(game.cutscene.isActive(), false);
-  assertEqual(game.cutscene.startRestart({}), false);
+  assertEqual(game.cutscene.play({}), false);
   assertEqual(game.cutscene.isActive(), false);
 });
 
@@ -24,7 +24,7 @@ test("Cutscene rejects mismatched player and position counts", function() {
   var fixture = makeFixture({ homeTeamSize: 2, awayTeamSize: 1 });
   var game = makeCutsceneGame(fixture);
 
-  var started = game.cutscene.startRestart({
+  var started = game.cutscene.play({
     ballPosition: fixture.config.initialBallPosition,
     teams: [
       {
@@ -48,7 +48,7 @@ test("Cutscene locks ball and moves players toward explicit targets", function()
   fixture.homePlayers[0].position.x = 100;
   fixture.homePlayers[0].position.y = 100;
 
-  game.cutscene.startRestart({
+  game.cutscene.play({
     ballPosition: new Vector3d(334, 433, 0),
     teams: [
       {
@@ -85,7 +85,7 @@ test("Cutscene waits for players and camera before completing", function() {
   fixture.homePlayers[0].position.x = 120;
   fixture.homePlayers[0].position.y = 100;
 
-  game.cutscene.startRestart({
+  game.cutscene.play({
     ballPosition: new Vector3d(334, 433, 0),
     teams: [
       {
@@ -114,7 +114,7 @@ test("Cutscene snaps overshot players to targets", function() {
   fixture.homePlayers[0].position.x = 120;
   fixture.homePlayers[0].position.y = 96;
 
-  game.cutscene.startRestart({
+  game.cutscene.play({
     ballPosition: fixture.config.initialBallPosition,
     teams: [
       {
@@ -143,7 +143,7 @@ test("Cutscene ignores pre-cutscene velocity when moving players to targets", fu
   fixture.awayPlayers[0].velocity.x = -fixture.config.teamVelocity("away");
   fixture.awayPlayers[0].velocity.y = 0;
 
-  game.cutscene.startRestart({
+  game.cutscene.play({
     ballPosition: fixture.config.initialBallPosition,
     teams: [
       {

@@ -11,6 +11,10 @@ var Configuration = function () {
   this.goalBottomTopRight = new Vector2d(372, 753);
   this.goalBottomBottomLeft = new Vector2d(300, 763);
   this.goalBottomBottomRight = new Vector2d(372, 763);
+  this.fieldLeft = 81;
+  this.fieldRight = 590;
+  this.fieldTop = 113;
+  this.fieldBottom = 753;
   this.stadiumWidth = 672;
   this.stadiumHeight = 848;
   this.viewportWidth = window.innerWidth;
@@ -50,11 +54,20 @@ var Configuration = function () {
   this.aiKeeperChallengeRadius = 70;
   this.aiTargetDeadband = 2;
   this.kickoffSide = "home";
+  this.outOfPlayRestartsEnabled = true;
+  this.outOfPlayRestartDelaySeconds = 0.35;
+  this.restartOpponentDistance = 45;
+  this.restartPlacementClearance = 1;
+  this.goalKickDistance = 25;
+  this.goalKickTakerDistance = 20;
+  this.cornerCrossDistance = 65;
+  this.throwInSpeed = 180;
+  this.throwInLoft = 90;
   this.centerCircleRadiusX = 62;
   this.centerCircleRadiusY = 40;
   this.cutsceneArrivedRadius = 3;
   this.cutsceneCameraArrivedRadius = 2;
-  this.cutsceneCameraLerp = 0.12;
+  this.cutsceneCameraLerp = 0.06;
   this.aiTargetReachedRadius = 1;
   this.aiAttackerSwitchHysteresisDistance = 20;
   this.humanSwitchHysteresisDistance = 20;
@@ -94,6 +107,10 @@ Configuration.prototype.applyQueryOptions = function() {
   this.homeTeamSize = this.parseIntOption(params.homeTeamSize, this.homeTeamSize, 1, 5);
   this.awayTeamSize = this.parseIntOption(params.awayTeamSize, this.awayTeamSize, 1, 5);
   this.kickoffSide = this.parseSideOption(params.kickoffSide, this.kickoffSide);
+  this.outOfPlayRestartsEnabled = this.parseBooleanOption(
+    params.outOfPlayRestartsEnabled,
+    this.outOfPlayRestartsEnabled
+  );
   this.playerVelocity = this.teamVelocity("home");
 };
 
@@ -135,6 +152,12 @@ Configuration.prototype.parseSideOption = function(paramsValue, defaultValue) {
   if (paramsValue == "home" || paramsValue == "away") {
     return paramsValue;
   }
+  return defaultValue;
+};
+
+Configuration.prototype.parseBooleanOption = function(paramsValue, defaultValue) {
+  if (paramsValue == "true") return true;
+  if (paramsValue == "false") return false;
   return defaultValue;
 };
 

@@ -3,20 +3,19 @@ var Team = function(config, side) {
   this.side = side;
   this.players = this.createPlayers();
   this.humanPlayer = side == "home" ? this.players[0] : null;
-  this.opponentTeam = null;
-  this.stadium = null;
-  this.teamAi = null;
+  this.score = 0;
 };
 
 Team.prototype.createPlayers = function() {
   var size = this.side == "home" ? this.config.homeTeamSize : this.config.awayTeamSize;
-  var kickoffState = this.config.kickoffSide == "away" ? "kickoffOpponent" : "kickoffUs";
+  var kickoffState = this.config.kickoffSide == this.side ? "kickoffUs" : "kickoffOpponent";
   var positions = new Formation(this.config).positions(kickoffState, this.side, size);
   var players = [];
   var img = this.side == "home" ? this.config.imgPlayerHome : this.config.imgPlayerAway;
 
   for (var i = 0; i < positions.length; i++) {
     var player = new Player(img, positions[i], this.config.playerSpriteWidth, this.config.playerSpriteHeight, this.config.playerSpriteCenterX, this.config.playerSpriteCenterY);
+    player.teamSide = this.side;
     if (this.side == "away") {
       player.facingY = 1;
     }
@@ -24,22 +23,4 @@ Team.prototype.createPlayers = function() {
   }
 
   return players;
-};
-
-Team.prototype.attach = function(stadium, opponentTeam) {
-  this.stadium = stadium;
-  this.opponentTeam = opponentTeam;
-  this.teamAi = new TeamAi(this.config, stadium, this, opponentTeam);
-};
-
-Team.prototype.updateAi = function() {
-  if (this.teamAi != null) {
-    this.teamAi.update();
-  }
-};
-
-Team.prototype.drawAiDebug = function(ctx) {
-  if (this.teamAi != null) {
-    this.teamAi.draw(ctx);
-  }
 };

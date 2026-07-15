@@ -34,12 +34,12 @@ function outsideCenterEllipse(config, position) {
     (dy * dy) / (config.centerCircleRadiusY * config.centerCircleRadiusY) >= 1;
 }
 
-test("Formation kickoffUs puts home striker near kickoff and away striker outside center ellipse", function() {
+test("Formation uses relative kickoff states for both teams", function() {
   var config = makeConfig({ homeTeamSize: 3, awayTeamSize: 3 });
   var formation = new Formation(config);
 
   var home = formation.positions("kickoffUs", "home", 3);
-  var away = formation.positions("kickoffUs", "away", 3);
+  var away = formation.positions("kickoffOpponent", "away", 3);
 
   assertTrue(home[2].y > config.aiCenterY);
   assertTrue(Math.abs(home[2].y - config.aiCenterY) <= 25);
@@ -47,12 +47,12 @@ test("Formation kickoffUs puts home striker near kickoff and away striker outsid
   assertTrue(outsideCenterEllipse(config, away[2]));
 });
 
-test("Formation kickoffOpponent puts away striker near kickoff and home striker outside center ellipse", function() {
+test("Formation mirrors relative states for an away kickoff", function() {
   var config = makeConfig({ homeTeamSize: 3, awayTeamSize: 3 });
   var formation = new Formation(config);
 
   var home = formation.positions("kickoffOpponent", "home", 3);
-  var away = formation.positions("kickoffOpponent", "away", 3);
+  var away = formation.positions("kickoffUs", "away", 3);
 
   assertTrue(away[2].y < config.aiCenterY);
   assertTrue(Math.abs(away[2].y - config.aiCenterY) <= 25);

@@ -28,6 +28,9 @@ test("Configuration defaults strength and team-size options", function() {
   assertEqual(config.opponentStrength, 6);
   assertEqual(config.homeTeamSize, 4);
   assertEqual(config.awayTeamSize, 4);
+  assertEqual(config.outOfPlayRestartsEnabled, true);
+  assertNear(config.outOfPlayRestartDelaySeconds, 0.35, 0.0001);
+  assertNear(config.cutsceneCameraLerp, 0.06, 0.0001);
 });
 
 test("Configuration maps strength to velocity", function() {
@@ -40,7 +43,7 @@ test("Configuration maps strength to velocity", function() {
 
 test("Configuration parses and clamps game options from query string", function() {
   var originalSearch = window.location.search;
-  window.location.search = "?playerStrength=10&opponentStrength=0&homeTeamSize=5&awayTeamSize=12&kickoffSide=away";
+  window.location.search = "?playerStrength=10&opponentStrength=0&homeTeamSize=5&awayTeamSize=12&kickoffSide=away&outOfPlayRestartsEnabled=false";
 
   var config = new Configuration();
 
@@ -50,11 +53,12 @@ test("Configuration parses and clamps game options from query string", function(
   assertEqual(config.homeTeamSize, 5);
   assertEqual(config.awayTeamSize, 5);
   assertEqual(config.kickoffSide, "away");
+  assertEqual(config.outOfPlayRestartsEnabled, false);
 });
 
 test("Configuration falls back for invalid query options", function() {
   var originalSearch = window.location.search;
-  window.location.search = "?playerStrength=x&opponentStrength=&homeTeamSize=no&awayTeamSize=?";
+  window.location.search = "?playerStrength=x&opponentStrength=&homeTeamSize=no&awayTeamSize=?&outOfPlayRestartsEnabled=maybe";
 
   var config = new Configuration();
 
@@ -63,4 +67,5 @@ test("Configuration falls back for invalid query options", function() {
   assertEqual(config.opponentStrength, 6);
   assertEqual(config.homeTeamSize, 4);
   assertEqual(config.awayTeamSize, 4);
+  assertEqual(config.outOfPlayRestartsEnabled, true);
 });

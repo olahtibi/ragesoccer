@@ -86,18 +86,26 @@ DebugLog.prototype.snapshot = function(game, frame, time) {
     frame: frame,
     time: this.round(time),
     dt: this.round(game.physics && game.physics.lastDt != null ? game.physics.lastDt : 0),
-    paused: game.paused,
-    started: game.started,
+    matchState: game.matchFlow.state,
+    restart: {
+      type: game.restartController.type(),
+      phase: game.restartController.phase()
+    },
+    scores: {
+      home: game.teams[0].score,
+      away: game.teams[1].score
+    },
     ball: this.ballSnapshot(game.stadium.ball),
     players: this.playersSnapshot(game.stadium),
-    ai: this.aiSnapshot(game.stadium)
+    ai: this.aiSnapshot(game.teamAis)
   };
 };
 
 DebugLog.prototype.ballSnapshot = function(ball) {
   return {
     pos: this.vectorSnapshot(ball.position),
-    vel: this.vectorSnapshot(ball.velocity)
+    vel: this.vectorSnapshot(ball.velocity),
+    lastTouchedBy: ball.lastTouchedBy
   };
 };
 
@@ -122,12 +130,12 @@ DebugLog.prototype.playersSnapshot = function(stadium) {
   return result;
 };
 
-DebugLog.prototype.aiSnapshot = function(stadium) {
+DebugLog.prototype.aiSnapshot = function(teamAis) {
   var result = [];
-  for (var t = 0; t < stadium.teams.length; t++) {
-    var team = stadium.teams[t];
-    if (team.teamAi == null) continue;
-    var snapshots = team.teamAi.debugSnapshot();
+  for (var t = 0; t < teamAis.length; t++) {
+    var teamAi = teamAis[t];
+    var team = teamAi.team;
+    var snapshots = teamAi.debugSnapshot();
     for (var i = 0; i < snapshots.length; i++) {
       var ai = snapshots[i];
       result.push({
