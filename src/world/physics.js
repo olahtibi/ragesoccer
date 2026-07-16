@@ -229,22 +229,6 @@ Physics.prototype._updateBallPosition = function(dt) {
 
   ball.position.x += moveArray[0];
   ball.position.y += moveArray[1];
-
-  // Sprite rotation: advance one phase for every `ballSpinPxPerPhase` pixels
-  // the ball actually travelled this frame. This ties spin speed to linear
-  // speed, so fast kicks blur and slow rolls show a clearly visible turn.
-  var stepDist = MathLib.vectorLength(moveArray[0], moveArray[1]);
-  if (stepDist > 0) {
-    ball.rollDistance += stepDist;
-    var pxPerPhase = this.config.ball.spinPxPerPhase;
-    while (ball.rollDistance >= pxPerPhase) {
-      ball.phaseIndex = (ball.phaseIndex + 1) % this.config.ball.spritePhases;
-      ball.rollDistance -= pxPerPhase;
-    }
-  } else {
-    // Ball at rest: keep the sprite from starting mid-phase next time.
-    ball.rollDistance = 0;
-  }
 };
 
 // Reflect the ball off a vertical-normal wall (horizontal surface, ball crossing pY).

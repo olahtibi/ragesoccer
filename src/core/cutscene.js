@@ -140,7 +140,6 @@ CutsceneController.prototype._lockBall = function(ball) {
   ball.velocity.x = 0;
   ball.velocity.y = 0;
   ball.velocity.z = 0;
-  ball.rollDistance = 0;
 };
 
 CutsceneController.prototype._clear = function(game) {
