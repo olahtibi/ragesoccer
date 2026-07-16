@@ -30,8 +30,10 @@ test("Prototype classes identify their public API", function() {
   }
 });
 
-test("Cutscene uses the sceneTeams contract and private helper names", function() {
-  var source = fs.readFileSync(path.join(sourceRoot, "core/cutscene.js"), "utf8");
+test("PositioningController uses the sceneTeams contract and private helper names", function() {
+  var source = fs.readFileSync(
+    path.join(sourceRoot, "core/restarts/positioningController.js"), "utf8"
+  );
   assertTrue(source.indexOf("options.sceneTeams") !== -1);
   assertTrue(source.indexOf("this._sceneTeams") !== -1);
   assertTrue(source.indexOf("prototype._movePlayerToTarget") !== -1);

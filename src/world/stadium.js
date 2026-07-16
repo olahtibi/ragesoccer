@@ -1,13 +1,10 @@
 var Stadium = function (imgStadium, ball, homeTeam, awayTeam) {
-  this.config = homeTeam.config;
   this.imgStadium = imgStadium;
   this.ball = ball;
   this.homeTeam = homeTeam;
   this.awayTeam = awayTeam;
   this.teams = [this.homeTeam, this.awayTeam];
-  this.homePlayers = this.homeTeam.players;
-  this.awayPlayers = this.awayTeam.players;
-  this.players = this.homePlayers.concat(this.awayPlayers);
+  this.players = homeTeam.players.concat(awayTeam.players);
 };
 
 // Public API

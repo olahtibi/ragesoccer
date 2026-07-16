@@ -13,6 +13,7 @@ function setup(options) {
   return {
     fixture: fixture,
     game: fixture.game,
+    positioningController: fixture.positioningController,
     input: new BrowserInput(fixture.game, window)
   };
 }
@@ -112,8 +113,8 @@ test("Keyboard direction executes a human throw-in and clamps it inward", functi
     boundary: "left",
     position: new Vector2d(setupResult.fixture.config.pitch.fieldLeft, setupResult.fixture.config.pitch.aiCenterY)
   });
-  setupResult.game.cutscene.updateBeforePhysics(setupResult.game.context());
-  setupResult.game.cutscene._clear(setupResult.game);
+  setupResult.positioningController.updateBeforePhysics(setupResult.game.context());
+  setupResult.positioningController._clear(setupResult.game.context());
 
   setupResult.input.handleKey({ keyCode: 37, type: "keydown" });
 
@@ -128,8 +129,8 @@ test("Touch direction executes a human throw-in and clamps it inward", function(
     boundary: "right",
     position: new Vector2d(setupResult.fixture.config.pitch.fieldRight, setupResult.fixture.config.pitch.aiCenterY)
   });
-  setupResult.game.cutscene.updateBeforePhysics(setupResult.game.context());
-  setupResult.game.cutscene._clear(setupResult.game);
+  setupResult.positioningController.updateBeforePhysics(setupResult.game.context());
+  setupResult.positioningController._clear(setupResult.game.context());
   var scale = setupResult.fixture.config.computeScaleBy();
 
   setupResult.input.handleTouch({ touches: [{
@@ -147,12 +148,12 @@ test("Touch executes a throw-in when the taker is ready before positioning compl
     boundary: "right",
     position: new Vector2d(setupResult.fixture.config.pitch.fieldRight, setupResult.fixture.config.pitch.aiCenterY)
   });
-  var cutscene = setupResult.game.cutscene;
-  for (var t = 0; t < cutscene._sceneTeams.length; t++) {
-    for (var i = 0; i < cutscene._sceneTeams[t].players.length; i++) {
-      if (cutscene._sceneTeams[t].players[i] === cutscene._readyPlayer) {
-        cutscene._readyPlayer.position.x = cutscene._sceneTeams[t].positions[i].x;
-        cutscene._readyPlayer.position.y = cutscene._sceneTeams[t].positions[i].y;
+  var controller = setupResult.positioningController;
+  for (var t = 0; t < controller._sceneTeams.length; t++) {
+    for (var i = 0; i < controller._sceneTeams[t].players.length; i++) {
+      if (controller._sceneTeams[t].players[i] === controller._readyPlayer) {
+        controller._readyPlayer.position.x = controller._sceneTeams[t].positions[i].x;
+        controller._readyPlayer.position.y = controller._sceneTeams[t].positions[i].y;
       }
     }
   }
@@ -164,7 +165,7 @@ test("Touch executes a throw-in when the taker is ready before positioning compl
   }] });
 
   assertEqual(setupResult.game.restartController.phase(), "inProgress");
-  assertEqual(cutscene.isActive(), false);
+  assertEqual(controller.isActive(), false);
   assertTrue(setupResult.fixture.ball.velocity.x < 0);
 });
 
@@ -175,7 +176,7 @@ test("J and K do not start restarts", function() {
   setupResult.input.handleKey({ keyCode: 75, type: "keydown" });
 
   assertEqual(setupResult.game.restartController.phase(), "waitingForInput");
-  assertEqual(setupResult.game.cutscene.isActive(), false);
+  assertEqual(setupResult.positioningController.isActive(), false);
 });
 
 test("C awards a home corner on the ball side when debugging is enabled", function() {
@@ -190,13 +191,13 @@ test("C awards a home corner on the ball side when debugging is enabled", functi
   assertEqual(setupResult.game.restartController.type(), "corner");
   assertEqual(setupResult.game.restartController.phase(), "positioning");
   assertEqual(
-    setupResult.game.cutscene._ballPosition.x,
+    setupResult.positioningController._ballPosition.x,
     setupResult.fixture.config.pitch.fieldRight -
       setupResult.fixture.config.ball.radius -
       setupResult.fixture.config.restarts.placementClearance
   );
   assertEqual(
-    setupResult.game.cutscene._ballPosition.y,
+    setupResult.positioningController._ballPosition.y,
     setupResult.fixture.config.pitch.fieldTop +
       setupResult.fixture.config.ball.radius +
       setupResult.fixture.config.restarts.placementClearance
@@ -212,19 +213,19 @@ test("C corner diagnostic is disabled when debugging is disabled", function() {
   setupResult.input.handleKey({ keyCode: 67, type: "keydown" });
 
   assertEqual(setupResult.game.restartController.type(), null);
-  assertEqual(setupResult.game.cutscene.isActive(), false);
+  assertEqual(setupResult.positioningController.isActive(), false);
 });
 
 test("Restart positioning selects the newly closest human player on completion", function() {
   var setupResult = setup({ homeTeamSize: 4, awayTeamSize: 4, kickoffSide: "away" });
   setupResult.game.beginRestart("kickoff", "home");
-  var cutscene = setupResult.game.cutscene;
-  for (var i = 0; i < cutscene._sceneTeams[0].players.length; i++) {
-    cutscene._sceneTeams[0].players[i].position.x = cutscene._sceneTeams[0].positions[i].x;
-    cutscene._sceneTeams[0].players[i].position.y = cutscene._sceneTeams[0].positions[i].y;
+  var controller = setupResult.positioningController;
+  for (var i = 0; i < controller._sceneTeams[0].players.length; i++) {
+    controller._sceneTeams[0].players[i].position.x = controller._sceneTeams[0].positions[i].x;
+    controller._sceneTeams[0].players[i].position.y = controller._sceneTeams[0].positions[i].y;
   }
 
-  cutscene._clear(setupResult.game);
+  controller._clear(setupResult.game.context());
 
   assertTrue(setupResult.fixture.homeTeam.humanPlayer === setupResult.fixture.homePlayers[3]);
 });

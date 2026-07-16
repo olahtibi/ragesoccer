@@ -6,7 +6,6 @@ var Game = function(options) {
   this.camera = options.camera;
   this.physics = options.physics;
   this.humanController = options.humanController;
-  this.cutscene = options.cutscene;
   this.restartController = options.restartController;
   this.matchFlow = options.matchFlow;
   this.debugTool = options.debugTool;
@@ -121,13 +120,13 @@ function createGame(config) {
   var goalDetector = new GoalDetector(config, ball);
   var boundaryDetector = new BoundaryDetector(config, ball);
   var humanController = new HumanController(config, homeTeam, ball);
-  var cutscene = new CutsceneController(config);
+  var positioningController = new PositioningController(config);
   var registry = new RestartRegistry();
   registry.register("kickoff", new KickoffRestart(config));
   registry.register("throwIn", new ThrowInRestart(config));
   registry.register("corner", new CornerRestart(config));
   registry.register("goalKick", new GoalKickRestart(config));
-  var restartController = new RestartController(registry, cutscene);
+  var restartController = new RestartController(registry, positioningController);
   var matchFlow = new MatchFlow(restartController, goalDetector, boundaryDetector);
   var game = new Game({
     config: config,
@@ -137,7 +136,6 @@ function createGame(config) {
     camera: camera,
     physics: physics,
     humanController: humanController,
-    cutscene: cutscene,
     restartController: restartController,
     matchFlow: matchFlow,
     debugTool: new DebugTool(config)

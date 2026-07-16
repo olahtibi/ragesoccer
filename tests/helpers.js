@@ -65,7 +65,7 @@ function loadGameScripts() {
     "src/world/stadium.js",
     "src/world/physics.js",
     "src/core/camera.js",
-    "src/core/cutscene.js",
+    "src/core/restarts/positioningController.js",
     "src/input/humanController.js",
     "src/core/restarts/restartRegistry.js",
     "src/core/restarts/restartController.js",
@@ -124,6 +124,7 @@ function makeFixture(options) {
     teamAis: game.teamAis,
     homeTeamAi: game.teamAis[0],
     awayTeamAi: game.teamAis[1],
+    positioningController: game.restartController._positioningController,
     game: game
   };
 }

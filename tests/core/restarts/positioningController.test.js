@@ -1,30 +1,29 @@
-var testlib = require("../testlib");
-var makeFixture = require("../helpers").makeFixture;
+var testlib = require("../../testlib");
+var makeFixture = require("../../helpers").makeFixture;
 
 var test = testlib.test;
 var assertTrue = testlib.assertTrue;
 var assertEqual = testlib.assertEqual;
 
-function makeCutsceneGame(fixture) {
-  var game = fixture.game;
-  window.game = game;
-  return game;
+function positioningControllerFor(fixture) {
+  window.game = fixture.game;
+  return fixture.positioningController;
 }
 
-test("Cutscene starts inactive and rejects invalid restart options", function() {
+test("PositioningController starts inactive and rejects invalid restart options", function() {
   var fixture = makeFixture();
-  var game = makeCutsceneGame(fixture);
+  var controller = positioningControllerFor(fixture);
 
-  assertEqual(game.cutscene.isActive(), false);
-  assertEqual(game.cutscene.play({}), false);
-  assertEqual(game.cutscene.isActive(), false);
+  assertEqual(controller.isActive(), false);
+  assertEqual(controller.play({}), false);
+  assertEqual(controller.isActive(), false);
 });
 
-test("Cutscene rejects mismatched player and position counts", function() {
+test("PositioningController rejects mismatched player and position counts", function() {
   var fixture = makeFixture({ homeTeamSize: 2, awayTeamSize: 1 });
-  var game = makeCutsceneGame(fixture);
+  var controller = positioningControllerFor(fixture);
 
-  var started = game.cutscene.play({
+  var started = controller.play({
     ballPosition: fixture.config.pitch.initialBallPosition,
     sceneTeams: [
       {
@@ -36,19 +35,19 @@ test("Cutscene rejects mismatched player and position counts", function() {
   });
 
   assertEqual(started, false);
-  assertEqual(game.cutscene.isActive(), false);
+  assertEqual(controller.isActive(), false);
 });
 
-test("Cutscene locks ball and moves players toward explicit targets", function() {
+test("PositioningController locks ball and moves players toward explicit targets", function() {
   var fixture = makeFixture({ homeTeamSize: 1, awayTeamSize: 1, playerStrength: 10 });
-  var game = makeCutsceneGame(fixture);
+  var controller = positioningControllerFor(fixture);
   fixture.ball.position.x = 100;
   fixture.ball.position.y = 200;
   fixture.ball.velocity.x = 90;
   fixture.homePlayers[0].position.x = 100;
   fixture.homePlayers[0].position.y = 100;
 
-  game.cutscene.play({
+  controller.play({
     ballPosition: new Vector3d(334, 433, 0),
     sceneTeams: [
       {
@@ -58,7 +57,7 @@ test("Cutscene locks ball and moves players toward explicit targets", function()
       }
     ]
   });
-  game.cutscene.update(game.context());
+  controller.update(fixture.game.context());
 
   assertEqual(fixture.ball.position.x, 334);
   assertEqual(fixture.ball.position.y, 433);
@@ -66,9 +65,10 @@ test("Cutscene locks ball and moves players toward explicit targets", function()
   assertTrue(fixture.homePlayers[0].velocity.x > 0);
 });
 
-test("Cutscene waits for players and camera before completing", function() {
+test("PositioningController waits for players and camera before completing", function() {
   var fixture = makeFixture({ homeTeamSize: 1, awayTeamSize: 1 });
-  var game = makeCutsceneGame(fixture);
+  var game = fixture.game;
+  var controller = positioningControllerFor(fixture);
   var cameraArrived = false;
   game.camera = {
     focusTarget: null,
@@ -85,7 +85,7 @@ test("Cutscene waits for players and camera before completing", function() {
   fixture.homePlayers[0].position.x = 120;
   fixture.homePlayers[0].position.y = 100;
 
-  game.cutscene.play({
+  controller.play({
     ballPosition: new Vector3d(334, 433, 0),
     sceneTeams: [
       {
@@ -96,25 +96,25 @@ test("Cutscene waits for players and camera before completing", function() {
     ]
   });
 
-  game.cutscene.update(game.context());
-  assertEqual(game.cutscene.isActive(), true);
+  controller.update(game.context());
+  assertEqual(controller.isActive(), true);
   assertTrue(game.camera.focusTarget !== null);
 
   cameraArrived = true;
-  game.cutscene.update(game.context());
+  controller.update(game.context());
 
-  assertEqual(game.cutscene.isActive(), false);
+  assertEqual(controller.isActive(), false);
   assertEqual(game.camera.focusTarget, null);
 });
 
-test("Cutscene snaps overshot players to targets", function() {
+test("PositioningController snaps overshot players to targets", function() {
   var fixture = makeFixture({ homeTeamSize: 1, awayTeamSize: 1 });
-  var game = makeCutsceneGame(fixture);
+  var controller = positioningControllerFor(fixture);
   var target = new Vector2d(120, 100);
   fixture.homePlayers[0].position.x = 120;
   fixture.homePlayers[0].position.y = 96;
 
-  game.cutscene.play({
+  controller.play({
     ballPosition: fixture.config.pitch.initialBallPosition,
     sceneTeams: [
       {
@@ -126,7 +126,9 @@ test("Cutscene snaps overshot players to targets", function() {
   });
   fixture.homePlayers[0].velocity.x = 0;
   fixture.homePlayers[0].velocity.y = -fixture.config.teamVelocity("home");
-  var arrived = game.cutscene._movePlayerToTarget(game, fixture.homePlayers[0], target, "home");
+  var arrived = controller._movePlayerToTarget(
+    fixture.game.context(), fixture.homePlayers[0], target, "home"
+  );
 
   assertEqual(arrived, true);
   assertEqual(fixture.homePlayers[0].position.x, target.x);
@@ -134,16 +136,16 @@ test("Cutscene snaps overshot players to targets", function() {
   assertEqual(fixture.homePlayers[0].velocity.y, 0);
 });
 
-test("Cutscene ignores pre-cutscene velocity when moving players to targets", function() {
+test("PositioningController ignores pre-positioning velocity when moving players to targets", function() {
   var fixture = makeFixture({ homeTeamSize: 1, awayTeamSize: 1 });
-  var game = makeCutsceneGame(fixture);
+  var controller = positioningControllerFor(fixture);
   var target = new Vector2d(120, 100);
   fixture.awayPlayers[0].position.x = 80;
   fixture.awayPlayers[0].position.y = 100;
   fixture.awayPlayers[0].velocity.x = -fixture.config.teamVelocity("away");
   fixture.awayPlayers[0].velocity.y = 0;
 
-  game.cutscene.play({
+  controller.play({
     ballPosition: fixture.config.pitch.initialBallPosition,
     sceneTeams: [
       {
@@ -153,23 +155,23 @@ test("Cutscene ignores pre-cutscene velocity when moving players to targets", fu
       }
     ]
   });
-  game.cutscene.updateBeforePhysics(game.context());
+  controller.updateBeforePhysics(fixture.game.context());
 
   assertEqual(fixture.awayPlayers[0].position.x, 80);
   assertEqual(fixture.awayPlayers[0].position.y, 100);
   assertTrue(fixture.awayPlayers[0].velocity.x > 0);
 });
 
-test("Cutscene becomes ready when its taker arrives before other players", function() {
+test("PositioningController becomes ready when its taker arrives before other players", function() {
   var fixture = makeFixture({ homeTeamSize: 2, awayTeamSize: 1 });
-  var game = makeCutsceneGame(fixture);
+  var controller = positioningControllerFor(fixture);
   var takerTarget = new Vector2d(120, 100);
   fixture.homePlayers[0].position.x = takerTarget.x;
   fixture.homePlayers[0].position.y = takerTarget.y;
   fixture.homePlayers[1].position.x = 300;
   fixture.homePlayers[1].position.y = 300;
 
-  game.cutscene.play({
+  controller.play({
     ballPosition: fixture.config.pitch.initialBallPosition,
     readyPlayer: fixture.homePlayers[0],
     sceneTeams: [{
@@ -179,20 +181,20 @@ test("Cutscene becomes ready when its taker arrives before other players", funct
     }]
   });
 
-  assertEqual(game.cutscene.isReadyForInput(), true);
-  assertEqual(game.cutscene.isActive(), true);
+  assertEqual(controller.isReadyForInput(), true);
+  assertEqual(controller.isActive(), true);
 });
 
-test("Cancelling a ready cutscene does not snap unfinished players", function() {
+test("Cancelling ready positioning does not snap unfinished players", function() {
   var fixture = makeFixture({ homeTeamSize: 2, awayTeamSize: 1 });
-  var game = makeCutsceneGame(fixture);
+  var controller = positioningControllerFor(fixture);
   var completed = false;
   fixture.homePlayers[0].position.x = 120;
   fixture.homePlayers[0].position.y = 100;
   fixture.homePlayers[1].position.x = 300;
   fixture.homePlayers[1].position.y = 300;
 
-  game.cutscene.play({
+  controller.play({
     ballPosition: fixture.config.pitch.initialBallPosition,
     readyPlayer: fixture.homePlayers[0],
     onComplete: function() { completed = true; },
@@ -202,9 +204,9 @@ test("Cancelling a ready cutscene does not snap unfinished players", function() 
       positions: [new Vector2d(120, 100), new Vector2d(400, 400)]
     }]
   });
-  game.cutscene.cancel(game.context());
+  controller.cancel(fixture.game.context());
 
-  assertEqual(game.cutscene.isActive(), false);
+  assertEqual(controller.isActive(), false);
   assertEqual(fixture.homePlayers[1].position.x, 300);
   assertEqual(fixture.homePlayers[1].position.y, 300);
   assertEqual(completed, false);

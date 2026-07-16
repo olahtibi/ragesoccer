@@ -1,6 +1,6 @@
-var RestartController = function(registry, cutscene) {
+var RestartController = function(registry, positioningController) {
   this._registry = registry;
-  this._cutscene = cutscene;
+  this._positioningController = positioningController;
   this._session = null;
   this._restartSequence = 0;
 };
@@ -32,7 +32,7 @@ RestartController.prototype.begin = function(request, context, options) {
     scene.onComplete = function() {
       controller._finishPositioning(context);
     };
-    if (!this._cutscene.play(scene)) {
+    if (!this._positioningController.play(scene)) {
       this._session = null;
       return false;
     }
@@ -84,7 +84,7 @@ RestartController.prototype._assignTeamAiStates = function(context) {
 RestartController.prototype._resume = function(context, direction) {
   if (!this._canResume()) return false;
   if (this._session.phase == "positioning") {
-    this._cutscene.cancel(context);
+    this._positioningController.cancel(context);
     this._finishPositioning(context);
   }
   if (this._session.strategy.resume != null &&
@@ -100,7 +100,7 @@ RestartController.prototype._canResume = function() {
   if (this._session.phase == "waitingForInput") return true;
   return this._session.phase == "positioning" &&
     this._session.strategy.allowEarlyResume == true &&
-    this._cutscene.isReadyForInput();
+    this._positioningController.isReadyForInput();
 };
 
 RestartController.prototype.canResumeFromInput = function() {
@@ -156,14 +156,14 @@ RestartController.prototype.positioningTargets = function(team) {
 
 RestartController.prototype.updateBeforePhysics = function(context) {
   if (this._session != null && this._session.phase == "positioning") {
-    this._cutscene.updateBeforePhysics(context);
+    this._positioningController.updateBeforePhysics(context);
   }
 };
 
 RestartController.prototype.updateAfterPhysics = function(context, deltaSeconds) {
   if (this._session == null) return;
   if (this._session.phase == "positioning") {
-    this._cutscene.updateAfterPhysics(context);
+    this._positioningController.updateAfterPhysics(context);
     if (this._session.phase == "waitingForInput" &&
         this._session.strategy.opponentAutoResumeAfterPositioning == true) {
       this._session.opponentReadyElapsed = 0;

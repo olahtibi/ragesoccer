@@ -151,7 +151,7 @@ Game
 │   ├── BoundaryDetector
 │   └── RestartController
 │       ├── RestartRegistry
-│       ├── CutsceneController
+│       ├── PositioningController
 │       └── active restart strategy
 ├── HumanController
 ├── TeamAi (home)
@@ -179,7 +179,7 @@ the next animation frame. `MatchFlow` exposes a generic simulation mode:
 
 - `none`: paused or waiting for restart input; reset the physics clock.
 - `ballOnly`: the ball continues beyond the boundary during the dead-ball delay.
-- `playersOnly`: `MatchFlow` prepares a positioning cutscene, physics moves the
+- `playersOnly`: `MatchFlow` prepares restart positioning, physics moves the
   players, and `MatchFlow` completes the post-physics restart update while the
   ball remains locked.
 - `full`: update AI, apply human input, run physics, enforce rules, and detect
@@ -235,7 +235,7 @@ occurrence:
 The controller owns common behavior:
 
 - Assigning the strategy's relative state to each team AI.
-- Starting and completing the positioning cutscene.
+- Starting and completing restart positioning.
 - Waiting for human input before resuming simulation.
 - Asking the strategy which teams may move.
 - Enforcing rules and checking completion after physics.

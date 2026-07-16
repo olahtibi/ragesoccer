@@ -1,4 +1,4 @@
-var CutsceneController = function(config) {
+var PositioningController = function(config) {
   this._config = config;
   this._active = false;
   this._ballPosition = null;
@@ -9,11 +9,11 @@ var CutsceneController = function(config) {
 
 // Public API
 
-CutsceneController.prototype.isActive = function() {
+PositioningController.prototype.isActive = function() {
   return this._active == true;
 };
 
-CutsceneController.prototype.play = function(options) {
+PositioningController.prototype.play = function(options) {
   if (!this._validRestartOptions(options)) return false;
 
   this._active = true;
@@ -29,7 +29,7 @@ CutsceneController.prototype.play = function(options) {
   return true;
 };
 
-CutsceneController.prototype.isReadyForInput = function() {
+PositioningController.prototype.isReadyForInput = function() {
   if (!this._active || this._readyPlayer == null) return false;
   for (var t = 0; t < this._sceneTeams.length; t++) {
     var sceneTeam = this._sceneTeams[t];
@@ -43,7 +43,7 @@ CutsceneController.prototype.isReadyForInput = function() {
   return false;
 };
 
-CutsceneController.prototype.updateBeforePhysics = function(context) {
+PositioningController.prototype.updateBeforePhysics = function(context) {
   if (!this._active) return;
   this._lockBall(context.ball);
   if (context.camera != null && context.camera.setFocusTarget != null) {
@@ -52,7 +52,7 @@ CutsceneController.prototype.updateBeforePhysics = function(context) {
   this._updatePlayers(context);
 };
 
-CutsceneController.prototype.updateAfterPhysics = function(context) {
+PositioningController.prototype.updateAfterPhysics = function(context) {
   if (!this._active) return;
   this._lockBall(context.ball);
   var allPlayersArrived = this._updatePlayers(context);
@@ -61,19 +61,19 @@ CutsceneController.prototype.updateAfterPhysics = function(context) {
   if (allPlayersArrived && cameraArrived) this._clear(context);
 };
 
-CutsceneController.prototype.update = function(context) {
+PositioningController.prototype.update = function(context) {
   this.updateBeforePhysics(context);
   this.updateAfterPhysics(context);
 };
 
-CutsceneController.prototype.cancel = function(context) {
+PositioningController.prototype.cancel = function(context) {
   this._onComplete = null;
   this._clear(context);
 };
 
 // Private helpers
 
-CutsceneController.prototype._validRestartOptions = function(options) {
+PositioningController.prototype._validRestartOptions = function(options) {
   if (options == null || options.ballPosition == null || options.sceneTeams == null) return false;
   if (options.sceneTeams.length == null) return false;
   for (var i = 0; i < options.sceneTeams.length; i++) {
@@ -85,7 +85,7 @@ CutsceneController.prototype._validRestartOptions = function(options) {
   return true;
 };
 
-CutsceneController.prototype._updatePlayers = function(context) {
+PositioningController.prototype._updatePlayers = function(context) {
   var allArrived = true;
   for (var t = 0; t < this._sceneTeams.length; t++) {
     var sceneTeam = this._sceneTeams[t];
@@ -101,7 +101,7 @@ CutsceneController.prototype._updatePlayers = function(context) {
   return allArrived;
 };
 
-CutsceneController.prototype._stopPlayers = function() {
+PositioningController.prototype._stopPlayers = function() {
   for (var t = 0; t < this._sceneTeams.length; t++) {
     var sceneTeam = this._sceneTeams[t];
     for (var i = 0; i < sceneTeam.players.length; i++) {
@@ -111,7 +111,7 @@ CutsceneController.prototype._stopPlayers = function() {
   }
 };
 
-CutsceneController.prototype._movePlayerToTarget = function(context, player, target, side) {
+PositioningController.prototype._movePlayerToTarget = function(context, player, target, side) {
   var distance = MathLib.computeDistance(player.position, target);
   var dx = target.x - player.position.x;
   var dy = target.y - player.position.y;
@@ -132,7 +132,7 @@ CutsceneController.prototype._movePlayerToTarget = function(context, player, tar
   return false;
 };
 
-CutsceneController.prototype._lockBall = function(ball) {
+PositioningController.prototype._lockBall = function(ball) {
   ball.position.x = this._ballPosition.x;
   ball.position.y = this._ballPosition.y;
   ball.position.z = this._ballPosition.z || 0;
@@ -141,7 +141,7 @@ CutsceneController.prototype._lockBall = function(ball) {
   ball.velocity.z = 0;
 };
 
-CutsceneController.prototype._clear = function(context) {
+PositioningController.prototype._clear = function(context) {
   var onComplete = this._onComplete;
   this._active = false;
   this._ballPosition = null;

@@ -17,6 +17,7 @@ test("Game composes explicit controllers without putting them on Stadium", funct
   assertEqual(fixture.game.debugLog, undefined);
   assertEqual(fixture.game.goalDetector, undefined);
   assertEqual(fixture.game.boundaryDetector, undefined);
+  assertEqual(fixture.game.positioningController, undefined);
   assertEqual(fixture.stadium._updateAi, undefined);
   assertEqual(context.game, undefined);
   assertTrue(context.camera === fixture.game.camera);
@@ -56,7 +57,7 @@ test("A goal result takes priority over out-of-play detection", function() {
   assertEqual(outUpdates, 0);
 });
 
-test("Positioning simulation updates cutscene around player-only physics", function() {
+test("Positioning simulation updates its controller around player-only physics", function() {
   var fixture = makeFixture();
   var order = [];
   fixture.game.beginRestart("kickoff", "home");
@@ -145,7 +146,7 @@ test("A home goal kickoff waits for fresh input after positioning", function() {
   fixture.ball.position.y = 758;
 
   fixture.game.matchFlow.detectGoal(fixture.game.context());
-  fixture.game.cutscene._clear(fixture.game);
+  fixture.positioningController._clear(fixture.game.context());
 
   assertEqual(fixture.game.restartController.phase(), "waitingForInput");
   assertEqual(fixture.game.matchFlow.simulationMode(), "none");
