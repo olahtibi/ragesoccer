@@ -6,6 +6,8 @@ var HumanController = function(config, team, ball) {
   this.touchTarget = null;
 };
 
+// Public API (underscore-prefixed members are private helpers)
+
 HumanController.prototype.player = function() {
   return this.team.humanPlayer;
 };
@@ -59,7 +61,7 @@ HumanController.prototype.selectPlayer = function(preferredPlayer) {
   if (current != null && closest !== current) {
     var currentDistance = MathLib.computeDistance(current.position, this.ball.position);
     var closestDistance = MathLib.computeDistance(closest.position, this.ball.position);
-    if (currentDistance <= closestDistance + (this.config.humanSwitchHysteresisDistance || 0)) {
+    if (currentDistance <= closestDistance + (this.config.input.humanSwitchHysteresisDistance || 0)) {
       return current;
     }
   }
@@ -109,7 +111,7 @@ HumanController.prototype.update = function(canMove) {
   }
 
   if (this.touchTarget == null) return;
-  if (MathLib.computeDistance(player.position, this.touchTarget) <= (this.config.aiTargetReachedRadius || 1)) {
+  if (MathLib.computeDistance(player.position, this.touchTarget) <= (this.config.ai.targetReachedRadius || 1)) {
     this.touchTarget = null;
     return;
   }

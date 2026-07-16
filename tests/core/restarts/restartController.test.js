@@ -1,5 +1,5 @@
-var testlib = require("../testlib");
-var makeFixture = require("../helpers").makeFixture;
+var testlib = require("../../testlib");
+var makeFixture = require("../../helpers").makeFixture;
 
 var test = testlib.test;
 var assertTrue = testlib.assertTrue;
@@ -7,16 +7,16 @@ var assertEqual = testlib.assertEqual;
 var assertNear = testlib.assertNear;
 
 function ellipseDistance(config, position) {
-  var dx = position.x - config.initialBallPosition.x;
-  var dy = position.y - config.aiCenterY;
-  return dx * dx / (config.centerCircleRadiusX * config.centerCircleRadiusX) +
-    dy * dy / (config.centerCircleRadiusY * config.centerCircleRadiusY);
+  var dx = position.x - config.pitch.initialBallPosition.x;
+  var dy = position.y - config.pitch.aiCenterY;
+  return dx * dx / (config.pitch.centerCircleRadiusX * config.pitch.centerCircleRadiusX) +
+    dy * dy / (config.pitch.centerCircleRadiusY * config.pitch.centerCircleRadiusY);
 }
 
 function cutsceneTargetForPlayer(cutscene, player) {
-  for (var t = 0; t < cutscene.teams.length; t++) {
-    for (var i = 0; i < cutscene.teams[t].players.length; i++) {
-      if (cutscene.teams[t].players[i] === player) return cutscene.teams[t].positions[i];
+  for (var t = 0; t < cutscene._sceneTeams.length; t++) {
+    for (var i = 0; i < cutscene._sceneTeams[t].players.length; i++) {
+      if (cutscene._sceneTeams[t].players[i] === player) return cutscene._sceneTeams[t].positions[i];
     }
   }
   return null;
@@ -47,7 +47,7 @@ test("Restart positioning progresses through waiting and in-progress phases", fu
   assertEqual(fixture.game.restartController.phase(), "positioning");
   assertEqual(fixture.game.matchFlow.simulationMode(), "playersOnly");
 
-  fixture.game.cutscene.clear(fixture.game);
+  fixture.game.cutscene._clear(fixture.game);
   assertEqual(fixture.game.restartController.phase(), "waitingForInput");
 
   fixture.game.resumeFromInput();
@@ -74,15 +74,15 @@ test("Goal kick can start when its taker arrives while teammates are still posit
   var fixture = makeFixture({ homeTeamSize: 4, awayTeamSize: 4 });
   fixture.game.beginRestart("goalKick", "home", {
     boundary: "bottom",
-    position: new Vector2d(fixture.config.initialBallPosition.x, fixture.config.fieldBottom)
+    position: new Vector2d(fixture.config.pitch.initialBallPosition.x, fixture.config.pitch.fieldBottom)
   });
   var cutscene = fixture.game.cutscene;
-  var taker = cutscene.readyPlayer;
+  var taker = cutscene._readyPlayer;
   var target = cutsceneTargetForPlayer(cutscene, taker);
   var unfinished = fixture.homePlayers[3];
   var designatedTarget = cutsceneTargetForPlayer(cutscene, unfinished);
-  unfinished.position.x = fixture.config.fieldLeft;
-  unfinished.position.y = fixture.config.aiCenterY;
+  unfinished.position.x = fixture.config.pitch.fieldLeft;
+  unfinished.position.y = fixture.config.pitch.aiCenterY;
   var unfinishedX = unfinished.position.x;
   var unfinishedY = unfinished.position.y;
 
@@ -96,7 +96,7 @@ test("Goal kick can start when its taker arrives while teammates are still posit
   assertEqual(unfinished.position.x, unfinishedX);
   assertEqual(unfinished.position.y, unfinishedY);
 
-  fixture.game.updateAi();
+  fixture.game._updateAi();
   var targetAfterRelease = fixture.homeTeamAi.debugSnapshot()[3].target;
   assertEqual(targetAfterRelease.x, designatedTarget.x);
   assertEqual(targetAfterRelease.y, designatedTarget.y);
@@ -106,15 +106,15 @@ test("Early home restart selects the designated taker over a closer teammate", f
   var fixture = makeFixture({ homeTeamSize: 4, awayTeamSize: 4 });
   fixture.game.beginRestart("goalKick", "home", {
     boundary: "bottom",
-    position: new Vector2d(fixture.config.initialBallPosition.x, fixture.config.fieldBottom)
+    position: new Vector2d(fixture.config.pitch.initialBallPosition.x, fixture.config.pitch.fieldBottom)
   });
   var cutscene = fixture.game.cutscene;
-  var taker = cutscene.readyPlayer;
+  var taker = cutscene._readyPlayer;
   var target = cutsceneTargetForPlayer(cutscene, taker);
   taker.position.x = target.x;
   taker.position.y = target.y;
-  fixture.homePlayers[1].position.x = cutscene.ballPosition.x;
-  fixture.homePlayers[1].position.y = cutscene.ballPosition.y;
+  fixture.homePlayers[1].position.x = cutscene._ballPosition.x;
+  fixture.homePlayers[1].position.y = cutscene._ballPosition.y;
 
   fixture.game.resumeFromInput(new Vector2d(0, -1));
 
@@ -125,12 +125,12 @@ test("Away corner waits for the configured delay after its taker is ready", func
   var fixture = makeFixture({ homeTeamSize: 4, awayTeamSize: 4 });
   fixture.game.beginRestart("corner", "away", {
     boundary: "bottom",
-    position: new Vector2d(fixture.config.fieldRight, fixture.config.fieldBottom)
+    position: new Vector2d(fixture.config.pitch.fieldRight, fixture.config.pitch.fieldBottom)
   });
   var cutscene = fixture.game.cutscene;
-  var target = cutsceneTargetForPlayer(cutscene, cutscene.readyPlayer);
-  cutscene.readyPlayer.position.x = target.x;
-  cutscene.readyPlayer.position.y = target.y;
+  var target = cutsceneTargetForPlayer(cutscene, cutscene._readyPlayer);
+  cutscene._readyPlayer.position.x = target.x;
+  cutscene._readyPlayer.position.y = target.y;
 
   assertEqual(fixture.game.resumeFromInput(new Vector2d(0, -1)), false);
 
@@ -150,9 +150,9 @@ test("Opponent restart delay continues after every player finishes positioning",
   var fixture = makeFixture({ homeTeamSize: 4, awayTeamSize: 4 });
   fixture.game.beginRestart("throwIn", "away", {
     boundary: "right",
-    position: new Vector2d(fixture.config.fieldRight, fixture.config.aiCenterY)
+    position: new Vector2d(fixture.config.pitch.fieldRight, fixture.config.pitch.aiCenterY)
   });
-  fixture.game.cutscene.clear(fixture.game);
+  fixture.game.cutscene._clear(fixture.game);
 
   assertEqual(fixture.game.restartController.phase(), "waitingForInput");
   assertEqual(fixture.game.matchFlow.simulationMode(), "playersOnly");
@@ -171,16 +171,16 @@ test("Away kickoff delay starts only after every player finishes positioning", f
   var fixture = makeFixture({ homeTeamSize: 4, awayTeamSize: 4 });
   fixture.game.beginRestart("kickoff", "away");
   var cutscene = fixture.game.cutscene;
-  var takerTarget = cutsceneTargetForPlayer(cutscene, cutscene.readyPlayer);
-  cutscene.readyPlayer.position.x = takerTarget.x;
-  cutscene.readyPlayer.position.y = takerTarget.y;
+  var takerTarget = cutsceneTargetForPlayer(cutscene, cutscene._readyPlayer);
+  cutscene._readyPlayer.position.x = takerTarget.x;
+  cutscene._readyPlayer.position.y = takerTarget.y;
 
   fixture.game.physics.lastDt = 1;
   fixture.game.restartController.updateAfterPhysics(fixture.game.context());
   assertEqual(fixture.game.restartController.phase(), "positioning");
   assertEqual(fixture.game.resumeFromInput(new Vector2d(0, -1)), false);
 
-  cutscene.clear(fixture.game);
+  cutscene._clear(fixture.game);
   assertEqual(fixture.game.restartController.phase(), "waitingForInput");
 
   fixture.game.physics.lastDt = 0.6;
@@ -194,20 +194,20 @@ test("Away kickoff delay starts only after every player finishes positioning", f
 
 test("Early away goal kick keeps the goalkeeper as designated taker", function() {
   var fixture = makeFixture({ homeTeamSize: 4, awayTeamSize: 4 });
-  fixture.config.opponentRestartDelaySeconds = 0;
+  fixture.config.restarts.opponentDelaySeconds = 0;
   fixture.game.beginRestart("goalKick", "away", {
     boundary: "top",
-    position: new Vector2d(fixture.config.initialBallPosition.x, fixture.config.fieldTop)
+    position: new Vector2d(fixture.config.pitch.initialBallPosition.x, fixture.config.pitch.fieldTop)
   });
   var cutscene = fixture.game.cutscene;
-  var target = cutsceneTargetForPlayer(cutscene, cutscene.readyPlayer);
-  cutscene.readyPlayer.position.x = target.x;
-  cutscene.readyPlayer.position.y = target.y;
-  fixture.awayPlayers[1].position.x = cutscene.ballPosition.x;
-  fixture.awayPlayers[1].position.y = cutscene.ballPosition.y;
+  var target = cutsceneTargetForPlayer(cutscene, cutscene._readyPlayer);
+  cutscene._readyPlayer.position.x = target.x;
+  cutscene._readyPlayer.position.y = target.y;
+  fixture.awayPlayers[1].position.x = cutscene._ballPosition.x;
+  fixture.awayPlayers[1].position.y = cutscene._ballPosition.y;
 
   fixture.game.restartController.updateAfterPhysics(fixture.game.context());
-  fixture.game.updateAi();
+  fixture.game._updateAi();
 
   assertEqual(fixture.awayTeamAi.debugSnapshot()[0].command, "attackBall");
   assertEqual(fixture.awayTeamAi.debugSnapshot()[1].command, "moveToPosition");
@@ -215,15 +215,15 @@ test("Early away goal kick keeps the goalkeeper as designated taker", function()
 
 test("Away throw-in launches automatically when its taker is ready", function() {
   var fixture = makeFixture({ homeTeamSize: 4, awayTeamSize: 4 });
-  fixture.config.opponentRestartDelaySeconds = 0;
+  fixture.config.restarts.opponentDelaySeconds = 0;
   fixture.game.beginRestart("throwIn", "away", {
     boundary: "right",
-    position: new Vector2d(fixture.config.fieldRight, fixture.config.aiCenterY)
+    position: new Vector2d(fixture.config.pitch.fieldRight, fixture.config.pitch.aiCenterY)
   });
   var cutscene = fixture.game.cutscene;
-  var target = cutsceneTargetForPlayer(cutscene, cutscene.readyPlayer);
-  cutscene.readyPlayer.position.x = target.x;
-  cutscene.readyPlayer.position.y = target.y;
+  var target = cutsceneTargetForPlayer(cutscene, cutscene._readyPlayer);
+  cutscene._readyPlayer.position.x = target.x;
+  cutscene._readyPlayer.position.y = target.y;
 
   fixture.game.restartController.updateAfterPhysics(fixture.game.context());
 
@@ -237,13 +237,13 @@ test("Held human input starts an early restart when the taker becomes ready", fu
   var fixture = makeFixture({ homeTeamSize: 4, awayTeamSize: 4 });
   fixture.game.beginRestart("goalKick", "home", {
     boundary: "bottom",
-    position: new Vector2d(fixture.config.initialBallPosition.x, fixture.config.fieldBottom)
+    position: new Vector2d(fixture.config.pitch.initialBallPosition.x, fixture.config.pitch.fieldBottom)
   });
   fixture.game.humanController.setKey(38, true);
   var cutscene = fixture.game.cutscene;
-  var target = cutsceneTargetForPlayer(cutscene, cutscene.readyPlayer);
-  cutscene.readyPlayer.position.x = target.x;
-  cutscene.readyPlayer.position.y = target.y;
+  var target = cutsceneTargetForPlayer(cutscene, cutscene._readyPlayer);
+  cutscene._readyPlayer.position.x = target.x;
+  cutscene._readyPlayer.position.y = target.y;
 
   fixture.game.restartController.updateAfterPhysics(fixture.game.context());
 
@@ -252,7 +252,7 @@ test("Held human input starts an early restart when the taker becomes ready", fu
 
 test("Kickoff assigns relative states and movement permission", function() {
   var fixture = makeFixture({ kickoffSide: "away" });
-  fixture.config.opponentRestartDelaySeconds = 0;
+  fixture.config.restarts.opponentDelaySeconds = 0;
   fixture.game.restartController.updateAfterPhysics(fixture.game.context());
 
   assertEqual(fixture.homeTeamAi.state, "kickoffOpponent");
@@ -265,10 +265,10 @@ test("Throw-in uses fresh directional input to launch a lofted inward throw", fu
   var fixture = makeFixture();
   fixture.game.beginRestart("throwIn", "home", {
     boundary: "left",
-    position: new Vector2d(fixture.config.fieldLeft, fixture.config.aiCenterY)
+    position: new Vector2d(fixture.config.pitch.fieldLeft, fixture.config.pitch.aiCenterY)
   });
   fixture.game.cutscene.updateBeforePhysics(fixture.game);
-  fixture.game.cutscene.clear(fixture.game);
+  fixture.game.cutscene._clear(fixture.game);
 
   var taker = fixture.ball.heldBy;
   var heldPosition = fixture.ball.heldPosition();
@@ -291,13 +291,13 @@ test("Throw-in uses fresh directional input to launch a lofted inward throw", fu
 
 test("Away throw-in chooses an automatic inward attacking direction", function() {
   var fixture = makeFixture();
-  fixture.config.opponentRestartDelaySeconds = 0;
+  fixture.config.restarts.opponentDelaySeconds = 0;
   fixture.game.beginRestart("throwIn", "away", {
     boundary: "right",
-    position: new Vector2d(fixture.config.fieldRight, fixture.config.aiCenterY)
+    position: new Vector2d(fixture.config.pitch.fieldRight, fixture.config.pitch.aiCenterY)
   });
   fixture.game.cutscene.updateBeforePhysics(fixture.game);
-  fixture.game.cutscene.clear(fixture.game);
+  fixture.game.cutscene._clear(fixture.game);
 
   assertEqual(fixture.ball.heldBy.facingX, -1);
   assertEqual(fixture.ball.heldBy.facingY, 0);
@@ -313,14 +313,14 @@ test("Set-piece positioning keeps opponents outside the restart distance", funct
   var fixture = makeFixture({ homeTeamSize: 4, awayTeamSize: 4 });
   fixture.game.beginRestart("corner", "home", {
     boundary: "top",
-    position: new Vector2d(fixture.config.fieldLeft, fixture.config.fieldTop)
+    position: new Vector2d(fixture.config.pitch.fieldLeft, fixture.config.pitch.fieldTop)
   });
-  var ballPosition = fixture.game.cutscene.ballPosition;
-  var awayScene = fixture.game.cutscene.teams[1];
+  var ballPosition = fixture.game.cutscene._ballPosition;
+  var awayScene = fixture.game.cutscene._sceneTeams[1];
 
   for (var i = 0; i < awayScene.positions.length; i++) {
     assertTrue(MathLib.computeDistance(awayScene.positions[i], ballPosition) >=
-      fixture.config.restartOpponentDistance - 0.0001);
+      fixture.config.restarts.opponentDistance - 0.0001);
   }
 });
 
@@ -328,19 +328,19 @@ test("Corner restart gives the awarded AI team a central crossing target", funct
   var fixture = makeFixture();
   fixture.game.beginRestart("corner", "away", {
     boundary: "bottom",
-    position: new Vector2d(fixture.config.fieldRight, fixture.config.fieldBottom)
+    position: new Vector2d(fixture.config.pitch.fieldRight, fixture.config.pitch.fieldBottom)
   });
 
   var target = fixture.game.restartController.attackTarget(fixture.awayTeam);
 
-  assertEqual(target.x, fixture.config.initialBallPosition.x);
-  assertEqual(target.y, fixture.config.fieldBottom - fixture.config.cornerCrossDistance);
+  assertEqual(target.x, fixture.config.pitch.initialBallPosition.x);
+  assertEqual(target.y, fixture.config.pitch.fieldBottom - fixture.config.restarts.cornerCrossDistance);
   assertEqual(fixture.game.restartController.attackTarget(fixture.homeTeam), null);
 });
 
 test("Corner restart never selects the goalkeeper or cover defender as taker", function() {
   var fixture = makeFixture({ homeTeamSize: 4, awayTeamSize: 4 });
-  var corner = new Vector2d(fixture.config.fieldLeft, fixture.config.fieldTop);
+  var corner = new Vector2d(fixture.config.pitch.fieldLeft, fixture.config.pitch.fieldTop);
   fixture.homePlayers[0].position.x = corner.x;
   fixture.homePlayers[0].position.y = corner.y;
   fixture.homePlayers[1].position.x = corner.x + 1;
@@ -356,25 +356,25 @@ test("Corner restart never selects the goalkeeper or cover defender as taker", f
   });
 
   var scene = fixture.game.cutscene;
-  var homeScene = scene.teams[0];
-  assertTrue(MathLib.computeDistance(homeScene.positions[2], scene.ballPosition) < 20);
-  assertTrue(MathLib.computeDistance(homeScene.positions[0], scene.ballPosition) > 20);
-  assertTrue(MathLib.computeDistance(homeScene.positions[1], scene.ballPosition) > 20);
+  var homeScene = scene._sceneTeams[0];
+  assertTrue(MathLib.computeDistance(homeScene.positions[2], scene._ballPosition) < 20);
+  assertTrue(MathLib.computeDistance(homeScene.positions[0], scene._ballPosition) > 20);
+  assertTrue(MathLib.computeDistance(homeScene.positions[1], scene._ballPosition) > 20);
   assertTrue(Math.abs(
     homeScene.positions[3].y -
-      (fixture.config.fieldTop + fixture.config.cornerBoxDepth)
-  ) <= fixture.config.restartPositionVariationY);
+      (fixture.config.pitch.fieldTop + fixture.config.restarts.cornerBoxDepth)
+  ) <= fixture.config.restarts.positionVariationY);
 });
 
 test("Corner restart applies the taker-aware layered plan before jitter", function() {
   var fixture = makeFixture({ homeTeamSize: 11, awayTeamSize: 11 });
   fixture.game.beginRestart("corner", "home", {
     boundary: "top",
-    position: new Vector2d(fixture.config.fieldLeft, fixture.config.fieldTop)
+    position: new Vector2d(fixture.config.pitch.fieldLeft, fixture.config.pitch.fieldTop)
   });
   var scene = fixture.game.cutscene;
-  var homeScene = scene.teams[0];
-  var takerIndex = homeScene.players.indexOf(scene.readyPlayer);
+  var homeScene = scene._sceneTeams[0];
+  var takerIndex = homeScene.players.indexOf(scene._readyPlayer);
   var plan = new Formation(fixture.config).cornerAttackingPlan(
     "home",
     11,
@@ -385,29 +385,29 @@ test("Corner restart applies the taker-aware layered plan before jitter", functi
 
   assertTrue(takerIndex >= 0);
   assertTrue(Math.abs(homeScene.positions[shortIndex].x - plan.positions[shortIndex].x) <=
-    fixture.config.restartPositionVariationX);
+    fixture.config.restarts.positionVariationX);
   assertTrue(Math.abs(homeScene.positions[shortIndex].y - plan.positions[shortIndex].y) <=
-    fixture.config.restartPositionVariationY);
-  assertTrue(MathLib.computeDistance(homeScene.positions[takerIndex], scene.ballPosition) < 20);
+    fixture.config.restarts.positionVariationY);
+  assertTrue(MathLib.computeDistance(homeScene.positions[takerIndex], scene._ballPosition) < 20);
 });
 
 test("Goal kick always positions the goalkeeper as the only nearby taker", function() {
   var fixture = makeFixture({ homeTeamSize: 3, awayTeamSize: 3 });
   var ballPosition = new Vector2d(
-    fixture.config.initialBallPosition.x,
-    fixture.config.fieldBottom - fixture.config.goalKickDistance
+    fixture.config.pitch.initialBallPosition.x,
+    fixture.config.pitch.fieldBottom - fixture.config.restarts.goalKickDistance
   );
-  fixture.homePlayers[0].position.x = fixture.config.fieldLeft;
-  fixture.homePlayers[0].position.y = fixture.config.aiCenterY;
+  fixture.homePlayers[0].position.x = fixture.config.pitch.fieldLeft;
+  fixture.homePlayers[0].position.y = fixture.config.pitch.aiCenterY;
   fixture.homePlayers[1].position.x = ballPosition.x;
   fixture.homePlayers[1].position.y = ballPosition.y;
 
   fixture.game.beginRestart("goalKick", "home", {
     boundary: "bottom",
-    position: new Vector2d(fixture.config.initialBallPosition.x, fixture.config.fieldBottom)
+    position: new Vector2d(fixture.config.pitch.initialBallPosition.x, fixture.config.pitch.fieldBottom)
   });
 
-  var homeScene = fixture.game.cutscene.teams[0];
+  var homeScene = fixture.game.cutscene._sceneTeams[0];
   var nearby = 0;
   for (var i = 0; i < homeScene.positions.length; i++) {
     if (MathLib.computeDistance(homeScene.positions[i], ballPosition) < 40) nearby++;
@@ -415,7 +415,7 @@ test("Goal kick always positions the goalkeeper as the only nearby taker", funct
   assertEqual(nearby, 1);
   assertNear(
     MathLib.computeDistance(homeScene.positions[0], ballPosition),
-    fixture.config.goalKickTakerDistance,
+    fixture.config.restarts.goalKickTakerDistance,
     0.0001
   );
 });
@@ -424,7 +424,7 @@ test("Kickoff clamps the human player to the center ellipse", function() {
   var fixture = makeFixture();
   fixture.game.resumeFromInput();
   var player = fixture.homeTeam.humanPlayer;
-  player.position.y = fixture.config.aiCenterY - fixture.config.centerCircleRadiusY - 20;
+  player.position.y = fixture.config.pitch.aiCenterY - fixture.config.pitch.centerCircleRadiusY - 20;
   player.velocity.y = -10;
 
   fixture.game.restartController.updateAfterPhysics(fixture.game.context());
@@ -436,11 +436,11 @@ test("Kickoff clamps the human player to the center ellipse", function() {
 test("Kickoff scene exposes the dedicated first striker as taker", function() {
   var homeFixture = makeFixture({ homeTeamSize: 11, awayTeamSize: 11 });
   homeFixture.game.beginRestart("kickoff", "home");
-  assertTrue(homeFixture.game.cutscene.readyPlayer === homeFixture.homePlayers[9]);
+  assertTrue(homeFixture.game.cutscene._readyPlayer === homeFixture.homePlayers[9]);
 
   var awayFixture = makeFixture({ homeTeamSize: 11, awayTeamSize: 11 });
   awayFixture.game.beginRestart("kickoff", "away");
-  assertTrue(awayFixture.game.cutscene.readyPlayer === awayFixture.awayPlayers[9]);
+  assertTrue(awayFixture.game.cutscene._readyPlayer === awayFixture.awayPlayers[9]);
 });
 
 test("Kickoff slightly varies non-takers while preserving legal positions", function() {
@@ -453,8 +453,8 @@ test("Kickoff slightly varies non-takers while preserving legal positions", func
   var exactHome = formation.positions("kickoffUs", "home", 11);
   var sawVariation = false;
 
-  for (var teamIndex = 0; teamIndex < scene.teams.length; teamIndex++) {
-    var sceneTeam = scene.teams[teamIndex];
+  for (var teamIndex = 0; teamIndex < scene.sceneTeams.length; teamIndex++) {
+    var sceneTeam = scene.sceneTeams[teamIndex];
     for (var i = 0; i < sceneTeam.positions.length; i++) {
       var isTaker = sceneTeam.side == "home" && i == takerIndex;
       if (isTaker) {
@@ -465,14 +465,14 @@ test("Kickoff slightly varies non-takers while preserving legal positions", func
       assertTrue(ellipseDistance(fixture.config, sceneTeam.positions[i]) >= 1);
       if (sceneTeam.side == "home") {
         assertTrue(sceneTeam.positions[i].y >=
-          fixture.config.aiCenterY + fixture.config.playerRadius);
+          fixture.config.pitch.aiCenterY + fixture.config.player.radius);
         if (sceneTeam.positions[i].x != exactHome[i].x ||
             sceneTeam.positions[i].y != exactHome[i].y) {
           sawVariation = true;
         }
       } else {
         assertTrue(sceneTeam.positions[i].y <=
-          fixture.config.aiCenterY - fixture.config.playerRadius);
+          fixture.config.pitch.aiCenterY - fixture.config.player.radius);
       }
     }
   }
@@ -504,11 +504,11 @@ test("Throw-in corner and goal-kick positioning changes with restart seed", func
     var second = entry.strategy.createScene(fixture.game.context(), entry.request);
     var sawVariation = false;
 
-    for (var teamIndex = 0; teamIndex < first.teams.length; teamIndex++) {
-      for (var i = 0; i < first.teams[teamIndex].positions.length; i++) {
-        var firstPlayer = first.teams[teamIndex].players[i];
-        var firstTarget = first.teams[teamIndex].positions[i];
-        var secondTarget = second.teams[teamIndex].positions[i];
+    for (var teamIndex = 0; teamIndex < first.sceneTeams.length; teamIndex++) {
+      for (var i = 0; i < first.sceneTeams[teamIndex].positions.length; i++) {
+        var firstPlayer = first.sceneTeams[teamIndex].players[i];
+        var firstTarget = first.sceneTeams[teamIndex].positions[i];
+        var secondTarget = second.sceneTeams[teamIndex].positions[i];
         if (firstPlayer === first.readyPlayer) {
           assertEqual(firstTarget.x, secondTarget.x);
           assertEqual(firstTarget.y, secondTarget.y);
@@ -524,7 +524,7 @@ test("Throw-in corner and goal-kick positioning changes with restart seed", func
 test("Kickoff completes generically when its strategy condition is met", function() {
   var fixture = makeFixture();
   fixture.game.resumeFromInput();
-  fixture.ball.velocity.x = fixture.config.minVelocity + 1;
+  fixture.ball.velocity.x = fixture.config.physics.minVelocity + 1;
 
   fixture.game.matchFlow.updateAfterPhysics(fixture.game.context());
 

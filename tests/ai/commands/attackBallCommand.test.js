@@ -70,7 +70,7 @@ test("attackBall detours around ball when close and not aligned", function() {
   ai.update({ ball: fixture.ball });
 
   assertEqual(ai.debugSnapshot().state, "detour");
-  assertNear(MathLib.computeDistance(ai.tPos, fixture.ball.position), fixture.config.aiAttackDetourRadius, 0.0001);
+  assertNear(MathLib.computeDistance(ai.tPos, fixture.ball.position), fixture.config.ai.attackDetourRadius, 0.0001);
   assertTrue(ai.debugSnapshot().attackOrbitDir !== 0);
 });
 
@@ -130,24 +130,24 @@ test("attackBall keeps shoot commitment without relaxing entry accuracy", functi
   assertTrue(committedAi.debugSnapshot().correctingAim);
   assertNear(
     MathLib.computeDistance(committedAi.tPos, fixture.ball.position),
-    fixture.config.aiAttackDetourRadius,
+    fixture.config.ai.attackDetourRadius,
     0.0001
   );
 
   var freshPlayer = new Player(
-    fixture.config.imgPlayerAway,
+    fixture.config.assets.playerAway,
     new Vector2d(fixture.playerAway.position.x, fixture.playerAway.position.y),
-    fixture.config.playerSpriteWidth,
-    fixture.config.playerSpriteHeight,
-    fixture.config.playerSpriteCenterX,
-    fixture.config.playerSpriteCenterY
+    fixture.config.player.spriteWidth,
+    fixture.config.player.spriteHeight,
+    fixture.config.player.spriteCenterX,
+    fixture.config.player.spriteCenterY
   );
   var freshAi = new IndividualAi(fixture.config, fixture.awayTeam, freshPlayer);
   freshAi.setCommand("attackBall", null);
   freshAi.update({ ball: fixture.ball });
   assertTrue(freshAi.debugSnapshot().state != "shoot");
 
-  var correctionTolerance = fixture.config.aiAttackAimCorrectionToleranceRadians;
+  var correctionTolerance = fixture.config.ai.attackAimCorrectionToleranceRadians;
   var stillCorrecting = 0.12;
   fixture.playerAway.position.x = fixture.ball.position.x + Math.sin(stillCorrecting) * 20;
   fixture.playerAway.position.y = fixture.ball.position.y - Math.cos(stillCorrecting) * 20;
@@ -193,6 +193,6 @@ test("attackBall does not stop short of a nearly aligned correction waypoint", f
   assertEqual(ai.debugSnapshot().state, "shoot");
   assertTrue(ai.debugSnapshot().correctingAim);
   assertTrue(MathLib.computeDistance(ai.tPos, fixture.playerAway.position) <
-    fixture.config.aiTargetReachedRadius);
+    fixture.config.ai.targetReachedRadius);
   assertTrue(fixture.playerAway.velocity.x != 0 || fixture.playerAway.velocity.y != 0);
 });

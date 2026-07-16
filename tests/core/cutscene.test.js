@@ -25,8 +25,8 @@ test("Cutscene rejects mismatched player and position counts", function() {
   var game = makeCutsceneGame(fixture);
 
   var started = game.cutscene.play({
-    ballPosition: fixture.config.initialBallPosition,
-    teams: [
+    ballPosition: fixture.config.pitch.initialBallPosition,
+    sceneTeams: [
       {
         side: "home",
         players: fixture.homePlayers,
@@ -50,7 +50,7 @@ test("Cutscene locks ball and moves players toward explicit targets", function()
 
   game.cutscene.play({
     ballPosition: new Vector3d(334, 433, 0),
-    teams: [
+    sceneTeams: [
       {
         side: "home",
         players: fixture.homePlayers,
@@ -87,7 +87,7 @@ test("Cutscene waits for players and camera before completing", function() {
 
   game.cutscene.play({
     ballPosition: new Vector3d(334, 433, 0),
-    teams: [
+    sceneTeams: [
       {
         side: "home",
         players: fixture.homePlayers,
@@ -115,8 +115,8 @@ test("Cutscene snaps overshot players to targets", function() {
   fixture.homePlayers[0].position.y = 96;
 
   game.cutscene.play({
-    ballPosition: fixture.config.initialBallPosition,
-    teams: [
+    ballPosition: fixture.config.pitch.initialBallPosition,
+    sceneTeams: [
       {
         side: "home",
         players: fixture.homePlayers,
@@ -126,7 +126,7 @@ test("Cutscene snaps overshot players to targets", function() {
   });
   fixture.homePlayers[0].velocity.x = 0;
   fixture.homePlayers[0].velocity.y = -fixture.config.teamVelocity("home");
-  var arrived = game.cutscene.movePlayerToTarget(game, fixture.homePlayers[0], target, "home");
+  var arrived = game.cutscene._movePlayerToTarget(game, fixture.homePlayers[0], target, "home");
 
   assertEqual(arrived, true);
   assertEqual(fixture.homePlayers[0].position.x, target.x);
@@ -144,8 +144,8 @@ test("Cutscene ignores pre-cutscene velocity when moving players to targets", fu
   fixture.awayPlayers[0].velocity.y = 0;
 
   game.cutscene.play({
-    ballPosition: fixture.config.initialBallPosition,
-    teams: [
+    ballPosition: fixture.config.pitch.initialBallPosition,
+    sceneTeams: [
       {
         side: "away",
         players: fixture.awayPlayers,
@@ -170,9 +170,9 @@ test("Cutscene becomes ready when its taker arrives before other players", funct
   fixture.homePlayers[1].position.y = 300;
 
   game.cutscene.play({
-    ballPosition: fixture.config.initialBallPosition,
+    ballPosition: fixture.config.pitch.initialBallPosition,
     readyPlayer: fixture.homePlayers[0],
-    teams: [{
+    sceneTeams: [{
       side: "home",
       players: fixture.homePlayers,
       positions: [takerTarget, new Vector2d(400, 400)]
@@ -193,10 +193,10 @@ test("Cancelling a ready cutscene does not snap unfinished players", function() 
   fixture.homePlayers[1].position.y = 300;
 
   game.cutscene.play({
-    ballPosition: fixture.config.initialBallPosition,
+    ballPosition: fixture.config.pitch.initialBallPosition,
     readyPlayer: fixture.homePlayers[0],
     onComplete: function() { completed = true; },
-    teams: [{
+    sceneTeams: [{
       side: "home",
       players: fixture.homePlayers,
       positions: [new Vector2d(120, 100), new Vector2d(400, 400)]

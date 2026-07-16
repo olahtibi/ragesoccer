@@ -5,6 +5,8 @@ var BrowserInput = function(game, eventTarget) {
   this.boundTouchHandler = this.handleTouch.bind(this);
 };
 
+// Public API (underscore-prefixed members are private helpers)
+
 BrowserInput.prototype.attach = function() {
   this.eventTarget.addEventListener("keydown", this.boundKeyHandler, false);
   this.eventTarget.addEventListener("keyup", this.boundKeyHandler, false);
@@ -51,19 +53,19 @@ BrowserInput.prototype.applyHumanInput = function() {
 
 BrowserInput.prototype.handleCommand = function(keyCode) {
   if (keyCode == 70) this.game.camera.showStats = !this.game.camera.showStats;
-  if (keyCode == 81) this.game.config.viewportRatio /= 1.2;
-  if (keyCode == 87) this.game.config.viewportRatio *= 1.2;
-  if (keyCode == 67 && this.game.config.debug == true &&
+  if (keyCode == 81) this.game.config.viewport.ratio /= 1.2;
+  if (keyCode == 87) this.game.config.viewport.ratio *= 1.2;
+  if (keyCode == 67 && this.game.config.debug.enabled == true &&
       !this.game.isOutOfPlayPending()) {
     var cornerX = this.game.stadium.ball.position.x <=
-      this.game.config.initialBallPosition.x ?
-      this.game.config.fieldLeft : this.game.config.fieldRight;
+      this.game.config.pitch.initialBallPosition.x ?
+      this.game.config.pitch.fieldLeft : this.game.config.pitch.fieldRight;
     this.game.beginRestart("corner", "home", {
       boundary: "top",
-      position: new Vector2d(cornerX, this.game.config.fieldTop)
+      position: new Vector2d(cornerX, this.game.config.pitch.fieldTop)
     });
   }
-  if (keyCode == 191 && this.game.config.debug == true) {
+  if (keyCode == 191 && this.game.config.debug.enabled == true) {
     this.game.togglePause();
     this.game.debugLog.dump();
   }

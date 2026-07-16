@@ -52,8 +52,8 @@ function loadGameScripts() {
     "src/core/debugLog.js",
     "src/world/ball.js",
     "src/world/player.js",
-    "src/world/goalDetector.js",
-    "src/world/boundaryDetector.js",
+    "src/world/detectors/goalDetector.js",
+    "src/world/detectors/boundaryDetector.js",
     "src/ai/formation.js",
     "src/ai/commands/inactiveCommand.js",
     "src/ai/commands/moveToPositionCommand.js",
@@ -67,12 +67,13 @@ function loadGameScripts() {
     "src/core/camera.js",
     "src/core/cutscene.js",
     "src/input/humanController.js",
-    "src/core/restart.js",
-    "src/core/restartPositioning.js",
-    "src/core/kickoffRestart.js",
-    "src/core/throwInRestart.js",
-    "src/core/cornerRestart.js",
-    "src/core/goalKickRestart.js",
+    "src/core/restarts/restartRegistry.js",
+    "src/core/restarts/restartController.js",
+    "src/core/restarts/restartPositioning.js",
+    "src/core/restarts/kickoffRestart.js",
+    "src/core/restarts/throwInRestart.js",
+    "src/core/restarts/cornerRestart.js",
+    "src/core/restarts/goalKickRestart.js",
     "src/core/matchFlow.js",
     "src/input/io.js",
     "src/core/game.js"
@@ -84,14 +85,16 @@ function loadGameScripts() {
 function makeConfig(options) {
   var config = new Configuration();
   options = options || {};
-  config.homeTeamSize = options.homeTeamSize != null ? options.homeTeamSize : 1;
-  config.awayTeamSize = options.awayTeamSize != null ? options.awayTeamSize : 1;
-  config.playerStrength = options.playerStrength != null ? options.playerStrength : config.playerStrength;
-  config.opponentStrength = options.opponentStrength != null ? options.opponentStrength : config.opponentStrength;
-  config.kickoffSide = options.kickoffSide != null ? options.kickoffSide : config.kickoffSide;
-  config.outOfPlayRestartsEnabled = options.outOfPlayRestartsEnabled != null ?
-    options.outOfPlayRestartsEnabled : config.outOfPlayRestartsEnabled;
-  config.playerVelocity = config.teamVelocity("home");
+  config.teams.homeSize = options.homeTeamSize != null ? options.homeTeamSize : 1;
+  config.teams.awaySize = options.awayTeamSize != null ? options.awayTeamSize : 1;
+  config.teams.homeStrength = options.playerStrength != null ?
+    options.playerStrength : config.teams.homeStrength;
+  config.teams.awayStrength = options.opponentStrength != null ?
+    options.opponentStrength : config.teams.awayStrength;
+  config.restarts.kickoffSide = options.kickoffSide != null ?
+    options.kickoffSide : config.restarts.kickoffSide;
+  config.restarts.outOfPlayEnabled = options.outOfPlayRestartsEnabled != null ?
+    options.outOfPlayRestartsEnabled : config.restarts.outOfPlayEnabled;
   return config;
 }
 
@@ -171,19 +174,19 @@ function applyReplayEvent(event, game, input) {
 function advanceReplayFrame(game, dt) {
   if (game.isOutOfPlayPending()) {
     game.physics.lastDt = dt;
-    game.physics.updateBallPosition(dt);
-    game.updatePendingOutOfPlay();
+    game.physics._updateBallPosition(dt);
+    game._updatePendingOutOfPlay();
     return;
   }
-  game.updateAi();
+  game._updateAi();
   var canMove = !game.matchFlow.isRestartActive() || game.restartController.canTeamMove(game.teams[0]);
   game.humanController.update(canMove);
   game.physics.lastDt = dt;
-  game.physics.updatePlayerPosition(dt);
-  game.physics.resolveBallPlayerContacts();
-  game.physics.updateBallPosition(dt);
+  game.physics._updatePlayerPositions(dt);
+  game.physics._resolveBallPlayerContacts();
+  game.physics._updateBallPosition(dt);
   game.matchFlow.updateAfterPhysics(game.context());
-  if (!game.updateScore()) game.updateOutOfPlay();
+  if (!game._handleGoalDetection()) game._handleBoundaryDetection();
 }
 
 module.exports = {

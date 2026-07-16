@@ -6,12 +6,14 @@ var DebugLog = function(config) {
   this.startTimeMs = null;
 };
 
+// Public API (underscore-prefixed members are private helpers)
+
 DebugLog.prototype.record = function(game) {
-  if (!this.config.debug) {
+  if (!this.config.debug.enabled) {
     return;
   }
 
-  var everyNFrames = this.config.debugLogEveryNFrames || 1;
+  var everyNFrames = this.config.debug.logEveryNFrames || 1;
   var frame = this.frame;
   this.frame++;
 
@@ -25,7 +27,7 @@ DebugLog.prototype.record = function(game) {
 };
 
 DebugLog.prototype.recordKeyEvent = function(e) {
-  if (!this.config.debug) {
+  if (!this.config.debug.enabled) {
     return;
   }
 
@@ -40,7 +42,7 @@ DebugLog.prototype.recordKeyEvent = function(e) {
 };
 
 DebugLog.prototype.recordTouchEvent = function(target) {
-  if (!this.config.debug) {
+  if (!this.config.debug.enabled) {
     return;
   }
 
@@ -55,7 +57,7 @@ DebugLog.prototype.recordTouchEvent = function(target) {
 };
 
 DebugLog.prototype.dump = function() {
-  if (!this.config.debug) {
+  if (!this.config.debug.enabled) {
     return;
   }
 
@@ -67,7 +69,7 @@ DebugLog.prototype.dump = function() {
 };
 
 DebugLog.prototype.trim = function(currentTime) {
-  var seconds = this.config.debugLogSeconds;
+  var seconds = this.config.debug.logSeconds;
   if (seconds == null || seconds < 0) {
     return;
   }

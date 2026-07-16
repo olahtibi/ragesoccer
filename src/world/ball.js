@@ -1,4 +1,5 @@
-var Ball = function (imgBall, ballRadius, position) {
+var Ball = function(imgBall, ballRadius, position, ballConfig) {
+  ballConfig = ballConfig || {};
   this.imgBall = imgBall;
   this.ballRadius = ballRadius;
   this.position = new Vector3d(position.x, position.y, position.z || 0);
@@ -10,7 +11,13 @@ var Ball = function (imgBall, ballRadius, position) {
   // Accumulated distance rolled since the last sprite phase change.
   // Used by the physics loop to advance the sprite in proportion to travel.
   this.rollDistance = 0;
+  this._heldOffsetX = ballConfig.heldOffsetX || 5;
+  this._heldOffsetY = ballConfig.heldOffsetY || -8;
+  this._shadowFrame = ballConfig.shadowFrame || 4;
+  this._shadowOffset = ballConfig.shadowOffset || 1;
 };
+
+// Public API (underscore-prefixed members are private helpers)
 
 Ball.prototype.draw = function(ctx) {
     if(this.heldBy != null) {
@@ -29,10 +36,10 @@ Ball.prototype.draw = function(ctx) {
     var size = this.ballRadius * 2;
     ctx.drawImage(
         this.imgBall, 
-        (size * 4), 0, 
+        (size * this._shadowFrame), 0,
         size, size, 
-        this.position.x - this.ballRadius + 1 + this.position.z,
-        this.position.y - this.ballRadius + 1 + this.position.z,
+        this.position.x - this.ballRadius + this._shadowOffset + this.position.z,
+        this.position.y - this.ballRadius + this._shadowOffset + this.position.z,
         size, size
     );
     ctx.drawImage(
@@ -50,8 +57,8 @@ Ball.prototype.heldPosition = function() {
         return new Vector3d(this.position.x, this.position.y, this.position.z);
     }
     return new Vector3d(
-        this.heldBy.position.x + this.heldBy.facingX * 5,
-        this.heldBy.position.y - 8,
+        this.heldBy.position.x + this.heldBy.facingX * this._heldOffsetX,
+        this.heldBy.position.y + this._heldOffsetY,
         0
     );
 };

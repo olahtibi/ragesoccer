@@ -4,7 +4,7 @@ var TeamAi = function(config, team, opponentTeam, ball) {
   this.opponentTeam = opponentTeam;
   this.ball = ball;
   this.formation = new Formation(config);
-  this.state = config.kickoffSide == team.side ? "kickoffUs" : "kickoffOpponent";
+  this.state = config.restarts.kickoffSide == team.side ? "kickoffUs" : "kickoffOpponent";
   this.ballAttacker = null;
   this.cornerTakerIndex = -1;
   this.cornerPositioningTargets = null;
@@ -18,8 +18,10 @@ var TeamAi = function(config, team, opponentTeam, ball) {
   }
 };
 
+// Public API (underscore-prefixed members are private helpers)
+
 TeamAi.prototype.update = function(context) {
-  if (!this.config.teamAiEnabled) {
+  if (!this.config.ai.enabled) {
     return;
   }
 
@@ -97,17 +99,17 @@ TeamAi.prototype.createMovementProfiles = function() {
       paceValue: paceValue,
       paceMultiplier: 1,
       lateralBias: isGoalie ? 0 :
-        this.profileValue(i, 2) * this.config.aiFormationLateralVariation,
+        this.profileValue(i, 2) * this.config.ai.formationLateralVariation,
       depthBias: isGoalie ? 0 :
-        this.profileValue(i, 3) * this.config.aiFormationDepthVariation,
+        this.profileValue(i, 3) * this.config.ai.formationDepthVariation,
       responseRate: isGoalie ? 0 : this.profileRange(
         i,
         4,
-        this.config.aiFormationTargetResponseMin,
-        this.config.aiFormationTargetResponseMax
+        this.config.ai.formationTargetResponseMin,
+        this.config.ai.formationTargetResponseMax
       ),
       ballResponseMultiplier: isGoalie ? 1 : 1 +
-        this.profileValue(i, 5) * this.config.aiFormationBallResponseVariation,
+        this.profileValue(i, 5) * this.config.ai.formationBallResponseVariation,
       smoothedTarget: null,
       wanderStep: 0,
       wanderElapsed: 0,
@@ -133,7 +135,7 @@ TeamAi.prototype.createMovementProfiles = function() {
     if (profiles[k].role == "goalie" || maxDeviation == 0) continue;
     profiles[k].paceMultiplier = 1 +
       (profiles[k].paceValue - paceMean) / maxDeviation *
-      this.config.aiFormationPaceVariation;
+      this.config.ai.formationPaceVariation;
   }
 
   return profiles;
@@ -241,9 +243,9 @@ TeamAi.prototype.updateWander = function(profile, playerIndex, deltaSeconds) {
 TeamAi.prototype.wanderOffset = function(playerIndex, step) {
   return new Vector2d(
     this.profileValue(playerIndex, 30 + step * 2) *
-      this.config.aiFormationWanderLateral,
+      this.config.ai.formationWanderLateral,
     this.profileValue(playerIndex, 31 + step * 2) *
-      this.config.aiFormationWanderDepth
+      this.config.ai.formationWanderDepth
   );
 };
 
@@ -251,19 +253,19 @@ TeamAi.prototype.wanderDuration = function(playerIndex, step) {
   return this.profileRange(
     playerIndex,
     100 + step,
-    this.config.aiFormationWanderIntervalMin,
-    this.config.aiFormationWanderIntervalMax
+    this.config.ai.formationWanderIntervalMin,
+    this.config.ai.formationWanderIntervalMax
   );
 };
 
 TeamAi.prototype.ballShiftForRole = function(role) {
-  var influence = role == "defender" ? this.config.aiFormationDefenderBallInfluence :
-    (role == "midfielder" ? this.config.aiFormationMidfielderBallInfluence :
-      this.config.aiFormationStrikerBallInfluence);
-  var maxShift = role == "defender" ? this.config.aiFormationDefenderMaxShift :
-    (role == "midfielder" ? this.config.aiFormationMidfielderMaxShift :
-      this.config.aiFormationStrikerMaxShift);
-  var center = this.config.initialBallPosition;
+  var influence = role == "defender" ? this.config.ai.formationDefenderBallInfluence :
+    (role == "midfielder" ? this.config.ai.formationMidfielderBallInfluence :
+      this.config.ai.formationStrikerBallInfluence);
+  var maxShift = role == "defender" ? this.config.ai.formationDefenderMaxShift :
+    (role == "midfielder" ? this.config.ai.formationMidfielderMaxShift :
+      this.config.ai.formationStrikerMaxShift);
+  var center = this.config.pitch.initialBallPosition;
   if (influence <= 0 || maxShift <= 0) {
     return new Vector2d(0, 0);
   }
@@ -274,8 +276,8 @@ TeamAi.prototype.ballShiftForRole = function(role) {
 };
 
 TeamAi.prototype.separateFormationTargets = function(targets) {
-  var spacing = this.config.aiMinTeammateSpacing || 0;
-  var maxShift = this.config.aiFormationSeparationMaxShift || 0;
+  var spacing = this.config.ai.minTeammateSpacing || 0;
+  var maxShift = this.config.ai.formationSeparationMaxShift || 0;
   if (spacing <= 0 || maxShift <= 0) return targets;
 
   var result = [];
@@ -329,13 +331,13 @@ TeamAi.prototype.shouldChaseCorner = function(playerIndex) {
   );
   if (groups[playerIndex] == "box") return true;
   return groups[playerIndex] == "late" &&
-    this.cornerBallProgress() >= this.config.cornerLateRunReleaseDistance;
+    this.cornerBallProgress() >= this.config.restarts.cornerLateRunReleaseDistance;
 };
 
 TeamAi.prototype.cornerBallProgress = function() {
   return this.team.side == "home" ?
-    this.ball.position.y - this.config.fieldTop :
-    this.config.fieldBottom - this.ball.position.y;
+    this.ball.position.y - this.config.pitch.fieldTop :
+    this.config.pitch.fieldBottom - this.ball.position.y;
 };
 
 TeamAi.prototype.setRestartState = function(state) {
@@ -376,25 +378,25 @@ TeamAi.prototype.cornerAttackResolved = function() {
   }
 
   if (this.team.side == "home") {
-    return this.ball.position.y >= this.config.fieldTop + this.config.cornerCrossDistance;
+    return this.ball.position.y >= this.config.pitch.fieldTop + this.config.restarts.cornerCrossDistance;
   }
-  return this.ball.position.y <= this.config.fieldBottom - this.config.cornerCrossDistance;
+  return this.ball.position.y <= this.config.pitch.fieldBottom - this.config.restarts.cornerCrossDistance;
 };
 
 TeamAi.prototype.isBallInOwnHalf = function() {
   var y = this.ball.position.y;
   if (this.team.side == "home") {
-    return y > this.config.aiCenterY;
+    return y > this.config.pitch.aiCenterY;
   }
-  return y < this.config.aiCenterY;
+  return y < this.config.pitch.aiCenterY;
 };
 
 TeamAi.prototype.isBallInOpponentHalf = function() {
   var y = this.ball.position.y;
   if (this.team.side == "home") {
-    return y < this.config.aiCenterY;
+    return y < this.config.pitch.aiCenterY;
   }
-  return y > this.config.aiCenterY;
+  return y > this.config.pitch.aiCenterY;
 };
 
 TeamAi.prototype.closestPlayerToBall = function() {
@@ -416,7 +418,7 @@ TeamAi.prototype.selectedBallAttacker = function() {
   if (this.ballAttacker != null && closest !== this.ballAttacker) {
     var currentDistance = MathLib.computeDistance(this.ballAttacker.position, this.ball.position);
     var closestDistance = MathLib.computeDistance(closest.position, this.ball.position);
-    var hysteresis = this.config.aiAttackerSwitchHysteresisDistance || 0;
+    var hysteresis = this.config.ai.attackerSwitchHysteresisDistance || 0;
     if (currentDistance <= closestDistance + hysteresis) {
       return this.ballAttacker;
     }

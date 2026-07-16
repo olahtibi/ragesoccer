@@ -1,5 +1,5 @@
 var tests = [];
-var currentSuite = "Tests";
+var currentSuite = ["Tests"];
 
 var symbols = {
   pass: "\u2713",
@@ -21,11 +21,11 @@ function colorize(color, text) {
 }
 
 function suite(name) {
-  currentSuite = name;
+  currentSuite = Array.isArray(name) ? name.slice() : [name];
 }
 
 function test(name, fn) {
-  tests.push({ suite: currentSuite, name: name, fn: fn });
+  tests.push({ suite: currentSuite.slice(), name: name, fn: fn });
 }
 
 function fail(message) {
@@ -52,26 +52,36 @@ function assertNear(actual, expected, epsilon, message) {
 
 function runTests() {
   var passed = 0;
-  var currentPrintedSuite = null;
+  var currentPrintedSuite = [];
 
   for (var i = 0; i < tests.length; i++) {
     var entry = tests[i];
-    if (entry.suite !== currentPrintedSuite) {
-      currentPrintedSuite = entry.suite;
-      console.log("");
-      console.log(colorize("bold", currentPrintedSuite));
+    var commonDepth = 0;
+    while (commonDepth < currentPrintedSuite.length && commonDepth < entry.suite.length &&
+        currentPrintedSuite[commonDepth] === entry.suite[commonDepth]) {
+      commonDepth++;
+    }
+    if (commonDepth < entry.suite.length) {
+      if (commonDepth === 0) console.log("");
+      for (var level = commonDepth; level < entry.suite.length; level++) {
+        console.log(new Array(level * 2 + 1).join(" ") +
+          colorize("bold", entry.suite[level]));
+      }
+      currentPrintedSuite = entry.suite.slice();
     }
 
     try {
       entry.fn();
       passed++;
-      console.log("  " + colorize("green", symbols.pass) + " " + entry.name);
+      var testIndent = new Array(entry.suite.length * 2 + 1).join(" ");
+      console.log(testIndent + colorize("green", symbols.pass) + " " + entry.name);
     } catch (err) {
-      console.log("  " + colorize("red", symbols.fail) + " " + entry.name);
-      console.log("    " + colorize("red", err.message));
+      var failureIndent = new Array(entry.suite.length * 2 + 1).join(" ");
+      console.log(failureIndent + colorize("red", symbols.fail) + " " + entry.name);
+      console.log(failureIndent + "  " + colorize("red", err.message));
       if (err.stack) {
         console.log(err.stack.split("\n").slice(1).map(function(line) {
-          return "    " + line;
+          return failureIndent + "  " + line;
         }).join("\n"));
       }
     }

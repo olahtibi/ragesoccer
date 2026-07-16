@@ -2,6 +2,8 @@ var Formation = function(config) {
   this.config = config;
 };
 
+// Public API (underscore-prefixed members are private helpers)
+
 Formation.prototype.positions = function(state, side, teamSize) {
   if (state == "cornerUs") {
     return this.cornerAttackingPositions(side, teamSize);
@@ -36,8 +38,8 @@ Formation.prototype.cornerAttackingPlan = function(side, teamSize, takerIndex, c
     groupCounts[groups[i]] = (groupCounts[groups[i]] || 0) + 1;
   }
 
-  var goalX = (this.config.goalTopTopLeft.x + this.config.goalTopTopRight.x) / 2;
-  var goalY = side == "home" ? this.config.fieldTop : this.config.fieldBottom;
+  var goalX = (this.config.pitch.goalTopTopLeft.x + this.config.pitch.goalTopTopRight.x) / 2;
+  var goalY = side == "home" ? this.config.pitch.fieldTop : this.config.pitch.fieldBottom;
   var attackDir = side == "home" ? 1 : -1;
   for (var j = 0; j < groups.length; j++) {
     var group = groups[j];
@@ -46,18 +48,18 @@ Formation.prototype.cornerAttackingPlan = function(side, teamSize, takerIndex, c
     var x;
     var depth;
     if (group == "box") {
-      x = goalX + this.lane(groupIndex, groupCounts[group]) * this.config.cornerBoxSpacing;
-      depth = this.config.cornerBoxDepth + groupIndex * this.config.cornerBoxDepthStep;
+      x = goalX + this.lane(groupIndex, groupCounts[group]) * this.config.restarts.cornerBoxSpacing;
+      depth = this.config.restarts.cornerBoxDepth + groupIndex * this.config.restarts.cornerBoxDepthStep;
     } else if (group == "late") {
-      x = goalX + this.lane(groupIndex, groupCounts[group]) * this.config.cornerBoxSpacing * 2;
-      depth = this.config.cornerLateDepth;
+      x = goalX + this.lane(groupIndex, groupCounts[group]) * this.config.restarts.cornerBoxSpacing * 2;
+      depth = this.config.restarts.cornerLateDepth;
     } else if (group == "edge") {
       x = goalX;
-      depth = this.config.cornerEdgeDepth;
+      depth = this.config.restarts.cornerEdgeDepth;
     } else if (group == "short") {
-      x = cornerLeft ? this.config.fieldLeft + this.config.cornerShortInset :
-        this.config.fieldRight - this.config.cornerShortInset;
-      depth = this.config.cornerShortDepth;
+      x = cornerLeft ? this.config.pitch.fieldLeft + this.config.restarts.cornerShortInset :
+        this.config.pitch.fieldRight - this.config.restarts.cornerShortInset;
+      depth = this.config.restarts.cornerShortDepth;
     } else {
       continue;
     }
@@ -180,27 +182,28 @@ Formation.prototype.positionForRole = function(state, side, role, index, count) 
     return this.goaliePosition(side);
   }
 
-  var centerX = this.config.initialBallPosition.x;
-  var centerY = this.config.aiCenterY;
+  var centerX = this.config.pitch.initialBallPosition.x;
+  var centerY = this.config.pitch.aiCenterY;
   var attackDir = side == "home" ? -1 : 1;
-  var progress = role == "defender" ? this.config.formationDefenderProgress :
-    (role == "midfielder" ? this.config.formationMidfielderProgress :
-      this.config.formationStrikerProgress);
+  var progress = role == "defender" ? this.config.ai.formationDefenderProgress :
+    (role == "midfielder" ? this.config.ai.formationMidfielderProgress :
+      this.config.ai.formationStrikerProgress);
   var kickingSide = this.kickoffSideForState(state, side);
   var kickoffTaker = kickingSide != null && side == kickingSide &&
     role == "striker" && index == 0;
 
   if (state == "attack") {
-    progress += this.config.formationStateShift;
+    progress += this.config.ai.formationStateShift;
   } else if (state == "defense") {
-    progress -= role == "defender" ? this.config.formationDefenderDefenseShift :
-      this.config.formationStateShift;
+    progress -= role == "defender" ? this.config.ai.formationDefenderDefenseShift :
+      this.config.ai.formationStateShift;
   } else if (kickingSide != null && role == "striker") {
     progress = side == kickingSide ?
-      (kickoffTaker ? -this.config.kickoffTakerDistance : -20) :
+      (kickoffTaker ? -this.config.restarts.kickoffTakerDistance :
+        -this.config.ai.formationFallbackDepth) :
       this.nonKickingStrikerProgress(index, count);
   } else if (kickingSide != null && role == "midfielder") {
-    progress = this.config.kickoffMidfielderProgress;
+    progress = this.config.ai.kickoffMidfielderProgress;
   }
 
   var x = kickoffTaker ? centerX : centerX + this.lane(index, count) * 90;
@@ -219,21 +222,21 @@ Formation.prototype.kickoffSideForState = function(state, side) {
 };
 
 Formation.prototype.nonKickingStrikerProgress = function(index, count) {
-  var radiusX = this.config.centerCircleRadiusX || 1;
-  var radiusY = this.config.centerCircleRadiusY || 0;
+  var radiusX = this.config.pitch.centerCircleRadiusX || 1;
+  var radiusY = this.config.pitch.centerCircleRadiusY || 0;
   var xOffset = this.lane(index, count) * 90;
   var normalizedX = Math.min(1, Math.abs(xOffset) / radiusX);
   var boundaryY = radiusY * Math.sqrt(Math.max(0, 1 - normalizedX * normalizedX));
-  return -(boundaryY + (this.config.playerRadius || 0) + 1);
+  return -(boundaryY + (this.config.player.radius || 0) + this.config.ai.fieldClampClearance);
 };
 
 Formation.prototype.goaliePosition = function(side) {
-  var x = this.config.initialBallPosition.x;
+  var x = this.config.pitch.initialBallPosition.x;
   var y;
   if (side == "home") {
-    y = this.config.goalBottomTopLeft.y - this.config.goalieDistance;
+    y = this.config.pitch.goalBottomTopLeft.y - this.config.ai.goalieDistance;
   } else {
-    y = this.config.goalTopBottomLeft.y + this.config.goalieDistance;
+    y = this.config.pitch.goalTopBottomLeft.y + this.config.ai.goalieDistance;
   }
   return this.clampToField(new Vector2d(x, y));
 };
@@ -248,9 +251,9 @@ Formation.prototype.lane = function(index, count) {
 Formation.prototype.clampToField = function(position) {
   var x = position.x;
   var y = position.y;
-  if (x < this.config.boxTopLeft.x) x = this.config.boxTopLeft.x;
-  if (x > this.config.boxTopRight.x) x = this.config.boxTopRight.x;
-  if (y < this.config.boxTopLeft.y) y = this.config.boxTopLeft.y;
-  if (y > this.config.boxBottomLeft.y) y = this.config.boxBottomLeft.y;
+  if (x < this.config.pitch.boxTopLeft.x) x = this.config.pitch.boxTopLeft.x;
+  if (x > this.config.pitch.boxTopRight.x) x = this.config.pitch.boxTopRight.x;
+  if (y < this.config.pitch.boxTopLeft.y) y = this.config.pitch.boxTopLeft.y;
+  if (y > this.config.pitch.boxBottomLeft.y) y = this.config.pitch.boxBottomLeft.y;
   return new Vector2d(x, y);
 };

@@ -19,7 +19,7 @@ function makeDebugGame(options) {
 
 test("DebugLog records no snapshots when debug is false", function() {
   var setup = makeDebugGame();
-  setup.fixture.config.debug = false;
+  setup.fixture.config.debug.enabled = false;
 
   setup.game.debugLog.record(setup.game);
 
@@ -28,8 +28,8 @@ test("DebugLog records no snapshots when debug is false", function() {
 
 test("DebugLog records snapshots when debug is true", function() {
   var setup = makeDebugGame();
-  setup.fixture.config.debug = true;
-  setup.fixture.config.debugLogEveryNFrames = 1;
+  setup.fixture.config.debug.enabled = true;
+  setup.fixture.config.debug.logEveryNFrames = 1;
 
   setup.game.debugLog.record(setup.game);
 
@@ -38,8 +38,8 @@ test("DebugLog records snapshots when debug is true", function() {
 
 test("DebugLog samples snapshots by configured frame interval", function() {
   var setup = makeDebugGame();
-  setup.fixture.config.debug = true;
-  setup.fixture.config.debugLogEveryNFrames = 3;
+  setup.fixture.config.debug.enabled = true;
+  setup.fixture.config.debug.logEveryNFrames = 3;
 
   for (var i = 0; i < 7; i++) {
     setup.game.debugLog.record(setup.game);
@@ -54,9 +54,9 @@ test("DebugLog samples snapshots by configured frame interval", function() {
 test("DebugLog trims snapshots older than configured seconds", function() {
   var setup = makeDebugGame();
   var now = 0;
-  setup.fixture.config.debug = true;
-  setup.fixture.config.debugLogEveryNFrames = 1;
-  setup.fixture.config.debugLogSeconds = 0.05;
+  setup.fixture.config.debug.enabled = true;
+  setup.fixture.config.debug.logEveryNFrames = 1;
+  setup.fixture.config.debug.logSeconds = 0.05;
   setup.game.debugLog.nowMs = function() {
     now += 25;
     return now;
@@ -73,15 +73,15 @@ test("DebugLog trims snapshots older than configured seconds", function() {
 
 test("DebugLog snapshot includes ball, players, and AI commands states and targets", function() {
   var setup = makeDebugGame({ homeTeamSize: 3, awayTeamSize: 3 });
-  setup.fixture.config.debug = true;
-  setup.fixture.config.debugLogEveryNFrames = 1;
+  setup.fixture.config.debug.enabled = true;
+  setup.fixture.config.debug.logEveryNFrames = 1;
   setup.fixture.ball.position.x = 12.345;
   setup.fixture.ball.velocity.y = -6.789;
   setup.fixture.ball.lastTouchedBy = "away";
   setup.game.matchFlow.state = "normalPlay";
   setup.fixture.ball.position.x = setup.fixture.awayPlayers[0].position.x + 20;
   setup.fixture.ball.position.y = setup.fixture.awayPlayers[0].position.y;
-  setup.game.updateAi();
+  setup.game._updateAi();
 
   setup.game.debugLog.record(setup.game);
 
@@ -108,7 +108,7 @@ test("DebugLog snapshot includes ball, players, and AI commands states and targe
 
 test("DebugLog records keyboard and touch events when debug is true", function() {
   var setup = makeDebugGame();
-  setup.fixture.config.debug = true;
+  setup.fixture.config.debug.enabled = true;
   setup.game.debugLog.nowMs = function() {
     return 1000;
   };
@@ -127,7 +127,7 @@ test("DebugLog records keyboard and touch events when debug is true", function()
 
 test("DebugLog records no input events when debug is false", function() {
   var setup = makeDebugGame();
-  setup.fixture.config.debug = false;
+  setup.fixture.config.debug.enabled = false;
 
   setup.game.debugLog.recordKeyEvent({ type: "keydown", keyCode: 39 });
   setup.game.debugLog.recordTouchEvent(new Vector2d(10, 20));
@@ -138,8 +138,8 @@ test("DebugLog records no input events when debug is false", function() {
 test("DebugLog trims events older than configured seconds", function() {
   var setup = makeDebugGame();
   var now = 0;
-  setup.fixture.config.debug = true;
-  setup.fixture.config.debugLogSeconds = 0.05;
+  setup.fixture.config.debug.enabled = true;
+  setup.fixture.config.debug.logSeconds = 0.05;
   setup.game.debugLog.nowMs = function() {
     now += 25;
     return now;
@@ -158,8 +158,8 @@ test("DebugLog dump includes compact frames and events payload", function() {
   var setup = makeDebugGame();
   var logged = null;
   var originalLog = console.log;
-  setup.fixture.config.debug = true;
-  setup.fixture.config.debugLogEveryNFrames = 1;
+  setup.fixture.config.debug.enabled = true;
+  setup.fixture.config.debug.logEveryNFrames = 1;
   console.log = function(message) {
     logged = message;
   };

@@ -5,22 +5,25 @@ var ThrowInRestart = function(config) {
   this.taker = null;
 };
 
-ThrowInRestart.prototype.ballPosition = function(request) {
-  var clearance = this.config.ballRadius + this.config.restartPlacementClearance;
-  var x = request.boundary == "left" ? this.config.fieldLeft + clearance :
-    this.config.fieldRight - clearance;
-  var minY = this.config.fieldTop + clearance;
-  var maxY = this.config.fieldBottom - clearance;
+// Public API (underscore-prefixed members are private helpers)
+
+ThrowInRestart.prototype._ballPosition = function(request) {
+  var clearance = this.config.ball.radius + this.config.restarts.placementClearance;
+  var x = request.boundary == "left" ? this.config.pitch.fieldLeft + clearance :
+    this.config.pitch.fieldRight - clearance;
+  var minY = this.config.pitch.fieldTop + clearance;
+  var maxY = this.config.pitch.fieldBottom - clearance;
   return new Vector3d(x, Math.max(minY, Math.min(maxY, request.position.y)), 0);
 };
 
 ThrowInRestart.prototype.createScene = function(context, request) {
   this.launched = false;
-  var ballPosition = this.ballPosition(request);
-  var offset = this.config.playerRadius + this.config.ballRadius + 2;
-  var takerX = request.boundary == "left" ? this.config.fieldLeft - offset :
-    this.config.fieldRight + offset;
-  this.taker = this.findTaker(context, request, ballPosition);
+  var ballPosition = this._ballPosition(request);
+  var offset = this.config.player.radius + this.config.ball.radius +
+    this.config.restarts.takerClearance;
+  var takerX = request.boundary == "left" ? this.config.pitch.fieldLeft - offset :
+    this.config.pitch.fieldRight + offset;
+  this.taker = this._findTaker(context, request, ballPosition);
   context.ball.heldBy = this.taker;
   return RestartPositioning.createScene(
     this.config,
@@ -31,7 +34,7 @@ ThrowInRestart.prototype.createScene = function(context, request) {
   );
 };
 
-ThrowInRestart.prototype.findTaker = function(context, request, ballPosition) {
+ThrowInRestart.prototype._findTaker = function(context, request, ballPosition) {
   for (var i = 0; i < context.teams.length; i++) {
     if (context.teams[i].side == request.awardedTo) {
       var team = context.teams[i];
@@ -74,9 +77,9 @@ ThrowInRestart.prototype.resume = function(context, request, direction) {
   context.ball.position.y = heldPosition.y;
   context.ball.position.z = 0;
   context.ball.heldBy = null;
-  context.ball.velocity.x = normalized.x * this.config.throwInSpeed;
-  context.ball.velocity.y = normalized.y * this.config.throwInSpeed;
-  context.ball.velocity.z = this.config.throwInLoft;
+  context.ball.velocity.x = normalized.x * this.config.restarts.throwInSpeed;
+  context.ball.velocity.y = normalized.y * this.config.restarts.throwInSpeed;
+  context.ball.velocity.z = this.config.restarts.throwInLoft;
   context.ball.lastTouchedBy = request.awardedTo;
   this.launched = true;
   return true;
@@ -87,6 +90,6 @@ ThrowInRestart.prototype.enforceRules = function() {};
 ThrowInRestart.prototype.isComplete = function(context) {
   if (!this.launched) return false;
   var velocity = context.ball.velocity;
-  var minSpeed = this.config.minVelocity || 0;
+  var minSpeed = this.config.physics.minVelocity || 0;
   return velocity.x * velocity.x + velocity.y * velocity.y > minSpeed * minSpeed;
 };

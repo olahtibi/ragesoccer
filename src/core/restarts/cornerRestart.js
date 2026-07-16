@@ -3,30 +3,33 @@ var CornerRestart = function(config) {
   this.allowEarlyResume = true;
 };
 
-CornerRestart.prototype.ballPosition = function(request) {
-  var clearance = this.config.ballRadius + this.config.restartPlacementClearance;
-  var left = request.position.x <= this.config.initialBallPosition.x;
+// Public API (underscore-prefixed members are private helpers)
+
+CornerRestart.prototype._ballPosition = function(request) {
+  var clearance = this.config.ball.radius + this.config.restarts.placementClearance;
+  var left = request.position.x <= this.config.pitch.initialBallPosition.x;
   return new Vector3d(
-    left ? this.config.fieldLeft + clearance : this.config.fieldRight - clearance,
-    request.boundary == "top" ? this.config.fieldTop + clearance :
-      this.config.fieldBottom - clearance,
+    left ? this.config.pitch.fieldLeft + clearance : this.config.pitch.fieldRight - clearance,
+    request.boundary == "top" ? this.config.pitch.fieldTop + clearance :
+      this.config.pitch.fieldBottom - clearance,
     0
   );
 };
 
 CornerRestart.prototype.createScene = function(context, request) {
-  var ballPosition = this.ballPosition(request);
-  var offset = this.config.playerRadius + this.config.ballRadius + 2;
-  var goalX = (this.config.goalTopTopLeft.x + this.config.goalTopTopRight.x) / 2;
-  var goalY = request.awardedTo == "home" ? this.config.fieldTop : this.config.fieldBottom;
+  var ballPosition = this._ballPosition(request);
+  var offset = this.config.player.radius + this.config.ball.radius +
+    this.config.restarts.takerClearance;
+  var goalX = (this.config.pitch.goalTopTopLeft.x + this.config.pitch.goalTopTopRight.x) / 2;
+  var goalY = request.awardedTo == "home" ? this.config.pitch.fieldTop : this.config.pitch.fieldBottom;
   var toGoal = MathLib.normalizeVector(goalX - ballPosition.x, goalY - ballPosition.y, 0,
     request.awardedTo == "home" ? -1 : 1);
-  var takerIndex = this.takerIndex(context, request, ballPosition);
+  var takerIndex = this._takerIndex(context, request, ballPosition);
   var cornerPlan = new Formation(this.config).cornerAttackingPlan(
     request.awardedTo,
-    this.awardedTeamSize(context, request),
+    this._awardedTeamSize(context, request),
     takerIndex,
-    ballPosition.x <= this.config.initialBallPosition.x
+    ballPosition.x <= this.config.pitch.initialBallPosition.x
   );
   return RestartPositioning.createScene(
     this.config,
@@ -40,14 +43,14 @@ CornerRestart.prototype.createScene = function(context, request) {
   );
 };
 
-CornerRestart.prototype.awardedTeamSize = function(context, request) {
+CornerRestart.prototype._awardedTeamSize = function(context, request) {
   for (var i = 0; i < context.teams.length; i++) {
     if (context.teams[i].side == request.awardedTo) return context.teams[i].players.length;
   }
   return 1;
 };
 
-CornerRestart.prototype.takerIndex = function(context, request, ballPosition) {
+CornerRestart.prototype._takerIndex = function(context, request, ballPosition) {
   var team = null;
   for (var i = 0; i < context.teams.length; i++) {
     if (context.teams[i].side == request.awardedTo) {
@@ -86,9 +89,9 @@ CornerRestart.prototype.canTeamMove = function(team, request) {
 CornerRestart.prototype.attackTarget = function(team, request) {
   if (team.side != request.awardedTo) return null;
   return new Vector2d(
-    this.config.initialBallPosition.x,
-    request.awardedTo == "home" ? this.config.fieldTop + this.config.cornerCrossDistance :
-      this.config.fieldBottom - this.config.cornerCrossDistance
+    this.config.pitch.initialBallPosition.x,
+    request.awardedTo == "home" ? this.config.pitch.fieldTop + this.config.restarts.cornerCrossDistance :
+      this.config.pitch.fieldBottom - this.config.restarts.cornerCrossDistance
   );
 };
 
@@ -96,6 +99,6 @@ CornerRestart.prototype.enforceRules = function() {};
 
 CornerRestart.prototype.isComplete = function(context) {
   var velocity = context.ball.velocity;
-  var minSpeed = this.config.minVelocity || 0;
+  var minSpeed = this.config.physics.minVelocity || 0;
   return velocity.x * velocity.x + velocity.y * velocity.y > minSpeed * minSpeed;
 };

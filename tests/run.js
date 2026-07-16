@@ -1,31 +1,28 @@
 require("./helpers").loadGameScripts();
 
+var fs = require("fs");
+var path = require("path");
 var testlib = require("./testlib");
 
-[
-  { name: "Configuration", path: "./core/configuration.test" },
-  { name: "MathLib", path: "./math/mathlib.test" },
-  { name: "GoalDetector", path: "./world/goalDetector.test" },
-  { name: "BoundaryDetector", path: "./world/boundaryDetector.test" },
-  { name: "Player", path: "./world/player.test" },
-  { name: "Physics", path: "./world/physics.test" },
-  { name: "Formation", path: "./ai/formation.test" },
-  { name: "AI Commands", path: "./ai/commands/inactiveCommand.test" },
-  { name: "AI Commands", path: "./ai/commands/moveToPositionCommand.test" },
-  { name: "AI Commands", path: "./ai/commands/attackBallCommand.test" },
-  { name: "Individual AI", path: "./ai/individualAi.test" },
-  { name: "Cutscene", path: "./core/cutscene.test" },
-  { name: "Restart", path: "./core/restart.test" },
-  { name: "Team AI", path: "./ai/teamAi.test" },
-  { name: "Team", path: "./world/team.test" },
-  { name: "Stadium", path: "./world/stadium.test" },
-  { name: "DebugLog", path: "./core/debugLog.test" },
-  { name: "Game", path: "./core/game.test" },
-  { name: "Input", path: "./input/io.test" },
-  { name: "HTML", path: "./core/html.test" }
-].forEach(function(entry) {
-  testlib.suite(entry.name);
-  require(entry.path);
+function findTestFiles(directory) {
+  var result = [];
+  var entries = fs.readdirSync(directory, { withFileTypes: true });
+  for (var i = 0; i < entries.length; i++) {
+    var entry = entries[i];
+    var fullPath = path.join(directory, entry.name);
+    if (entry.isDirectory()) {
+      result = result.concat(findTestFiles(fullPath));
+    } else if (/\.test\.js$/.test(entry.name)) {
+      result.push(fullPath);
+    }
+  }
+  return result;
+}
+
+findTestFiles(__dirname).sort().forEach(function(testPath) {
+  var relativePath = path.relative(__dirname, testPath).replace(/\.test\.js$/, "");
+  testlib.suite(relativePath.split(path.sep));
+  require(testPath);
 });
 
 testlib.runTests();

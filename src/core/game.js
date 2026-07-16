@@ -12,8 +12,10 @@ var Game = function(options) {
   this.restartController = options.restartController;
   this.matchFlow = options.matchFlow;
   this.debugLog = options.debugLog;
-  this.pendingOutOfPlay = null;
+  this._pendingOutOfPlay = null;
 };
+
+// Public API
 
 Game.prototype.context = function() {
   return {
@@ -45,7 +47,7 @@ Game.prototype.resumeFromInput = function(direction) {
 };
 
 Game.prototype.isOutOfPlayPending = function() {
-  return this.pendingOutOfPlay != null;
+  return this._pendingOutOfPlay != null;
 };
 
 Game.prototype.beginRestart = function(type, awardedTo, details) {
@@ -57,7 +59,46 @@ Game.prototype.beginRestart = function(type, awardedTo, details) {
   return this.matchFlow.beginRestart(request, this.context());
 };
 
-Game.prototype.updateAi = function() {
+Game.prototype.update = function() {
+  var context = this.context();
+  if (this.isOutOfPlayPending()) {
+    if (this.isPaused()) {
+      this.physics.resetClock();
+    } else {
+      this.physics.updateBallOnly();
+      this._updatePendingOutOfPlay();
+    }
+    this.debugLog.record(this);
+    return;
+  }
+  var mode = this.matchFlow.simulationMode();
+  if (mode == "none") {
+    this.physics.resetClock();
+  } else if (mode == "playersOnly") {
+    this.restartController.updateBeforePhysics(context);
+    this.physics.updatePlayersOnly();
+    this.matchFlow.updateAfterPhysics(context);
+  } else {
+    this._updateAi();
+    var canMove = !this.matchFlow.isRestartActive() || this.restartController.canTeamMove(this.teams[0]);
+    this.humanController.update(canMove);
+    this.physics.update();
+    this.matchFlow.updateAfterPhysics(context);
+    if (!this._handleGoalDetection()) this._handleBoundaryDetection();
+  }
+  this.debugLog.record(this);
+};
+
+Game.prototype.render = function(ctx) {
+  this.camera.windowToViewport(ctx);
+  this.stadium.draw(ctx);
+  if (this.isPaused()) this._drawAiDebug(ctx);
+  this.camera.renderOverlay(ctx, this.physics.displayFps);
+};
+
+// Private helpers
+
+Game.prototype._updateAi = function() {
   this.humanController.selectPlayer();
   for (var i = 0; i < this.teamAis.length; i++) {
     var teamAi = this.teamAis[i];
@@ -75,37 +116,7 @@ Game.prototype.updateAi = function() {
   }
 };
 
-Game.prototype.update = function() {
-  var context = this.context();
-  if (this.isOutOfPlayPending()) {
-    if (this.isPaused()) {
-      this.physics.resetClock();
-    } else {
-      this.physics.updateBallOnly();
-      this.updatePendingOutOfPlay();
-    }
-    this.debugLog.record(this);
-    return;
-  }
-  var mode = this.matchFlow.simulationMode();
-  if (mode == "none") {
-    this.physics.resetClock();
-  } else if (mode == "playersOnly") {
-    this.restartController.updateBeforePhysics(context);
-    this.physics.updatePlayersOnly();
-    this.matchFlow.updateAfterPhysics(context);
-  } else {
-    this.updateAi();
-    var canMove = !this.matchFlow.isRestartActive() || this.restartController.canTeamMove(this.teams[0]);
-    this.humanController.update(canMove);
-    this.physics.update();
-    this.matchFlow.updateAfterPhysics(context);
-    if (!this.updateScore()) this.updateOutOfPlay();
-  }
-  this.debugLog.record(this);
-};
-
-Game.prototype.updateScore = function() {
+Game.prototype._handleGoalDetection = function() {
   var scoredBy = this.goalDetector.update();
   if (scoredBy == null) return false;
   var scoringTeam = null;
@@ -123,7 +134,7 @@ Game.prototype.updateScore = function() {
   return true;
 };
 
-Game.prototype.updateOutOfPlay = function() {
+Game.prototype._handleBoundaryDetection = function() {
   var event = this.boundaryDetector.update();
   if (event == null) return false;
   if (event.lastTouchedBy == null) {
@@ -137,28 +148,28 @@ Game.prototype.updateOutOfPlay = function() {
     return false;
   }
 
-  this.pendingOutOfPlay = { event: event, elapsed: 0 };
-  this.stopPlayersForOutOfPlay();
+  this._pendingOutOfPlay = { event: event, elapsed: 0 };
+  this._stopPlayersForOutOfPlay();
   return true;
 };
 
-Game.prototype.stopPlayersForOutOfPlay = function() {
+Game.prototype._stopPlayersForOutOfPlay = function() {
   for (var i = 0; i < this.stadium.players.length; i++) {
     this.stadium.players[i].velocity.x = 0;
     this.stadium.players[i].velocity.y = 0;
   }
 };
 
-Game.prototype.updatePendingOutOfPlay = function() {
+Game.prototype._updatePendingOutOfPlay = function() {
   if (!this.isOutOfPlayPending()) return false;
-  this.pendingOutOfPlay.elapsed += this.physics.lastDt || 0;
-  if (this.pendingOutOfPlay.elapsed < this.config.outOfPlayRestartDelaySeconds) return false;
-  var event = this.pendingOutOfPlay.event;
-  this.pendingOutOfPlay = null;
-  return this.beginOutOfPlayRestart(event);
+  this._pendingOutOfPlay.elapsed += this.physics.lastDt || 0;
+  if (this._pendingOutOfPlay.elapsed < this.config.restarts.outOfPlayDelaySeconds) return false;
+  var event = this._pendingOutOfPlay.event;
+  this._pendingOutOfPlay = null;
+  return this._beginOutOfPlayRestart(event);
 };
 
-Game.prototype.beginOutOfPlayRestart = function(event) {
+Game.prototype._beginOutOfPlayRestart = function(event) {
   var awardedTo;
   var type;
   if (event.boundary == "left" || event.boundary == "right") {
@@ -181,25 +192,23 @@ Game.prototype.beginOutOfPlayRestart = function(event) {
   });
 };
 
-Game.prototype.render = function(ctx) {
-  this.camera.windowToViewport(ctx);
-  this.stadium.draw(ctx);
-  if (this.isPaused()) this.drawAiDebug(ctx);
-  this.camera.renderOverlay(ctx, this.physics.displayFps);
-};
-
-Game.prototype.drawAiDebug = function(ctx) {
+Game.prototype._drawAiDebug = function(ctx) {
   for (var i = 0; i < this.teamAis.length; i++) {
     this.teamAis[i].draw(ctx);
   }
 };
 
 function createGame(config) {
-  var ball = new Ball(config.imgBall, config.ballRadius, config.initialBallPosition);
+  var ball = new Ball(
+    config.assets.ball,
+    config.ball.radius,
+    config.pitch.initialBallPosition,
+    config.ball
+  );
   var homeTeam = new Team(config, "home");
   var awayTeam = new Team(config, "away");
   var teams = [homeTeam, awayTeam];
-  var stadium = new Stadium(config.imgPitch, ball, homeTeam, awayTeam);
+  var stadium = new Stadium(config.assets.pitch, ball, homeTeam, awayTeam);
   var teamAis = [
     new TeamAi(config, homeTeam, awayTeam, ball),
     new TeamAi(config, awayTeam, homeTeam, ball)
@@ -233,7 +242,7 @@ function createGame(config) {
     debugLog: new DebugLog(config)
   });
   matchFlow.beginRestart(
-    { type: "kickoff", awardedTo: config.kickoffSide },
+    { type: "kickoff", awardedTo: config.restarts.kickoffSide },
     game.context(),
     { skipPositioning: true, positionImmediately: true }
   );
@@ -249,9 +258,9 @@ function startLoop() {
 }
 
 function createContext(game) {
-  var canvas = game.config.objCanvas;
-  canvas.width = game.config.viewportWidth;
-  canvas.height = game.config.viewportHeight;
+  var canvas = game.config.assets.canvas;
+  canvas.width = game.config.viewport.width;
+  canvas.height = game.config.viewport.height;
   var ctx = canvas.getContext("2d");
   ctx.imageSmoothingEnabled = false;
   ctx.mozImageSmoothingEnabled = false;

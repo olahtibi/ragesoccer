@@ -4,6 +4,8 @@ var MatchFlow = function(restartController) {
   this.stateBeforePause = null;
 };
 
+// Public API (underscore-prefixed members are private helpers)
+
 MatchFlow.prototype.beginRestart = function(request, context, options) {
   if (this.state == "paused") return false;
   if (this.state == "restart" && this.restartController.phase() == "positioning") return false;

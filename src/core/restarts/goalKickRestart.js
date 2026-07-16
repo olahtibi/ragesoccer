@@ -3,18 +3,20 @@ var GoalKickRestart = function(config) {
   this.allowEarlyResume = true;
 };
 
-GoalKickRestart.prototype.ballPosition = function(request) {
+// Public API (underscore-prefixed members are private helpers)
+
+GoalKickRestart.prototype._ballPosition = function(request) {
   return new Vector3d(
-    this.config.initialBallPosition.x,
-    request.boundary == "top" ? this.config.fieldTop + this.config.goalKickDistance :
-      this.config.fieldBottom - this.config.goalKickDistance,
+    this.config.pitch.initialBallPosition.x,
+    request.boundary == "top" ? this.config.pitch.fieldTop + this.config.restarts.goalKickDistance :
+      this.config.pitch.fieldBottom - this.config.restarts.goalKickDistance,
     0
   );
 };
 
 GoalKickRestart.prototype.createScene = function(context, request) {
-  var ballPosition = this.ballPosition(request);
-  var offset = this.config.goalKickTakerDistance;
+  var ballPosition = this._ballPosition(request);
+  var offset = this.config.restarts.goalKickTakerDistance;
   var takerY = request.boundary == "top" ? ballPosition.y - offset : ballPosition.y + offset;
   return RestartPositioning.createScene(
     this.config,
@@ -22,11 +24,11 @@ GoalKickRestart.prototype.createScene = function(context, request) {
     request,
     ballPosition,
     new Vector2d(ballPosition.x, takerY),
-    this.goalkeeperIndex(context, request)
+    this._goalkeeperIndex(context, request)
   );
 };
 
-GoalKickRestart.prototype.goalkeeperIndex = function(context, request) {
+GoalKickRestart.prototype._goalkeeperIndex = function(context, request) {
   for (var i = 0; i < context.teams.length; i++) {
     var team = context.teams[i];
     if (team.side != request.awardedTo) continue;
@@ -50,6 +52,6 @@ GoalKickRestart.prototype.enforceRules = function() {};
 
 GoalKickRestart.prototype.isComplete = function(context) {
   var velocity = context.ball.velocity;
-  var minSpeed = this.config.minVelocity || 0;
+  var minSpeed = this.config.physics.minVelocity || 0;
   return velocity.x * velocity.x + velocity.y * velocity.y > minSpeed * minSpeed;
 };

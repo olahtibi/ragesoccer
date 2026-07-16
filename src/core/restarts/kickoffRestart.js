@@ -4,8 +4,10 @@ var KickoffRestart = function(config) {
   this.opponentAutoResumeAfterPositioning = true;
 };
 
+// Public API (underscore-prefixed members are private helpers)
+
 KickoffRestart.prototype.createScene = function(context, request) {
-  var teams = [];
+  var sceneTeams = [];
   var readyPlayer = null;
   for (var i = 0; i < context.teams.length; i++) {
     var team = context.teams[i];
@@ -23,26 +25,26 @@ KickoffRestart.prototype.createScene = function(context, request) {
       team.side,
       takerIndex
     );
-    positions = this.applyPositioningRules(positions, team.side, takerIndex);
-    teams.push({
+    positions = this._applyPositioningRules(positions, team.side, takerIndex);
+    sceneTeams.push({
       side: team.side,
       players: team.players,
       positions: positions
     });
   }
   return {
-    ballPosition: this.config.initialBallPosition,
-    teams: teams,
+    ballPosition: this.config.pitch.initialBallPosition,
+    sceneTeams: sceneTeams,
     readyPlayer: readyPlayer
   };
 };
 
-KickoffRestart.prototype.applyPositioningRules = function(positions, side, takerIndex) {
+KickoffRestart.prototype._applyPositioningRules = function(positions, side, takerIndex) {
   var result = [];
-  var centerX = this.config.initialBallPosition.x;
-  var centerY = this.config.aiCenterY;
-  var radiusX = this.config.centerCircleRadiusX + this.config.playerRadius + 1;
-  var radiusY = this.config.centerCircleRadiusY + this.config.playerRadius + 1;
+  var centerX = this.config.pitch.initialBallPosition.x;
+  var centerY = this.config.pitch.aiCenterY;
+  var radiusX = this.config.pitch.centerCircleRadiusX + this.config.player.radius + 1;
+  var radiusY = this.config.pitch.centerCircleRadiusY + this.config.player.radius + 1;
 
   for (var i = 0; i < positions.length; i++) {
     if (i == takerIndex) {
@@ -50,8 +52,8 @@ KickoffRestart.prototype.applyPositioningRules = function(positions, side, taker
       continue;
     }
     var target = positions[i];
-    var y = side == "home" ? Math.max(target.y, centerY + this.config.playerRadius) :
-      Math.min(target.y, centerY - this.config.playerRadius);
+    var y = side == "home" ? Math.max(target.y, centerY + this.config.player.radius) :
+      Math.min(target.y, centerY - this.config.player.radius);
     var dx = target.x - centerX;
     var dy = y - centerY;
     var ellipseDistance = dx * dx / (radiusX * radiusX) + dy * dy / (radiusY * radiusY);
@@ -79,10 +81,10 @@ KickoffRestart.prototype.enforceRules = function(context, request) {
   var player = context.humanController.player();
   if (player == null) return;
 
-  var centerX = this.config.initialBallPosition.x;
-  var centerY = this.config.aiCenterY;
-  var radiusX = this.config.centerCircleRadiusX;
-  var radiusY = this.config.centerCircleRadiusY;
+  var centerX = this.config.pitch.initialBallPosition.x;
+  var centerY = this.config.pitch.aiCenterY;
+  var radiusX = this.config.pitch.centerCircleRadiusX;
+  var radiusY = this.config.pitch.centerCircleRadiusY;
   var dx = player.position.x - centerX;
   var dy = player.position.y - centerY;
   var distance = (dx * dx) / (radiusX * radiusX) + (dy * dy) / (radiusY * radiusY);
@@ -100,6 +102,6 @@ KickoffRestart.prototype.enforceRules = function(context, request) {
 
 KickoffRestart.prototype.isComplete = function(context) {
   var velocity = context.ball.velocity;
-  var minSpeed = this.config.minVelocity || 0;
+  var minSpeed = this.config.physics.minVelocity || 0;
   return velocity.x * velocity.x + velocity.y * velocity.y > minSpeed * minSpeed;
 };

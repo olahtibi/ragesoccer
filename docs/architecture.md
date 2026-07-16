@@ -135,6 +135,11 @@ boundary.
 
 ## Runtime Composition
 
+Runtime settings are exposed through nested configuration groups such as
+`pitch`, `physics`, `player`, `ball`, `teams`, `ai`, and `restarts`. Browser
+query options retain their original names but are mapped into those groups by
+`Configuration`.
+
 `createGame(config)` in `src/core/game.js` is the composition root. It constructs
 the world and controllers, connects their dependencies, registers restart
 strategies, and creates the initial kickoff session.
@@ -255,7 +260,7 @@ team AI with a central penalty-area target so its taker crosses instead of
 shooting directly at goal. Goal kicks explicitly select the formation's
 goalkeeper as taker so another nearby player cannot be positioned beside them.
 
-`BoundaryDetector` reports the first pitch edge crossed, its crossing position,
+`BoundaryDetector` in `src/world/detectors/` reports the first pitch edge crossed, its crossing position,
 and the ball's last-touch side. `Game` gives goals priority, then converts a
 touchline exit to a throw-in or an end-line exit to either a corner or goal kick.
 The detector does not own restart policy. Before positioning begins, a short
