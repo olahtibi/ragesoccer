@@ -11,7 +11,8 @@ test("Game composes explicit controllers without putting them on Stadium", funct
 
   assertEqual(fixture.game.teamAis.length, 2);
   assertTrue(fixture.game.humanController !== null);
-  assertTrue(fixture.game.restartController !== null);
+  assertEqual(fixture.game.restartController, undefined);
+  assertTrue(fixture.game.matchFlow._restartController !== null);
   assertTrue(fixture.game.matchFlow._boundaryDetector !== null);
   assertTrue(fixture.game.debugTool !== null);
   assertEqual(fixture.game.debugLog, undefined);
@@ -62,7 +63,7 @@ test("Positioning simulation updates its controller around player-only physics",
   var order = [];
   fixture.game.beginRestart("kickoff", "home");
   fixture.game.matchFlow.updateBeforePhysics = function() { order.push("before"); };
-  fixture.game.restartController.updateBeforePhysics = function() { order.push("direct"); };
+  fixture.restartController.updateBeforePhysics = function() { order.push("direct"); };
   fixture.game.physics.updatePlayersOnly = function() { order.push("players"); };
   fixture.game.matchFlow.updateAfterPhysics = function() { order.push("after"); };
   fixture.game.debugTool.record = function() { order.push("debug"); };
@@ -105,7 +106,7 @@ test("Game renders AI debug through DebugTool only while paused", function() {
 
 test("A home goal updates the score and starts an away kickoff once", function() {
   var fixture = makeFixture();
-  fixture.game.restartController.clear();
+  fixture.restartController.clear();
   fixture.game.matchFlow.state = "normalPlay";
   fixture.ball.position.x = 336;
   fixture.ball.position.y = 100;
@@ -115,15 +116,15 @@ test("A home goal updates the score and starts an away kickoff once", function()
 
   assertEqual(fixture.homeTeam.score, 1);
   assertEqual(fixture.awayTeam.score, 0);
-  assertEqual(fixture.game.restartController.type(), "kickoff");
-  assertEqual(fixture.game.restartController.phase(), "positioning");
+  assertEqual(fixture.restartController.type(), "kickoff");
+  assertEqual(fixture.restartController.phase(), "positioning");
   assertEqual(fixture.homeTeamAi.state, "kickoffOpponent");
   assertEqual(fixture.awayTeamAi.state, "kickoffUs");
 });
 
 test("An away goal updates the score and starts a home kickoff", function() {
   var fixture = makeFixture();
-  fixture.game.restartController.clear();
+  fixture.restartController.clear();
   fixture.game.matchFlow.state = "normalPlay";
   fixture.ball.position.x = 336;
   fixture.ball.position.y = 758;
@@ -132,15 +133,15 @@ test("An away goal updates the score and starts a home kickoff", function() {
 
   assertEqual(fixture.homeTeam.score, 0);
   assertEqual(fixture.awayTeam.score, 1);
-  assertEqual(fixture.game.restartController.type(), "kickoff");
-  assertEqual(fixture.game.restartController.phase(), "positioning");
+  assertEqual(fixture.restartController.type(), "kickoff");
+  assertEqual(fixture.restartController.phase(), "positioning");
   assertEqual(fixture.homeTeamAi.state, "kickoffUs");
   assertEqual(fixture.awayTeamAi.state, "kickoffOpponent");
 });
 
 test("A home goal kickoff waits for fresh input after positioning", function() {
   var fixture = makeFixture({ homeTeamSize: 1, awayTeamSize: 1 });
-  fixture.game.restartController.clear();
+  fixture.restartController.clear();
   fixture.game.matchFlow.state = "normalPlay";
   fixture.ball.position.x = 336;
   fixture.ball.position.y = 758;
@@ -148,7 +149,7 @@ test("A home goal kickoff waits for fresh input after positioning", function() {
   fixture.game.matchFlow.detectGoal(fixture.game.context());
   fixture.positioningController._clear(fixture.game.context());
 
-  assertEqual(fixture.game.restartController.phase(), "waitingForInput");
+  assertEqual(fixture.restartController.phase(), "waitingForInput");
   assertEqual(fixture.game.matchFlow.simulationMode(), "none");
 });
 
@@ -178,8 +179,8 @@ test("An out-of-play ball continues flying while players remain frozen", functio
   fixture.game.update();
 
   assertEqual(fixture.game.matchFlow.isOutOfPlay(), false);
-  assertEqual(fixture.game.restartController.type(), "throwIn");
-  assertEqual(fixture.game.restartController.phase(), "positioning");
+  assertEqual(fixture.restartController.type(), "throwIn");
+  assertEqual(fixture.restartController.phase(), "positioning");
 });
 
 test("Render frame delegates update and render before scheduling", function() {

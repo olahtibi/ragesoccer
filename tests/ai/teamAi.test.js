@@ -193,13 +193,13 @@ test("TeamAi retains layered support targets after the corner restart clears", f
     position: new Vector2d(fixture.config.pitch.fieldRight, fixture.config.pitch.fieldBottom)
   });
   fixture.game._updateAi();
-  var taker = fixture.game.restartController.taker(fixture.awayTeam);
+  var taker = fixture.restartController.taker(fixture.awayTeam);
   var takerIndex = fixture.awayPlayers.indexOf(taker);
   var groups = new Formation(fixture.config).cornerAssignments(11, takerIndex);
   var shortIndex = groups.indexOf("short");
-  var expectedTarget = fixture.game.restartController.positioningTargets(fixture.awayTeam)[shortIndex];
+  var expectedTarget = fixture.restartController.positioningTargets(fixture.awayTeam)[shortIndex];
 
-  fixture.game.restartController.clear();
+  fixture.restartController.clear();
   fixture.game.matchFlow.state = "normalPlay";
   fixture.ball.lastTouchedBy = "away";
   fixture.ball.position.y = fixture.config.pitch.fieldBottom - 20;

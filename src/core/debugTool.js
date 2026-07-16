@@ -90,8 +90,8 @@ DebugTool.prototype.snapshot = function(game, frame, time) {
     dt: this.round(game.physics && game.physics.lastDt != null ? game.physics.lastDt : 0),
     matchState: game.matchFlow.state,
     restart: {
-      type: game.restartController.type(),
-      phase: game.restartController.phase()
+      type: game.matchFlow.restartType(),
+      phase: game.matchFlow.restartPhase()
     },
     scores: {
       home: game.teams[0].score,

@@ -37,8 +37,8 @@ test("Initial kickoff waits for input without running positioning", function() {
   var fixture = makeFixture();
 
   assertEqual(fixture.game.matchFlow.state, "restart");
-  assertEqual(fixture.game.restartController.type(), "kickoff");
-  assertEqual(fixture.game.restartController.phase(), "waitingForInput");
+  assertEqual(fixture.restartController.type(), "kickoff");
+  assertEqual(fixture.restartController.phase(), "waitingForInput");
   assertEqual(fixture.game.matchFlow.simulationMode(), "none");
 });
 
@@ -46,14 +46,14 @@ test("Restart positioning progresses through waiting and in-progress phases", fu
   var fixture = makeFixture({ homeTeamSize: 1, awayTeamSize: 1 });
   fixture.game.beginRestart("kickoff", "home");
 
-  assertEqual(fixture.game.restartController.phase(), "positioning");
+  assertEqual(fixture.restartController.phase(), "positioning");
   assertEqual(fixture.game.matchFlow.simulationMode(), "playersOnly");
 
   fixture.positioningController._clear(fixture.game.context());
-  assertEqual(fixture.game.restartController.phase(), "waitingForInput");
+  assertEqual(fixture.restartController.phase(), "waitingForInput");
 
   fixture.game.resumeFromInput();
-  assertEqual(fixture.game.restartController.phase(), "inProgress");
+  assertEqual(fixture.restartController.phase(), "inProgress");
   assertEqual(fixture.game.matchFlow.simulationMode(), "full");
 });
 
@@ -93,7 +93,7 @@ test("Goal kick can start when its taker arrives while teammates are still posit
   taker.position.y = target.y;
   assertEqual(fixture.game.resumeFromInput(new Vector2d(0, -1)), true);
 
-  assertEqual(fixture.game.restartController.phase(), "inProgress");
+  assertEqual(fixture.restartController.phase(), "inProgress");
   assertEqual(controller.isActive(), false);
   assertEqual(unfinished.position.x, unfinishedX);
   assertEqual(unfinished.position.y, unfinishedY);
@@ -137,14 +137,14 @@ test("Away corner waits for the configured delay after its taker is ready", func
   assertEqual(fixture.game.resumeFromInput(new Vector2d(0, -1)), false);
 
   fixture.game.physics.lastDt = 0.4;
-  fixture.game.restartController.updateAfterPhysics(fixture.game.context(), fixture.physics.lastDt);
+  fixture.restartController.updateAfterPhysics(fixture.game.context(), fixture.physics.lastDt);
 
-  assertEqual(fixture.game.restartController.phase(), "positioning");
+  assertEqual(fixture.restartController.phase(), "positioning");
 
   fixture.game.physics.lastDt = 0.6;
-  fixture.game.restartController.updateAfterPhysics(fixture.game.context(), fixture.physics.lastDt);
+  fixture.restartController.updateAfterPhysics(fixture.game.context(), fixture.physics.lastDt);
 
-  assertEqual(fixture.game.restartController.phase(), "inProgress");
+  assertEqual(fixture.restartController.phase(), "inProgress");
   assertEqual(controller.isActive(), false);
 });
 
@@ -156,16 +156,16 @@ test("Opponent restart delay continues after every player finishes positioning",
   });
   fixture.positioningController._clear(fixture.game.context());
 
-  assertEqual(fixture.game.restartController.phase(), "waitingForInput");
+  assertEqual(fixture.restartController.phase(), "waitingForInput");
   assertEqual(fixture.game.matchFlow.simulationMode(), "playersOnly");
 
   fixture.game.physics.lastDt = 0.5;
-  fixture.game.restartController.updateAfterPhysics(fixture.game.context(), fixture.physics.lastDt);
-  assertEqual(fixture.game.restartController.phase(), "waitingForInput");
+  fixture.restartController.updateAfterPhysics(fixture.game.context(), fixture.physics.lastDt);
+  assertEqual(fixture.restartController.phase(), "waitingForInput");
 
   fixture.game.physics.lastDt = 0.5;
-  fixture.game.restartController.updateAfterPhysics(fixture.game.context(), fixture.physics.lastDt);
-  assertEqual(fixture.game.restartController.phase(), "inProgress");
+  fixture.restartController.updateAfterPhysics(fixture.game.context(), fixture.physics.lastDt);
+  assertEqual(fixture.restartController.phase(), "inProgress");
   assertTrue(fixture.ball.velocity.z > 0);
 });
 
@@ -178,20 +178,20 @@ test("Away kickoff delay starts only after every player finishes positioning", f
   controller._readyPlayer.position.y = takerTarget.y;
 
   fixture.game.physics.lastDt = 1;
-  fixture.game.restartController.updateAfterPhysics(fixture.game.context(), fixture.physics.lastDt);
-  assertEqual(fixture.game.restartController.phase(), "positioning");
+  fixture.restartController.updateAfterPhysics(fixture.game.context(), fixture.physics.lastDt);
+  assertEqual(fixture.restartController.phase(), "positioning");
   assertEqual(fixture.game.resumeFromInput(new Vector2d(0, -1)), false);
 
   controller._clear(fixture.game.context());
-  assertEqual(fixture.game.restartController.phase(), "waitingForInput");
+  assertEqual(fixture.restartController.phase(), "waitingForInput");
 
   fixture.game.physics.lastDt = 0.6;
-  fixture.game.restartController.updateAfterPhysics(fixture.game.context(), fixture.physics.lastDt);
-  assertEqual(fixture.game.restartController.phase(), "waitingForInput");
+  fixture.restartController.updateAfterPhysics(fixture.game.context(), fixture.physics.lastDt);
+  assertEqual(fixture.restartController.phase(), "waitingForInput");
 
   fixture.game.physics.lastDt = 0.4;
-  fixture.game.restartController.updateAfterPhysics(fixture.game.context(), fixture.physics.lastDt);
-  assertEqual(fixture.game.restartController.phase(), "inProgress");
+  fixture.restartController.updateAfterPhysics(fixture.game.context(), fixture.physics.lastDt);
+  assertEqual(fixture.restartController.phase(), "inProgress");
 });
 
 test("Early away goal kick keeps the goalkeeper as designated taker", function() {
@@ -208,7 +208,7 @@ test("Early away goal kick keeps the goalkeeper as designated taker", function()
   fixture.awayPlayers[1].position.x = controller._ballPosition.x;
   fixture.awayPlayers[1].position.y = controller._ballPosition.y;
 
-  fixture.game.restartController.updateAfterPhysics(fixture.game.context(), fixture.physics.lastDt);
+  fixture.restartController.updateAfterPhysics(fixture.game.context(), fixture.physics.lastDt);
   fixture.game._updateAi();
 
   assertEqual(fixture.awayTeamAi.debugSnapshot()[0].command, "attackBall");
@@ -227,9 +227,9 @@ test("Away throw-in launches automatically when its taker is ready", function() 
   controller._readyPlayer.position.x = target.x;
   controller._readyPlayer.position.y = target.y;
 
-  fixture.game.restartController.updateAfterPhysics(fixture.game.context(), fixture.physics.lastDt);
+  fixture.restartController.updateAfterPhysics(fixture.game.context(), fixture.physics.lastDt);
 
-  assertEqual(fixture.game.restartController.phase(), "inProgress");
+  assertEqual(fixture.restartController.phase(), "inProgress");
   assertTrue(fixture.ball.velocity.x < 0);
   assertTrue(fixture.ball.velocity.z > 0);
   assertEqual(fixture.ball.lastTouchedBy, "away");
@@ -247,20 +247,20 @@ test("Held human input starts an early restart when the taker becomes ready", fu
   controller._readyPlayer.position.x = target.x;
   controller._readyPlayer.position.y = target.y;
 
-  fixture.game.restartController.updateAfterPhysics(fixture.game.context(), fixture.physics.lastDt);
+  fixture.restartController.updateAfterPhysics(fixture.game.context(), fixture.physics.lastDt);
 
-  assertEqual(fixture.game.restartController.phase(), "inProgress");
+  assertEqual(fixture.restartController.phase(), "inProgress");
 });
 
 test("Kickoff assigns relative states and movement permission", function() {
   var fixture = makeFixture({ kickoffSide: "away" });
   fixture.config.restarts.opponentDelaySeconds = 0;
-  fixture.game.restartController.updateAfterPhysics(fixture.game.context(), fixture.physics.lastDt);
+  fixture.restartController.updateAfterPhysics(fixture.game.context(), fixture.physics.lastDt);
 
   assertEqual(fixture.homeTeamAi.state, "kickoffOpponent");
   assertEqual(fixture.awayTeamAi.state, "kickoffUs");
-  assertEqual(fixture.game.restartController.canTeamMove(fixture.homeTeam), false);
-  assertEqual(fixture.game.restartController.canTeamMove(fixture.awayTeam), true);
+  assertEqual(fixture.restartController.canTeamMove(fixture.homeTeam), false);
+  assertEqual(fixture.restartController.canTeamMove(fixture.awayTeam), true);
 });
 
 test("Throw-in uses fresh directional input to launch a lofted inward throw", function() {
@@ -282,7 +282,7 @@ test("Throw-in uses fresh directional input to launch a lofted inward throw", fu
 
   fixture.game.resumeFromInput(new Vector2d(-1, 0));
 
-  assertEqual(fixture.game.restartController.phase(), "inProgress");
+  assertEqual(fixture.restartController.phase(), "inProgress");
   assertTrue(fixture.ball.velocity.x > 0);
   assertTrue(fixture.ball.velocity.z > 0);
   assertEqual(fixture.ball.lastTouchedBy, "home");
@@ -304,7 +304,7 @@ test("Away throw-in chooses an automatic inward attacking direction", function()
   assertEqual(fixture.ball.heldBy.facingX, -1);
   assertEqual(fixture.ball.heldBy.facingY, 0);
 
-  fixture.game.restartController.updateAfterPhysics(fixture.game.context(), fixture.physics.lastDt);
+  fixture.restartController.updateAfterPhysics(fixture.game.context(), fixture.physics.lastDt);
 
   assertTrue(fixture.ball.velocity.x < 0);
   assertTrue(fixture.ball.velocity.y > 0);
@@ -333,11 +333,11 @@ test("Corner restart gives the awarded AI team a central crossing target", funct
     position: new Vector2d(fixture.config.pitch.fieldRight, fixture.config.pitch.fieldBottom)
   });
 
-  var target = fixture.game.restartController.attackTarget(fixture.awayTeam);
+  var target = fixture.restartController.attackTarget(fixture.awayTeam);
 
   assertEqual(target.x, fixture.config.pitch.initialBallPosition.x);
   assertEqual(target.y, fixture.config.pitch.fieldBottom - fixture.config.restarts.cornerCrossDistance);
-  assertEqual(fixture.game.restartController.attackTarget(fixture.homeTeam), null);
+  assertEqual(fixture.restartController.attackTarget(fixture.homeTeam), null);
 });
 
 test("Corner restart never selects the goalkeeper or cover defender as taker", function() {
@@ -429,7 +429,7 @@ test("Kickoff clamps the human player to the center ellipse", function() {
   player.position.y = fixture.config.pitch.aiCenterY - fixture.config.pitch.centerCircleRadiusY - 20;
   player.velocity.y = -10;
 
-  fixture.game.restartController.updateAfterPhysics(fixture.game.context(), fixture.physics.lastDt);
+  fixture.restartController.updateAfterPhysics(fixture.game.context(), fixture.physics.lastDt);
 
   assertNear(ellipseDistance(fixture.config, player.position), 1, 0.0001);
   assertEqual(player.velocity.y, 0);
@@ -535,8 +535,8 @@ test("Kickoff completes generically when its strategy condition is met", functio
   fixture.game.matchFlow.updateAfterPhysics(fixture.game.context(), fixture.physics.lastDt);
 
   assertEqual(fixture.game.matchFlow.state, "normalPlay");
-  assertEqual(fixture.game.restartController.type(), null);
-  assertEqual(fixture.game.restartController.phase(), null);
+  assertEqual(fixture.restartController.type(), null);
+  assertEqual(fixture.restartController.phase(), null);
 });
 
 test("MatchFlow pause resumes the previous restart state", function() {
@@ -548,7 +548,7 @@ test("MatchFlow pause resumes the previous restart state", function() {
 
   fixture.game.togglePause();
   assertEqual(fixture.game.matchFlow.state, "restart");
-  assertEqual(fixture.game.restartController.phase(), "waitingForInput");
+  assertEqual(fixture.restartController.phase(), "waitingForInput");
 });
 
 test("MatchFlow rejects nested positioning and paused restart requests", function() {

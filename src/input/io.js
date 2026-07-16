@@ -15,7 +15,7 @@ BrowserInput.prototype.attach = function() {
 
 BrowserInput.prototype.handleTouch = function(event) {
   if ((this.game.matchFlow.simulationMode() == "playersOnly" &&
-      !this.game.restartController.canResumeFromInput()) || this.game.isPaused() ||
+      !this.game.matchFlow.canResumeFromInput()) || this.game.isPaused() ||
       this.game.matchFlow.isOutOfPlay()) return;
   var scaleBy = this.game.config.computeScaleBy();
   var target = new Vector2d(
@@ -46,8 +46,7 @@ BrowserInput.prototype.applyHumanInput = function() {
   if (this.game.isPaused() || this.game.matchFlow.simulationMode() == "playersOnly" ||
       this.game.matchFlow.isOutOfPlay()) return;
   this.game.humanController.selectPlayer();
-  var canMove = !this.game.matchFlow.isRestartActive() ||
-    this.game.restartController.canTeamMove(this.game.teams[0]);
+  var canMove = this.game.matchFlow.canTeamMove(this.game.teams[0]);
   this.game.humanController.update(canMove);
 };
 

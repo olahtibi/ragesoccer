@@ -13,6 +13,7 @@ function setup(options) {
   return {
     fixture: fixture,
     game: fixture.game,
+    restartController: fixture.restartController,
     positioningController: fixture.positioningController,
     input: new BrowserInput(fixture.game, window)
   };
@@ -95,16 +96,16 @@ test("Opponent kickoff ignores input and starts after its configured delay", fun
 
   setupResult.input.handleKey({ keyCode: 39, type: "keydown" });
 
-  assertEqual(setupResult.game.restartController.phase(), "waitingForInput");
+  assertEqual(setupResult.restartController.phase(), "waitingForInput");
   assertEqual(setupResult.fixture.playerHome.velocity.x, 0);
 
   setupResult.fixture.physics.lastDt = 0.5;
-  setupResult.game.restartController.updateAfterPhysics(setupResult.game.context(), 0.5);
-  assertEqual(setupResult.game.restartController.phase(), "waitingForInput");
+  setupResult.restartController.updateAfterPhysics(setupResult.game.context(), 0.5);
+  assertEqual(setupResult.restartController.phase(), "waitingForInput");
 
   setupResult.fixture.physics.lastDt = 0.5;
-  setupResult.game.restartController.updateAfterPhysics(setupResult.game.context(), 0.5);
-  assertEqual(setupResult.game.restartController.phase(), "inProgress");
+  setupResult.restartController.updateAfterPhysics(setupResult.game.context(), 0.5);
+  assertEqual(setupResult.restartController.phase(), "inProgress");
 });
 
 test("Keyboard direction executes a human throw-in and clamps it inward", function() {
@@ -118,7 +119,7 @@ test("Keyboard direction executes a human throw-in and clamps it inward", functi
 
   setupResult.input.handleKey({ keyCode: 37, type: "keydown" });
 
-  assertEqual(setupResult.game.restartController.phase(), "inProgress");
+  assertEqual(setupResult.restartController.phase(), "inProgress");
   assertTrue(setupResult.fixture.ball.velocity.x > 0);
   assertTrue(setupResult.fixture.ball.velocity.z > 0);
 });
@@ -138,7 +139,7 @@ test("Touch direction executes a human throw-in and clamps it inward", function(
     clientY: setupResult.fixture.config.pitch.aiCenterY * scale
   }] });
 
-  assertEqual(setupResult.game.restartController.phase(), "inProgress");
+  assertEqual(setupResult.restartController.phase(), "inProgress");
   assertTrue(setupResult.fixture.ball.velocity.x < 0);
 });
 
@@ -164,7 +165,7 @@ test("Touch executes a throw-in when the taker is ready before positioning compl
     clientY: setupResult.fixture.config.pitch.aiCenterY * scale
   }] });
 
-  assertEqual(setupResult.game.restartController.phase(), "inProgress");
+  assertEqual(setupResult.restartController.phase(), "inProgress");
   assertEqual(controller.isActive(), false);
   assertTrue(setupResult.fixture.ball.velocity.x < 0);
 });
@@ -175,21 +176,21 @@ test("J and K do not start restarts", function() {
   setupResult.input.handleKey({ keyCode: 74, type: "keydown" });
   setupResult.input.handleKey({ keyCode: 75, type: "keydown" });
 
-  assertEqual(setupResult.game.restartController.phase(), "waitingForInput");
+  assertEqual(setupResult.restartController.phase(), "waitingForInput");
   assertEqual(setupResult.positioningController.isActive(), false);
 });
 
 test("C awards a home corner on the ball side when debugging is enabled", function() {
   var setupResult = setup();
   setupResult.fixture.config.debug.enabled = true;
-  setupResult.game.restartController.clear();
+  setupResult.restartController.clear();
   setupResult.game.matchFlow.state = "normalPlay";
   setupResult.fixture.ball.position.x = setupResult.fixture.config.pitch.fieldRight - 20;
 
   setupResult.input.handleKey({ keyCode: 67, type: "keydown" });
 
-  assertEqual(setupResult.game.restartController.type(), "corner");
-  assertEqual(setupResult.game.restartController.phase(), "positioning");
+  assertEqual(setupResult.restartController.type(), "corner");
+  assertEqual(setupResult.restartController.phase(), "positioning");
   assertEqual(
     setupResult.positioningController._ballPosition.x,
     setupResult.fixture.config.pitch.fieldRight -
@@ -207,12 +208,12 @@ test("C awards a home corner on the ball side when debugging is enabled", functi
 test("C corner diagnostic is disabled when debugging is disabled", function() {
   var setupResult = setup();
   setupResult.fixture.config.debug.enabled = false;
-  setupResult.game.restartController.clear();
+  setupResult.restartController.clear();
   setupResult.game.matchFlow.state = "normalPlay";
 
   setupResult.input.handleKey({ keyCode: 67, type: "keydown" });
 
-  assertEqual(setupResult.game.restartController.type(), null);
+  assertEqual(setupResult.restartController.type(), null);
   assertEqual(setupResult.positioningController.isActive(), false);
 });
 
@@ -241,7 +242,7 @@ test("Slash pauses and resumes while preserving restart positioning", function()
 
   setupResult.input.handleKey({ keyCode: 191, type: "keydown" });
   assertEqual(setupResult.game.matchFlow.state, "restart");
-  assertEqual(setupResult.game.restartController.phase(), "positioning");
+  assertEqual(setupResult.restartController.phase(), "positioning");
 });
 
 test("Slash is disabled when debug logging is disabled", function() {

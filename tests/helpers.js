@@ -107,6 +107,7 @@ function makeFixture(options) {
   var goalDetector = game.matchFlow._goalDetector;
   var stadium = game.stadium;
   var physics = game.physics;
+  var restartController = game.matchFlow._restartController;
 
   return {
     config: config,
@@ -124,7 +125,8 @@ function makeFixture(options) {
     teamAis: game.teamAis,
     homeTeamAi: game.teamAis[0],
     awayTeamAi: game.teamAis[1],
-    positioningController: game.restartController._positioningController,
+    restartController: restartController,
+    positioningController: restartController._positioningController,
     game: game
   };
 }
@@ -180,7 +182,7 @@ function advanceReplayFrame(game, dt) {
     return;
   }
   game._updateAi();
-  var canMove = !game.matchFlow.isRestartActive() || game.restartController.canTeamMove(game.teams[0]);
+  var canMove = game.matchFlow.canTeamMove(game.teams[0]);
   game.humanController.update(canMove);
   game.physics.lastDt = dt;
   game.physics._updatePlayerPositions(dt);

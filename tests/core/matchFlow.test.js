@@ -22,7 +22,7 @@ function completeOutOfPlayDelay(fixture) {
 test("MatchFlow delegates its pre-physics update only during a restart", function() {
   var fixture = makeFixture();
   var updates = 0;
-  fixture.game.restartController.updateBeforePhysics = function() { updates++; };
+  fixture.restartController.updateBeforePhysics = function() { updates++; };
 
   fixture.game.matchFlow.state = "normalPlay";
   fixture.game.matchFlow.updateBeforePhysics(fixture.game.context());
@@ -38,8 +38,8 @@ test("MatchFlow awards a touchline exit to the team that did not touch last", fu
   enterOutOfPlay(fixture);
   completeOutOfPlayDelay(fixture);
 
-  assertEqual(fixture.game.restartController.type(), "throwIn");
-  assertEqual(fixture.game.restartController.phase(), "positioning");
+  assertEqual(fixture.restartController.type(), "throwIn");
+  assertEqual(fixture.restartController.phase(), "positioning");
   assertEqual(fixture.homeTeamAi.state, "throwInOpponent");
   assertEqual(fixture.awayTeamAi.state, "throwInUs");
 });
@@ -52,7 +52,7 @@ test("MatchFlow chooses top end-line goal kicks and corners from last touch", fu
   goalKick.game.matchFlow.detectOutOfPlay(goalKick.game.context());
   completeOutOfPlayDelay(goalKick);
 
-  assertEqual(goalKick.game.restartController.type(), "goalKick");
+  assertEqual(goalKick.restartController.type(), "goalKick");
   assertEqual(goalKick.awayTeamAi.state, "goalKickUs");
 
   var corner = makeFixture();
@@ -63,7 +63,7 @@ test("MatchFlow chooses top end-line goal kicks and corners from last touch", fu
   corner.game.matchFlow.detectOutOfPlay(corner.game.context());
   completeOutOfPlayDelay(corner);
 
-  assertEqual(corner.game.restartController.type(), "corner");
+  assertEqual(corner.restartController.type(), "corner");
   assertEqual(corner.homeTeamAi.state, "cornerUs");
 });
 
@@ -75,7 +75,7 @@ test("MatchFlow chooses bottom end-line goal kicks and corners from last touch",
   goalKick.game.matchFlow.detectOutOfPlay(goalKick.game.context());
   completeOutOfPlayDelay(goalKick);
 
-  assertEqual(goalKick.game.restartController.type(), "goalKick");
+  assertEqual(goalKick.restartController.type(), "goalKick");
   assertEqual(goalKick.homeTeamAi.state, "goalKickUs");
 
   var corner = makeFixture();
@@ -86,7 +86,7 @@ test("MatchFlow chooses bottom end-line goal kicks and corners from last touch",
   corner.game.matchFlow.detectOutOfPlay(corner.game.context());
   completeOutOfPlayDelay(corner);
 
-  assertEqual(corner.game.restartController.type(), "corner");
+  assertEqual(corner.restartController.type(), "corner");
   assertEqual(corner.awayTeamAi.state, "cornerUs");
 });
 
@@ -98,7 +98,7 @@ test("MatchFlow restores and stops an exit without last-touch ownership", functi
 
   fixture.game.matchFlow.detectOutOfPlay(fixture.game.context());
 
-  assertEqual(fixture.game.restartController.phase(), "waitingForInput");
+  assertEqual(fixture.restartController.phase(), "waitingForInput");
   assertEqual(fixture.ball.position.x, startX);
   assertEqual(fixture.ball.velocity.x, 0);
 });
@@ -139,7 +139,7 @@ test("MatchFlow pauses and resumes an out-of-play delay", function() {
   );
 
   assertEqual(fixture.game.matchFlow.state, "restart");
-  assertEqual(fixture.game.restartController.type(), "throwIn");
+  assertEqual(fixture.restartController.type(), "throwIn");
 });
 
 test("MatchFlow rejects input and external restarts while play is out", function() {

@@ -6,7 +6,6 @@ var Game = function(options) {
   this.camera = options.camera;
   this.physics = options.physics;
   this.humanController = options.humanController;
-  this.restartController = options.restartController;
   this.matchFlow = options.matchFlow;
   this.debugTool = options.debugTool;
 };
@@ -64,7 +63,7 @@ Game.prototype.update = function() {
     this.matchFlow.updateAfterPhysics(context, this.physics.lastDt);
   } else {
     this._updateAi();
-    var canMove = !this.matchFlow.isRestartActive() || this.restartController.canTeamMove(this.teams[0]);
+    var canMove = this.matchFlow.canTeamMove(this.teams[0]);
     this.humanController.update(canMove);
     this.physics.update();
     this.matchFlow.updateAfterPhysics(context, this.physics.lastDt);
@@ -89,13 +88,10 @@ Game.prototype._updateAi = function() {
     teamAi.update({
       deltaSeconds: this.physics.lastDt,
       restartActive: this.matchFlow.isRestartActive(),
-      canMove: !this.matchFlow.isRestartActive() || this.restartController.canTeamMove(teamAi.team),
-      restartTaker: this.matchFlow.isRestartActive() ?
-        this.restartController.taker(teamAi.team) : null,
-      positioningTargets: this.matchFlow.isRestartActive() ?
-        this.restartController.positioningTargets(teamAi.team) : null,
-      attackTarget: this.matchFlow.isRestartActive() ?
-        this.restartController.attackTarget(teamAi.team) : null
+      canMove: this.matchFlow.canTeamMove(teamAi.team),
+      restartTaker: this.matchFlow.restartTaker(teamAi.team),
+      positioningTargets: this.matchFlow.restartPositioningTargets(teamAi.team),
+      attackTarget: this.matchFlow.restartAttackTarget(teamAi.team)
     });
   }
 };
@@ -136,7 +132,6 @@ function createGame(config) {
     camera: camera,
     physics: physics,
     humanController: humanController,
-    restartController: restartController,
     matchFlow: matchFlow,
     debugTool: new DebugTool(config)
   });

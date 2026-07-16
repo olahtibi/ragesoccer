@@ -1,5 +1,5 @@
 var MatchFlow = function(restartController, goalDetector, boundaryDetector) {
-  this.restartController = restartController;
+  this._restartController = restartController;
   this._goalDetector = goalDetector;
   this._boundaryDetector = boundaryDetector;
   this._outOfPlay = null;
@@ -11,7 +11,7 @@ var MatchFlow = function(restartController, goalDetector, boundaryDetector) {
 
 MatchFlow.prototype.beginRestart = function(request, context, options) {
   if (this.state == "paused" || this.state == "outOfPlay") return false;
-  if (this.state == "restart" && this.restartController.phase() == "positioning") return false;
+  if (this.state == "restart" && this._restartController.phase() == "positioning") return false;
   return this._startRestart(request, context, options);
 };
 
@@ -29,7 +29,7 @@ MatchFlow.prototype.resume = function() {
 
 MatchFlow.prototype.resumeFromInput = function(context, direction) {
   if (this.state == "restart") {
-    return this.restartController.resumeFromInput(context, direction);
+    return this._restartController.resumeFromInput(context, direction);
   }
   return this.state == "normalPlay";
 };
@@ -38,12 +38,12 @@ MatchFlow.prototype.simulationMode = function() {
   if (this.state == "paused") return "none";
   if (this.state == "normalPlay") return "full";
   if (this.state == "outOfPlay") return "ballOnly";
-  return this.restartController.simulationMode();
+  return this._restartController.simulationMode();
 };
 
 MatchFlow.prototype.updateBeforePhysics = function(context) {
   if (this.state != "restart") return;
-  this.restartController.updateBeforePhysics(context);
+  this._restartController.updateBeforePhysics(context);
 };
 
 MatchFlow.prototype.updateAfterPhysics = function(context, deltaSeconds) {
@@ -52,10 +52,10 @@ MatchFlow.prototype.updateAfterPhysics = function(context, deltaSeconds) {
     return;
   }
   if (this.state != "restart") return;
-  this.restartController.updateAfterPhysics(context, deltaSeconds);
-  if (this.restartController.isComplete()) {
+  this._restartController.updateAfterPhysics(context, deltaSeconds);
+  if (this._restartController.isComplete()) {
     this.state = "normalPlay";
-    this.restartController.clear();
+    this._restartController.clear();
   }
 };
 
@@ -65,6 +65,34 @@ MatchFlow.prototype.isPaused = function() {
 
 MatchFlow.prototype.isRestartActive = function() {
   return this.state == "restart";
+};
+
+MatchFlow.prototype.canResumeFromInput = function() {
+  return this.state == "restart" && this._restartController.canResumeFromInput();
+};
+
+MatchFlow.prototype.canTeamMove = function(team) {
+  return this.state != "restart" || this._restartController.canTeamMove(team);
+};
+
+MatchFlow.prototype.restartTaker = function(team) {
+  return this.state == "restart" ? this._restartController.taker(team) : null;
+};
+
+MatchFlow.prototype.restartPositioningTargets = function(team) {
+  return this.state == "restart" ? this._restartController.positioningTargets(team) : null;
+};
+
+MatchFlow.prototype.restartAttackTarget = function(team) {
+  return this.state == "restart" ? this._restartController.attackTarget(team) : null;
+};
+
+MatchFlow.prototype.restartType = function() {
+  return this._restartController.type();
+};
+
+MatchFlow.prototype.restartPhase = function() {
+  return this._restartController.phase();
 };
 
 MatchFlow.prototype.isOutOfPlay = function() {
@@ -116,7 +144,7 @@ MatchFlow.prototype.detectOutOfPlay = function(context) {
 // Private helpers
 
 MatchFlow.prototype._startRestart = function(request, context, options) {
-  if (!this.restartController.begin(request, context, options)) return false;
+  if (!this._restartController.begin(request, context, options)) return false;
   this.state = "restart";
   return true;
 };
