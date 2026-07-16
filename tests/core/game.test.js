@@ -12,6 +12,8 @@ test("Game composes explicit controllers without putting them on Stadium", funct
   assertTrue(fixture.game.humanController !== null);
   assertTrue(fixture.game.restartController !== null);
   assertTrue(fixture.game.matchFlow._boundaryDetector !== null);
+  assertTrue(fixture.game.debugTool !== null);
+  assertEqual(fixture.game.debugLog, undefined);
   assertEqual(fixture.game.boundaryDetector, undefined);
   assertEqual(fixture.stadium._updateAi, undefined);
 });
@@ -30,7 +32,7 @@ test("Full simulation updates AI human input physics restart and score in order"
   fixture.game.matchFlow.updateAfterPhysics = function() { order.push("rules"); };
   fixture.game._handleGoalDetection = function() { order.push("score"); return false; };
   fixture.game.matchFlow.detectOutOfPlay = function() { order.push("out"); };
-  fixture.game.debugLog.record = function() { order.push("debug"); };
+  fixture.game.debugTool.record = function() { order.push("debug"); };
 
   fixture.game.update();
 
@@ -59,7 +61,7 @@ test("Positioning simulation updates cutscene around player-only physics", funct
   fixture.game.restartController.updateBeforePhysics = function() { order.push("direct"); };
   fixture.game.physics.updatePlayersOnly = function() { order.push("players"); };
   fixture.game.matchFlow.updateAfterPhysics = function() { order.push("after"); };
-  fixture.game.debugLog.record = function() { order.push("debug"); };
+  fixture.game.debugTool.record = function() { order.push("debug"); };
 
   fixture.game.update();
 
@@ -76,6 +78,25 @@ test("Paused and waiting states reset the physics clock", function() {
   fixture.game.update();
 
   assertEqual(resets, 2);
+});
+
+test("Game renders AI debug through DebugTool only while paused", function() {
+  var fixture = makeFixture();
+  var draws = 0;
+  var ctx = {};
+  fixture.config.debug.enabled = false;
+  fixture.game.camera.windowToViewport = function() {};
+  fixture.game.camera.renderOverlay = function() {};
+  fixture.game.stadium.draw = function() {};
+  fixture.game.debugTool.draw = function(actualCtx, teamAis) {
+    if (actualCtx === ctx && teamAis === fixture.game.teamAis) draws++;
+  };
+
+  fixture.game.render(ctx);
+  fixture.game.togglePause();
+  fixture.game.render(ctx);
+
+  assertEqual(draws, 1);
 });
 
 test("A home goal updates the score and starts an away kickoff once", function() {

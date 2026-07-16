@@ -427,12 +427,6 @@ TeamAi.prototype.selectedBallAttacker = function() {
   return closest;
 };
 
-TeamAi.prototype.draw = function(ctx) {
-  for (var i = 0; i < this._individualAis.length; i++) {
-    this._individualAis[i].draw(ctx);
-  }
-};
-
 TeamAi.prototype.debugSnapshot = function() {
   var result = [];
   for (var i = 0; i < this._individualAis.length; i++) {

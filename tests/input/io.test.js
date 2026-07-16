@@ -232,7 +232,7 @@ test("Restart positioning selects the newly closest human player on completion",
 test("Slash pauses and resumes while preserving restart positioning", function() {
   var setupResult = setup();
   setupResult.fixture.config.debug.enabled = true;
-  setupResult.game.debugLog.dump = function() {};
+  setupResult.game.debugTool.dump = function() {};
   setupResult.game.beginRestart("kickoff", "home");
 
   setupResult.input.handleKey({ keyCode: 191, type: "keydown" });
@@ -256,12 +256,12 @@ test("Input events are recorded only when debugging is enabled", function() {
   var setupResult = setup();
   setupResult.fixture.config.debug.enabled = false;
   setupResult.input.handleKey({ keyCode: 39, type: "keydown" });
-  assertEqual(setupResult.game.debugLog.events.length, 0);
+  assertEqual(setupResult.game.debugTool.events.length, 0);
 
   setupResult.fixture.config.debug.enabled = true;
   setupResult.input.handleKey({ keyCode: 39, type: "keyup" });
-  assertEqual(setupResult.game.debugLog.events.length, 1);
-  assertEqual(setupResult.game.debugLog.events[0].type, "keyup");
+  assertEqual(setupResult.game.debugTool.events.length, 1);
+  assertEqual(setupResult.game.debugTool.events[0].type, "keyup");
 });
 
 test("Touch debug events use world coordinates", function() {
@@ -273,8 +273,8 @@ test("Touch debug events use world coordinates", function() {
 
   setupResult.input.handleTouch({ touches: [{ clientX: 30 * scale, clientY: 40 * scale }] });
 
-  assertEqual(setupResult.game.debugLog.events[0].target.x, 40);
-  assertEqual(setupResult.game.debugLog.events[0].target.y, 60);
+  assertEqual(setupResult.game.debugTool.events[0].target.x, 40);
+  assertEqual(setupResult.game.debugTool.events[0].target.y, 60);
 });
 
 test("Q and W change the viewport ratio", function() {

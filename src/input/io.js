@@ -22,7 +22,7 @@ BrowserInput.prototype.handleTouch = function(event) {
     -this.game.camera.position.x + event.touches[0].clientX / scaleBy,
     -this.game.camera.position.y + event.touches[0].clientY / scaleBy
   );
-  this.game.debugLog.recordTouchEvent(target);
+  this.game.debugTool.recordTouchEvent(target);
   this.game.humanController.selectPlayer();
   this.game.humanController.setTouchTarget(target);
   this.game.resumeFromInput(new Vector2d(
@@ -33,7 +33,7 @@ BrowserInput.prototype.handleTouch = function(event) {
 };
 
 BrowserInput.prototype.handleKey = function(event) {
-  this.game.debugLog.recordKeyEvent(event);
+  this.game.debugTool.recordKeyEvent(event);
   this.game.humanController.setKey(event.keyCode, event.type == "keydown");
   if (event.type == "keydown") this.handleCommand(event.keyCode);
   if (this.game.humanController.hasMovementInput()) {
@@ -67,6 +67,6 @@ BrowserInput.prototype.handleCommand = function(keyCode) {
   }
   if (keyCode == 191 && this.game.config.debug.enabled == true) {
     this.game.togglePause();
-    this.game.debugLog.dump();
+    this.game.debugTool.dump();
   }
 };

@@ -4,7 +4,6 @@ var IndividualAi = function(config, team, player) {
   this.player = player;
   this.command = "inactive";
   this.target = null;
-  this.sPos = null;
   this.tPos = null;
   this.commands = createIndividualAiCommandRegistry();
   this.activeCommand = this.commands[this.command];
@@ -63,7 +62,6 @@ IndividualAi.prototype.isAlignedBehindBall = function(ballPosition, toGoal, tole
 };
 
 IndividualAi.prototype.moveTo = function(target, targetReachedRadius) {
-  this.sPos = this.player.position;
   this.tPos = target;
 
   var dx = target.x - this.player.position.x;
@@ -82,7 +80,6 @@ IndividualAi.prototype.moveTo = function(target, targetReachedRadius) {
 };
 
 IndividualAi.prototype.moveToFormationPosition = function(target, resumeFromStop) {
-  this.sPos = this.player.position;
   this.tPos = target;
 
   var dx = target.x - this.player.position.x;
@@ -113,17 +110,6 @@ IndividualAi.prototype.stop = function() {
   this.player.velocity.x = 0;
   this.player.velocity.y = 0;
   return "stopped";
-};
-
-IndividualAi.prototype.draw = function(ctx) {
-  if (this.sPos != null && this.tPos != null) {
-    ctx.beginPath();
-    ctx.moveTo(this.sPos.x, this.sPos.y);
-    ctx.lineTo(this.tPos.x, this.tPos.y);
-    ctx.lineWidth = 1;
-    ctx.strokeStyle = "blue";
-    ctx.stroke();
-  }
 };
 
 IndividualAi.prototype.debugSnapshot = function() {

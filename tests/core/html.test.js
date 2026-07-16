@@ -52,6 +52,7 @@ test("Game page contains canvas assets scripts and boot hook", function() {
   assertTrue(html.indexOf("startLoop();") !== -1);
   assertTrue(html.indexOf('src="assets/images/pitch.jpg"') !== -1);
   assertTrue(html.indexOf('src="src/core/configuration.js') !== -1);
+  assertTrue(html.indexOf('src="src/core/debugTool.js') !== -1);
   assertTrue(html.indexOf('src="src/core/cutscene.js') !== -1);
   assertTrue(html.indexOf('src="src/world/detectors/boundaryDetector.js') !== -1);
   assertTrue(html.indexOf('src="src/core/restarts/restartRegistry.js') !== -1);

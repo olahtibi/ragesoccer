@@ -49,7 +49,7 @@ function loadGameScripts() {
     "src/math/vector.js",
     "src/math/mathlib.js",
     "src/core/configuration.js",
-    "src/core/debugLog.js",
+    "src/core/debugTool.js",
     "src/world/ball.js",
     "src/world/player.js",
     "src/world/detectors/goalDetector.js",

@@ -157,7 +157,7 @@ Game
 ├── Physics
 ├── GoalDetector
 ├── Camera
-├── DebugLog
+├── DebugTool
 └── Stadium
     ├── Ball
     ├── Team (home)
@@ -363,9 +363,10 @@ unrelated controllers.
 
 ## Debugging And Determinism
 
-`DebugLog` records the match state, active restart type and phase, team scores,
-ball and player state, and AI command snapshots. Input events are recorded by
-the browser adapter and can be replayed without rendering.
+`DebugTool` records the match state, active restart type and phase, team scores,
+ball and player state, and AI command snapshots. It also draws AI movement
+targets while the game is paused. Input events are recorded by the browser
+adapter and can be replayed without rendering.
 
 Debug code reads public snapshots rather than command internals. When new state
 affects behavior, expose it through the relevant `debugSnapshot()` method.

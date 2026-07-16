@@ -10,7 +10,7 @@ var Game = function(options) {
   this.cutscene = options.cutscene;
   this.restartController = options.restartController;
   this.matchFlow = options.matchFlow;
-  this.debugLog = options.debugLog;
+  this.debugTool = options.debugTool;
 };
 
 // Public API
@@ -72,13 +72,13 @@ Game.prototype.update = function() {
     this.matchFlow.updateAfterPhysics(context);
     if (!this._handleGoalDetection()) this.matchFlow.detectOutOfPlay(context);
   }
-  this.debugLog.record(this);
+  this.debugTool.record(this);
 };
 
 Game.prototype.render = function(ctx) {
   this.camera.windowToViewport(ctx);
   this.stadium.draw(ctx);
-  if (this.isPaused()) this._drawAiDebug(ctx);
+  if (this.isPaused()) this.debugTool.draw(ctx, this.teamAis);
   this.camera.renderOverlay(ctx, this.physics.displayFps);
 };
 
@@ -118,12 +118,6 @@ Game.prototype._handleGoalDetection = function() {
   scoringTeam.score++;
   this.beginRestart("kickoff", concedingTeam.side);
   return true;
-};
-
-Game.prototype._drawAiDebug = function(ctx) {
-  for (var i = 0; i < this.teamAis.length; i++) {
-    this.teamAis[i].draw(ctx);
-  }
 };
 
 function createGame(config) {
@@ -166,7 +160,7 @@ function createGame(config) {
     cutscene: cutscene,
     restartController: restartController,
     matchFlow: matchFlow,
-    debugLog: new DebugLog(config)
+    debugTool: new DebugTool(config)
   });
   matchFlow.beginRestart(
     { type: "kickoff", awardedTo: config.restarts.kickoffSide },
