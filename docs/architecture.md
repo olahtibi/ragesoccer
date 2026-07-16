@@ -178,7 +178,9 @@ the next animation frame. `MatchFlow` exposes a generic simulation mode:
 
 - `none`: paused or waiting for restart input; reset the physics clock.
 - `ballOnly`: the ball continues beyond the boundary during the dead-ball delay.
-- `playersOnly`: a positioning cutscene moves players while the ball is locked.
+- `playersOnly`: `MatchFlow` prepares a positioning cutscene, physics moves the
+  players, and `MatchFlow` completes the post-physics restart update while the
+  ball remains locked.
 - `full`: update AI, apply human input, run physics, enforce rules, and detect
   goals or balls leaving play.
 

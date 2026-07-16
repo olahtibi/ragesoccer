@@ -40,6 +40,11 @@ MatchFlow.prototype.simulationMode = function() {
   return this.restartController.simulationMode();
 };
 
+MatchFlow.prototype.updateBeforePhysics = function(context) {
+  if (this.state != "restart") return;
+  this.restartController.updateBeforePhysics(context);
+};
+
 MatchFlow.prototype.updateAfterPhysics = function(context) {
   if (this.state == "outOfPlay") {
     this._updateOutOfPlay(context);

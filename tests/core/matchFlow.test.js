@@ -16,6 +16,20 @@ function completeOutOfPlayDelay(fixture) {
   fixture.game.matchFlow.updateAfterPhysics(fixture.game.context());
 }
 
+test("MatchFlow delegates its pre-physics update only during a restart", function() {
+  var fixture = makeFixture();
+  var updates = 0;
+  fixture.game.restartController.updateBeforePhysics = function() { updates++; };
+
+  fixture.game.matchFlow.state = "normalPlay";
+  fixture.game.matchFlow.updateBeforePhysics(fixture.game.context());
+  assertEqual(updates, 0);
+
+  fixture.game.matchFlow.state = "restart";
+  fixture.game.matchFlow.updateBeforePhysics(fixture.game.context());
+  assertEqual(updates, 1);
+});
+
 test("MatchFlow awards a touchline exit to the team that did not touch last", function() {
   var fixture = makeFixture();
   enterOutOfPlay(fixture);

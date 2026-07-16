@@ -61,7 +61,7 @@ Game.prototype.update = function() {
     this.physics.updateBallOnly();
     this.matchFlow.updateAfterPhysics(context);
   } else if (mode == "playersOnly") {
-    this.restartController.updateBeforePhysics(context);
+    this.matchFlow.updateBeforePhysics(context);
     this.physics.updatePlayersOnly();
     this.matchFlow.updateAfterPhysics(context);
   } else {

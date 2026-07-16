@@ -55,7 +55,8 @@ test("Positioning simulation updates cutscene around player-only physics", funct
   var fixture = makeFixture();
   var order = [];
   fixture.game.beginRestart("kickoff", "home");
-  fixture.game.restartController.updateBeforePhysics = function() { order.push("before"); };
+  fixture.game.matchFlow.updateBeforePhysics = function() { order.push("before"); };
+  fixture.game.restartController.updateBeforePhysics = function() { order.push("direct"); };
   fixture.game.physics.updatePlayersOnly = function() { order.push("players"); };
   fixture.game.matchFlow.updateAfterPhysics = function() { order.push("after"); };
   fixture.game.debugLog.record = function() { order.push("debug"); };
