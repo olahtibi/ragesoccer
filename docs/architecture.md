@@ -92,9 +92,9 @@ cohesive unit.
 ### Prefer synchronous results over an event bus
 
 Rule detectors return values to their caller. For example,
-`GoalDetector.update()` returns the scoring side, and `Game` applies that result
-to the appropriate team. A detected goal also begins a kickoff awarded to the
-team that conceded, using the standard restart lifecycle:
+`GoalDetector.update()` returns the scoring side, and `MatchFlow` applies that
+result to the appropriate team. A detected goal also begins a kickoff awarded
+to the team that conceded, using the standard restart lifecycle:
 
 ```text
 goal -> positioning -> waitingForInput -> inProgress -> normalPlay
@@ -147,6 +147,8 @@ strategies, and creates the initial kickoff session.
 ```text
 Game
 ├── MatchFlow
+│   ├── GoalDetector
+│   ├── BoundaryDetector
 │   └── RestartController
 │       ├── RestartRegistry
 │       ├── CutsceneController
@@ -155,7 +157,6 @@ Game
 ├── TeamAi (home)
 ├── TeamAi (away)
 ├── Physics
-├── GoalDetector
 ├── Camera
 ├── DebugTool
 └── Stadium
@@ -208,8 +209,10 @@ contract.
 ### MatchFlow
 
 `MatchFlow` decides whether the match is in normal play, out of play, a restart,
-or paused. Pause remembers the previous state so resuming returns to the same
-normal-play, out-of-play, or restart session.
+or paused. It also owns post-physics match-rule interpretation: goals take
+priority over boundary exits, update the scoring team, and start the conceding
+team's kickoff. Pause remembers the previous state so resuming returns to the
+same normal-play, out-of-play, or restart session.
 
 It does not implement any restart strategy. It owns the boundary-to-restart
 award policy, then delegates the resulting request to `RestartController`,
@@ -266,13 +269,12 @@ shooting directly at goal. Goal kicks explicitly select the formation's
 goalkeeper as taker so another nearby player cannot be positioned beside them.
 
 `BoundaryDetector` in `src/world/detectors/` reports the first pitch edge crossed,
-its crossing position, and the ball's last-touch side. `MatchFlow` owns the
-detector and converts a touchline exit to a throw-in or an end-line exit to
-either a corner or goal kick. `Game` invokes detection only after confirming no
-goal occurred, preserving scoring priority. Before positioning begins,
-`MatchFlow` enters `outOfPlay`: a short configurable delay freezes the players
-but selects ball-only physics so the ball visibly carries beyond the line
-instead of snapping back immediately.
+its crossing position, and the ball's last-touch side. `MatchFlow` owns both
+rule detectors, checks goals before boundary exits, and converts a touchline
+exit to a throw-in or an end-line exit to either a corner or goal kick. Before
+positioning begins, `MatchFlow` enters `outOfPlay`: a short configurable delay
+freezes the players but selects ball-only physics so the ball visibly carries
+beyond the line instead of snapping back immediately.
 
 The `outOfPlayRestartsEnabled` option controls the three restart types as one
 bundle. It defaults to enabled. When disabled, physics preserves the original

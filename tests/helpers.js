@@ -104,7 +104,7 @@ function makeFixture(options) {
   var ball = game.stadium.ball;
   var homeTeam = game.teams[0];
   var awayTeam = game.teams[1];
-  var goalDetector = game.goalDetector;
+  var goalDetector = game.matchFlow._goalDetector;
   var stadium = game.stadium;
   var physics = game.physics;
 
@@ -186,7 +186,7 @@ function advanceReplayFrame(game, dt) {
   game.physics._resolveBallPlayerContacts();
   game.physics._updateBallPosition(dt);
   game.matchFlow.updateAfterPhysics(game.context(), dt);
-  if (!game._handleGoalDetection()) game.matchFlow.detectOutOfPlay(game.context());
+  game.matchFlow.detectPostPhysicsEvents(game.context());
 }
 
 module.exports = {

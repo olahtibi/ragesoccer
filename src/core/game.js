@@ -5,7 +5,6 @@ var Game = function(options) {
   this.teamAis = options.teamAis;
   this.camera = options.camera;
   this.physics = options.physics;
-  this.goalDetector = options.goalDetector;
   this.humanController = options.humanController;
   this.cutscene = options.cutscene;
   this.restartController = options.restartController;
@@ -70,7 +69,7 @@ Game.prototype.update = function() {
     this.humanController.update(canMove);
     this.physics.update();
     this.matchFlow.updateAfterPhysics(context, this.physics.lastDt);
-    if (!this._handleGoalDetection()) this.matchFlow.detectOutOfPlay(context);
+    this.matchFlow.detectPostPhysicsEvents(context);
   }
   this.debugTool.record(this);
 };
@@ -102,24 +101,6 @@ Game.prototype._updateAi = function() {
   }
 };
 
-Game.prototype._handleGoalDetection = function() {
-  var scoredBy = this.goalDetector.update();
-  if (scoredBy == null) return false;
-  var scoringTeam = null;
-  var concedingTeam = null;
-  for (var i = 0; i < this.teams.length; i++) {
-    if (this.teams[i].side == scoredBy) {
-      scoringTeam = this.teams[i];
-    } else {
-      concedingTeam = this.teams[i];
-    }
-  }
-  if (scoringTeam == null || concedingTeam == null) return false;
-  scoringTeam.score++;
-  this.beginRestart("kickoff", concedingTeam.side);
-  return true;
-};
-
 function createGame(config) {
   var ball = new Ball(
     config.assets.ball,
@@ -147,7 +128,7 @@ function createGame(config) {
   registry.register("corner", new CornerRestart(config));
   registry.register("goalKick", new GoalKickRestart(config));
   var restartController = new RestartController(registry, cutscene);
-  var matchFlow = new MatchFlow(restartController, boundaryDetector);
+  var matchFlow = new MatchFlow(restartController, goalDetector, boundaryDetector);
   var game = new Game({
     config: config,
     stadium: stadium,
@@ -155,7 +136,6 @@ function createGame(config) {
     teamAis: teamAis,
     camera: camera,
     physics: physics,
-    goalDetector: goalDetector,
     humanController: humanController,
     cutscene: cutscene,
     restartController: restartController,

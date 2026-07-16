@@ -15,6 +15,7 @@ test("Game composes explicit controllers without putting them on Stadium", funct
   assertTrue(fixture.game.matchFlow._boundaryDetector !== null);
   assertTrue(fixture.game.debugTool !== null);
   assertEqual(fixture.game.debugLog, undefined);
+  assertEqual(fixture.game.goalDetector, undefined);
   assertEqual(fixture.game.boundaryDetector, undefined);
   assertEqual(fixture.stadium._updateAi, undefined);
   assertEqual(context.game, undefined);
@@ -32,14 +33,13 @@ test("Full simulation updates AI human input physics restart and score in order"
   fixture.game._updateAi = function() { order.push("ai"); };
   fixture.game.humanController.update = function() { order.push("human"); };
   fixture.game.physics.update = function() { order.push("physics"); };
-  fixture.game.matchFlow.updateAfterPhysics = function() { order.push("rules"); };
-  fixture.game._handleGoalDetection = function() { order.push("score"); return false; };
-  fixture.game.matchFlow.detectOutOfPlay = function() { order.push("out"); };
+  fixture.game.matchFlow.updateAfterPhysics = function() { order.push("restartRules"); };
+  fixture.game.matchFlow.detectPostPhysicsEvents = function() { order.push("matchRules"); };
   fixture.game.debugTool.record = function() { order.push("debug"); };
 
   fixture.game.update();
 
-  assertEqual(order.join(","), "ai,human,physics,rules,score,out,debug");
+  assertEqual(order.join(","), "ai,human,physics,restartRules,matchRules,debug");
 });
 
 test("A goal result takes priority over out-of-play detection", function() {
@@ -47,7 +47,7 @@ test("A goal result takes priority over out-of-play detection", function() {
   var outUpdates = 0;
   fixture.game.matchFlow.state = "normalPlay";
   fixture.game.physics.update = function() {};
-  fixture.game.goalDetector.update = function() { return "home"; };
+  fixture.goalDetector.update = function() { return "home"; };
   fixture.game.matchFlow.detectOutOfPlay = function() { outUpdates++; };
 
   fixture.game.update();
@@ -104,11 +104,13 @@ test("Game renders AI debug through DebugTool only while paused", function() {
 
 test("A home goal updates the score and starts an away kickoff once", function() {
   var fixture = makeFixture();
+  fixture.game.restartController.clear();
+  fixture.game.matchFlow.state = "normalPlay";
   fixture.ball.position.x = 336;
   fixture.ball.position.y = 100;
 
-  fixture.game._handleGoalDetection();
-  fixture.game._handleGoalDetection();
+  fixture.game.matchFlow.detectGoal(fixture.game.context());
+  fixture.game.matchFlow.detectGoal(fixture.game.context());
 
   assertEqual(fixture.homeTeam.score, 1);
   assertEqual(fixture.awayTeam.score, 0);
@@ -120,10 +122,12 @@ test("A home goal updates the score and starts an away kickoff once", function()
 
 test("An away goal updates the score and starts a home kickoff", function() {
   var fixture = makeFixture();
+  fixture.game.restartController.clear();
+  fixture.game.matchFlow.state = "normalPlay";
   fixture.ball.position.x = 336;
   fixture.ball.position.y = 758;
 
-  fixture.game._handleGoalDetection();
+  fixture.game.matchFlow.detectGoal(fixture.game.context());
 
   assertEqual(fixture.homeTeam.score, 0);
   assertEqual(fixture.awayTeam.score, 1);
@@ -135,10 +139,12 @@ test("An away goal updates the score and starts a home kickoff", function() {
 
 test("A home goal kickoff waits for fresh input after positioning", function() {
   var fixture = makeFixture({ homeTeamSize: 1, awayTeamSize: 1 });
+  fixture.game.restartController.clear();
+  fixture.game.matchFlow.state = "normalPlay";
   fixture.ball.position.x = 336;
   fixture.ball.position.y = 758;
 
-  fixture.game._handleGoalDetection();
+  fixture.game.matchFlow.detectGoal(fixture.game.context());
   fixture.game.cutscene._clear(fixture.game);
 
   assertEqual(fixture.game.restartController.phase(), "waitingForInput");

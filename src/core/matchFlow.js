@@ -1,5 +1,6 @@
-var MatchFlow = function(restartController, boundaryDetector) {
+var MatchFlow = function(restartController, goalDetector, boundaryDetector) {
   this.restartController = restartController;
+  this._goalDetector = goalDetector;
   this._boundaryDetector = boundaryDetector;
   this._outOfPlay = null;
   this.state = "normalPlay";
@@ -69,6 +70,31 @@ MatchFlow.prototype.isRestartActive = function() {
 MatchFlow.prototype.isOutOfPlay = function() {
   return this.state == "outOfPlay" ||
     (this.state == "paused" && this.stateBeforePause == "outOfPlay");
+};
+
+MatchFlow.prototype.detectPostPhysicsEvents = function(context) {
+  if (this.detectGoal(context)) return true;
+  return this.detectOutOfPlay(context);
+};
+
+MatchFlow.prototype.detectGoal = function(context) {
+  if (this.state != "normalPlay") return false;
+  var scoredBy = this._goalDetector.update();
+  if (scoredBy == null) return false;
+
+  var scoringTeam = null;
+  var concedingTeam = null;
+  for (var i = 0; i < context.teams.length; i++) {
+    if (context.teams[i].side == scoredBy) {
+      scoringTeam = context.teams[i];
+    } else {
+      concedingTeam = context.teams[i];
+    }
+  }
+  if (scoringTeam == null || concedingTeam == null) return false;
+
+  scoringTeam.score++;
+  return this._startRestart({ type: "kickoff", awardedTo: concedingTeam.side }, context);
 };
 
 MatchFlow.prototype.detectOutOfPlay = function(context) {
