@@ -7,6 +7,7 @@ var assertEqual = testlib.assertEqual;
 
 test("Game composes explicit controllers without putting them on Stadium", function() {
   var fixture = makeFixture();
+  var context = fixture.game.context();
 
   assertEqual(fixture.game.teamAis.length, 2);
   assertTrue(fixture.game.humanController !== null);
@@ -16,6 +17,8 @@ test("Game composes explicit controllers without putting them on Stadium", funct
   assertEqual(fixture.game.debugLog, undefined);
   assertEqual(fixture.game.boundaryDetector, undefined);
   assertEqual(fixture.stadium._updateAi, undefined);
+  assertEqual(context.game, undefined);
+  assertTrue(context.camera === fixture.game.camera);
 });
 
 test("Game update contains no kickoff-specific branch", function() {

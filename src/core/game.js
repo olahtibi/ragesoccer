@@ -17,13 +17,13 @@ var Game = function(options) {
 
 Game.prototype.context = function() {
   return {
-    game: this,
     config: this.config,
     stadium: this.stadium,
     ball: this.stadium.ball,
     teams: this.teams,
     teamAis: this.teamAis,
-    humanController: this.humanController
+    humanController: this.humanController,
+    camera: this.camera
   };
 };
 
@@ -59,17 +59,17 @@ Game.prototype.update = function() {
     this.physics.resetClock();
   } else if (mode == "ballOnly") {
     this.physics.updateBallOnly();
-    this.matchFlow.updateAfterPhysics(context);
+    this.matchFlow.updateAfterPhysics(context, this.physics.lastDt);
   } else if (mode == "playersOnly") {
     this.matchFlow.updateBeforePhysics(context);
     this.physics.updatePlayersOnly();
-    this.matchFlow.updateAfterPhysics(context);
+    this.matchFlow.updateAfterPhysics(context, this.physics.lastDt);
   } else {
     this._updateAi();
     var canMove = !this.matchFlow.isRestartActive() || this.restartController.canTeamMove(this.teams[0]);
     this.humanController.update(canMove);
     this.physics.update();
-    this.matchFlow.updateAfterPhysics(context);
+    this.matchFlow.updateAfterPhysics(context, this.physics.lastDt);
     if (!this._handleGoalDetection()) this.matchFlow.detectOutOfPlay(context);
   }
   this.debugTool.record(this);

@@ -98,11 +98,11 @@ test("Opponent kickoff ignores input and starts after its configured delay", fun
   assertEqual(setupResult.fixture.playerHome.velocity.x, 0);
 
   setupResult.fixture.physics.lastDt = 0.5;
-  setupResult.game.restartController.updateAfterPhysics(setupResult.game.context());
+  setupResult.game.restartController.updateAfterPhysics(setupResult.game.context(), 0.5);
   assertEqual(setupResult.game.restartController.phase(), "waitingForInput");
 
   setupResult.fixture.physics.lastDt = 0.5;
-  setupResult.game.restartController.updateAfterPhysics(setupResult.game.context());
+  setupResult.game.restartController.updateAfterPhysics(setupResult.game.context(), 0.5);
   assertEqual(setupResult.game.restartController.phase(), "inProgress");
 });
 
@@ -112,7 +112,7 @@ test("Keyboard direction executes a human throw-in and clamps it inward", functi
     boundary: "left",
     position: new Vector2d(setupResult.fixture.config.pitch.fieldLeft, setupResult.fixture.config.pitch.aiCenterY)
   });
-  setupResult.game.cutscene.updateBeforePhysics(setupResult.game);
+  setupResult.game.cutscene.updateBeforePhysics(setupResult.game.context());
   setupResult.game.cutscene._clear(setupResult.game);
 
   setupResult.input.handleKey({ keyCode: 37, type: "keydown" });
@@ -128,7 +128,7 @@ test("Touch direction executes a human throw-in and clamps it inward", function(
     boundary: "right",
     position: new Vector2d(setupResult.fixture.config.pitch.fieldRight, setupResult.fixture.config.pitch.aiCenterY)
   });
-  setupResult.game.cutscene.updateBeforePhysics(setupResult.game);
+  setupResult.game.cutscene.updateBeforePhysics(setupResult.game.context());
   setupResult.game.cutscene._clear(setupResult.game);
   var scale = setupResult.fixture.config.computeScaleBy();
 

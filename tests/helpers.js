@@ -175,7 +175,7 @@ function advanceReplayFrame(game, dt) {
   if (game.matchFlow.simulationMode() == "ballOnly") {
     game.physics.lastDt = dt;
     game.physics._updateBallPosition(dt);
-    game.matchFlow.updateAfterPhysics(game.context());
+    game.matchFlow.updateAfterPhysics(game.context(), dt);
     return;
   }
   game._updateAi();
@@ -185,7 +185,7 @@ function advanceReplayFrame(game, dt) {
   game.physics._updatePlayerPositions(dt);
   game.physics._resolveBallPlayerContacts();
   game.physics._updateBallPosition(dt);
-  game.matchFlow.updateAfterPhysics(game.context());
+  game.matchFlow.updateAfterPhysics(game.context(), dt);
   if (!game._handleGoalDetection()) game.matchFlow.detectOutOfPlay(game.context());
 }
 

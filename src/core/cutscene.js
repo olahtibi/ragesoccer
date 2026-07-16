@@ -43,32 +43,32 @@ CutsceneController.prototype.isReadyForInput = function() {
   return false;
 };
 
-CutsceneController.prototype.updateBeforePhysics = function(game) {
+CutsceneController.prototype.updateBeforePhysics = function(context) {
   if (!this._active) return;
-  this._lockBall(game.stadium.ball);
-  if (game.camera != null && game.camera.setFocusTarget != null) {
-    game.camera.setFocusTarget(this._ballPosition);
+  this._lockBall(context.ball);
+  if (context.camera != null && context.camera.setFocusTarget != null) {
+    context.camera.setFocusTarget(this._ballPosition);
   }
-  this._updatePlayers(game);
+  this._updatePlayers(context);
 };
 
-CutsceneController.prototype.updateAfterPhysics = function(game) {
+CutsceneController.prototype.updateAfterPhysics = function(context) {
   if (!this._active) return;
-  this._lockBall(game.stadium.ball);
-  var allPlayersArrived = this._updatePlayers(game);
-  var cameraArrived = game.camera == null || game.camera.hasArrivedAtFocus == null ||
-    game.camera.hasArrivedAtFocus();
-  if (allPlayersArrived && cameraArrived) this._clear(game);
+  this._lockBall(context.ball);
+  var allPlayersArrived = this._updatePlayers(context);
+  var cameraArrived = context.camera == null || context.camera.hasArrivedAtFocus == null ||
+    context.camera.hasArrivedAtFocus();
+  if (allPlayersArrived && cameraArrived) this._clear(context);
 };
 
-CutsceneController.prototype.update = function(game) {
-  this.updateBeforePhysics(game);
-  this.updateAfterPhysics(game);
+CutsceneController.prototype.update = function(context) {
+  this.updateBeforePhysics(context);
+  this.updateAfterPhysics(context);
 };
 
-CutsceneController.prototype.cancel = function(game) {
+CutsceneController.prototype.cancel = function(context) {
   this._onComplete = null;
-  this._clear(game);
+  this._clear(context);
 };
 
 // Private helpers
@@ -85,13 +85,13 @@ CutsceneController.prototype._validRestartOptions = function(options) {
   return true;
 };
 
-CutsceneController.prototype._updatePlayers = function(game) {
+CutsceneController.prototype._updatePlayers = function(context) {
   var allArrived = true;
   for (var t = 0; t < this._sceneTeams.length; t++) {
     var sceneTeam = this._sceneTeams[t];
     for (var i = 0; i < sceneTeam.players.length; i++) {
       if (!this._movePlayerToTarget(
-        game,
+        context,
         sceneTeam.players[i],
         sceneTeam.positions[i],
         sceneTeam.side
@@ -111,7 +111,7 @@ CutsceneController.prototype._stopPlayers = function() {
   }
 };
 
-CutsceneController.prototype._movePlayerToTarget = function(game, player, target, side) {
+CutsceneController.prototype._movePlayerToTarget = function(context, player, target, side) {
   var distance = MathLib.computeDistance(player.position, target);
   var dx = target.x - player.position.x;
   var dy = target.y - player.position.y;
@@ -127,7 +127,7 @@ CutsceneController.prototype._movePlayerToTarget = function(game, player, target
   player.velocity = MathLib.computeVelocityForTarget(
     player.position,
     target,
-    game.config.teamVelocity(side)
+    context.config.teamVelocity(side)
   );
   return false;
 };
@@ -141,15 +141,15 @@ CutsceneController.prototype._lockBall = function(ball) {
   ball.velocity.z = 0;
 };
 
-CutsceneController.prototype._clear = function(game) {
+CutsceneController.prototype._clear = function(context) {
   var onComplete = this._onComplete;
   this._active = false;
   this._ballPosition = null;
   this._sceneTeams = [];
   this._readyPlayer = null;
   this._onComplete = null;
-  if (game != null && game.camera != null && game.camera.clearFocusTarget != null) {
-    game.camera.clearFocusTarget();
+  if (context != null && context.camera != null && context.camera.clearFocusTarget != null) {
+    context.camera.clearFocusTarget();
   }
-  if (onComplete != null) onComplete(game);
+  if (onComplete != null) onComplete(context);
 };

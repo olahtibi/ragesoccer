@@ -13,7 +13,10 @@ function enterOutOfPlay(fixture) {
 
 function completeOutOfPlayDelay(fixture) {
   fixture.physics.lastDt = fixture.config.restarts.outOfPlayDelaySeconds;
-  fixture.game.matchFlow.updateAfterPhysics(fixture.game.context());
+  fixture.game.matchFlow.updateAfterPhysics(
+    fixture.game.context(),
+    fixture.config.restarts.outOfPlayDelaySeconds
+  );
 }
 
 test("MatchFlow delegates its pre-physics update only during a restart", function() {
@@ -114,17 +117,26 @@ test("MatchFlow pauses and resumes an out-of-play delay", function() {
   var fixture = makeFixture();
   enterOutOfPlay(fixture);
   fixture.physics.lastDt = fixture.config.restarts.outOfPlayDelaySeconds / 2;
-  fixture.game.matchFlow.updateAfterPhysics(fixture.game.context());
+  fixture.game.matchFlow.updateAfterPhysics(
+    fixture.game.context(),
+    fixture.config.restarts.outOfPlayDelaySeconds / 2
+  );
 
   fixture.game.matchFlow.pause();
   fixture.physics.lastDt = fixture.config.restarts.outOfPlayDelaySeconds;
-  fixture.game.matchFlow.updateAfterPhysics(fixture.game.context());
+  fixture.game.matchFlow.updateAfterPhysics(
+    fixture.game.context(),
+    fixture.config.restarts.outOfPlayDelaySeconds
+  );
 
   assertEqual(fixture.game.matchFlow.isOutOfPlay(), true);
   assertEqual(fixture.game.matchFlow.simulationMode(), "none");
 
   fixture.game.matchFlow.resume();
-  fixture.game.matchFlow.updateAfterPhysics(fixture.game.context());
+  fixture.game.matchFlow.updateAfterPhysics(
+    fixture.game.context(),
+    fixture.config.restarts.outOfPlayDelaySeconds / 2
+  );
 
   assertEqual(fixture.game.matchFlow.state, "restart");
   assertEqual(fixture.game.restartController.type(), "throwIn");

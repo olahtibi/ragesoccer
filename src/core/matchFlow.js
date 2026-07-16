@@ -45,13 +45,13 @@ MatchFlow.prototype.updateBeforePhysics = function(context) {
   this.restartController.updateBeforePhysics(context);
 };
 
-MatchFlow.prototype.updateAfterPhysics = function(context) {
+MatchFlow.prototype.updateAfterPhysics = function(context, deltaSeconds) {
   if (this.state == "outOfPlay") {
-    this._updateOutOfPlay(context);
+    this._updateOutOfPlay(context, deltaSeconds);
     return;
   }
   if (this.state != "restart") return;
-  this.restartController.updateAfterPhysics(context);
+  this.restartController.updateAfterPhysics(context, deltaSeconds);
   if (this.restartController.isComplete()) {
     this.state = "normalPlay";
     this.restartController.clear();
@@ -111,9 +111,9 @@ MatchFlow.prototype._stopPlayers = function(players) {
   }
 };
 
-MatchFlow.prototype._updateOutOfPlay = function(context) {
+MatchFlow.prototype._updateOutOfPlay = function(context, deltaSeconds) {
   if (this._outOfPlay == null) return false;
-  this._outOfPlay.elapsed += context.game.physics.lastDt || 0;
+  this._outOfPlay.elapsed += deltaSeconds || 0;
   if (this._outOfPlay.elapsed < context.config.restarts.outOfPlayDelaySeconds) return false;
   return this._beginOutOfPlayRestart(context);
 };

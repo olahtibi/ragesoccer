@@ -58,7 +58,7 @@ test("Cutscene locks ball and moves players toward explicit targets", function()
       }
     ]
   });
-  game.cutscene.update(game);
+  game.cutscene.update(game.context());
 
   assertEqual(fixture.ball.position.x, 334);
   assertEqual(fixture.ball.position.y, 433);
@@ -96,12 +96,12 @@ test("Cutscene waits for players and camera before completing", function() {
     ]
   });
 
-  game.cutscene.update(game);
+  game.cutscene.update(game.context());
   assertEqual(game.cutscene.isActive(), true);
   assertTrue(game.camera.focusTarget !== null);
 
   cameraArrived = true;
-  game.cutscene.update(game);
+  game.cutscene.update(game.context());
 
   assertEqual(game.cutscene.isActive(), false);
   assertEqual(game.camera.focusTarget, null);
@@ -153,7 +153,7 @@ test("Cutscene ignores pre-cutscene velocity when moving players to targets", fu
       }
     ]
   });
-  game.cutscene.updateBeforePhysics(game);
+  game.cutscene.updateBeforePhysics(game.context());
 
   assertEqual(fixture.awayPlayers[0].position.x, 80);
   assertEqual(fixture.awayPlayers[0].position.y, 100);
@@ -202,7 +202,7 @@ test("Cancelling a ready cutscene does not snap unfinished players", function() 
       positions: [new Vector2d(120, 100), new Vector2d(400, 400)]
     }]
   });
-  game.cutscene.cancel(game);
+  game.cutscene.cancel(game.context());
 
   assertEqual(game.cutscene.isActive(), false);
   assertEqual(fixture.homePlayers[1].position.x, 300);

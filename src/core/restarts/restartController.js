@@ -84,7 +84,7 @@ RestartController.prototype._assignTeamAiStates = function(context) {
 RestartController.prototype._resume = function(context, direction) {
   if (!this._canResume()) return false;
   if (this._session.phase == "positioning") {
-    this._cutscene.cancel(context.game);
+    this._cutscene.cancel(context);
     this._finishPositioning(context);
   }
   if (this._session.strategy.resume != null &&
@@ -156,24 +156,24 @@ RestartController.prototype.positioningTargets = function(team) {
 
 RestartController.prototype.updateBeforePhysics = function(context) {
   if (this._session != null && this._session.phase == "positioning") {
-    this._cutscene.updateBeforePhysics(context.game);
+    this._cutscene.updateBeforePhysics(context);
   }
 };
 
-RestartController.prototype.updateAfterPhysics = function(context) {
+RestartController.prototype.updateAfterPhysics = function(context, deltaSeconds) {
   if (this._session == null) return;
   if (this._session.phase == "positioning") {
-    this._cutscene.updateAfterPhysics(context.game);
+    this._cutscene.updateAfterPhysics(context);
     if (this._session.phase == "waitingForInput" &&
         this._session.strategy.opponentAutoResumeAfterPositioning == true) {
       this._session.opponentReadyElapsed = 0;
       return;
     }
-    this._resumeReadyRestart(context);
+    this._resumeReadyRestart(context, deltaSeconds);
     return;
   }
   if (this._session.phase == "waitingForInput") {
-    this._resumeReadyRestart(context);
+    this._resumeReadyRestart(context, deltaSeconds);
     return;
   }
   if (this._session.phase != "inProgress") return;
@@ -184,7 +184,7 @@ RestartController.prototype.updateAfterPhysics = function(context) {
   }
 };
 
-RestartController.prototype._resumeReadyRestart = function(context) {
+RestartController.prototype._resumeReadyRestart = function(context, deltaSeconds) {
   if (this._session == null) return false;
   if (this._session.request.awardedTo != "home") {
     var canAutoResume = this._session.strategy.allowEarlyResume == true ||
@@ -199,7 +199,7 @@ RestartController.prototype._resumeReadyRestart = function(context) {
       this._session.opponentReadyElapsed = 0;
       return false;
     }
-    this._session.opponentReadyElapsed += context.game.physics.lastDt || 0;
+    this._session.opponentReadyElapsed += deltaSeconds || 0;
     var delay = Math.max(0, context.config.restarts.opponentDelaySeconds || 0);
     if (this._session.opponentReadyElapsed < delay) return false;
     return this._resume(context, null);
