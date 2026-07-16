@@ -25,9 +25,11 @@ var Player = function(imgPlayer, position, playerSpriteWidth, playerSpriteHeight
     this.animationIdleGraceSeconds = animationConfig.animationIdleGraceSeconds || 0.05;
     this.animationMaxDeltaSeconds = animationConfig.animationMaxDeltaSeconds || 0.1;
     this.spriteSourceRowHeight = animationConfig.spriteSourceRowHeight || 18;
-    // Walk-cycle state advanced by Physics in step with
-    // distance actually travelled (not wall-clock time), so the animation
-    // naturally freezes when nothing is moving — including during pause.
+    this._stepPxPerPhase = animationConfig.stepPxPerPhase;
+    this._spritePhases = animationConfig.spritePhases;
+    this._lastAnimationPosition = new Vector2d(this.position.x, this.position.y);
+    // Walk-cycle state advances with rendered travel rather than wall-clock
+    // time, so the animation naturally freezes when the player does.
     this.phaseIndex = 0;
     this.stepDistance = 0;
 };
@@ -97,6 +99,7 @@ Player.prototype.animationElapsedSeconds = function(nowMs) {
 Player.prototype.updateAnimation = function(nowMs) {
     nowMs = nowMs == null ? this.animationNowMs() : nowMs;
     var elapsed = this.animationElapsedSeconds(nowMs);
+    this._updateWalkAnimation();
     var moving = this.velocity.x != 0 || this.velocity.y != 0;
     this.updateFacing();
 
@@ -142,6 +145,21 @@ Player.prototype.updateAnimation = function(nowMs) {
         this.animationFacingX = animationFacing.x;
         this.animationFacingY = animationFacing.y;
     }
+};
+
+Player.prototype._updateWalkAnimation = function() {
+    var dx = this.position.x - this._lastAnimationPosition.x;
+    var dy = this.position.y - this._lastAnimationPosition.y;
+    var distance = MathLib.vectorLength(dx, dy);
+    if(distance > 0) {
+        this.stepDistance += distance;
+        while(this.stepDistance >= this._stepPxPerPhase) {
+            this.phaseIndex = (this.phaseIndex + 1) % this._spritePhases;
+            this.stepDistance -= this._stepPxPerPhase;
+        }
+    }
+    this._lastAnimationPosition.x = this.position.x;
+    this._lastAnimationPosition.y = this.position.y;
 };
 
 Player.prototype.draw = function(ctx) {

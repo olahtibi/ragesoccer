@@ -84,24 +84,10 @@ Physics.prototype._updateStats = function(currentTime) {
 };
 
 Physics.prototype._updatePlayerPositions = function(dt) {
-  var pxPerPhase = this.config.player.stepPxPerPhase;
   for (var i = 0; i < this.stadium.players.length; i++) {
     var p = this.stadium.players[i];
-    var moveX = p.velocity.x * dt;
-    var moveY = p.velocity.y * dt;
-    p.position.x += moveX;
-    p.position.y += moveY;
-    // Walk-cycle: advance one sprite phase for every `playerStepPxPerPhase`
-    // pixels of travel. Ties the animation speed to actual motion, so a
-    // stopped or paused player never steps in place.
-    var stepDist = MathLib.vectorLength(moveX, moveY);
-    if (stepDist > 0) {
-      p.stepDistance += stepDist;
-      while (p.stepDistance >= pxPerPhase) {
-        p.phaseIndex = (p.phaseIndex + 1) % this.config.player.spritePhases;
-        p.stepDistance -= pxPerPhase;
-      }
-    }
+    p.position.x += p.velocity.x * dt;
+    p.position.y += p.velocity.y * dt;
   }
 };
 

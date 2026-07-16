@@ -3,6 +3,7 @@ var makeFixture = require("../helpers").makeFixture;
 
 var test = testlib.test;
 var assertEqual = testlib.assertEqual;
+var assertNear = testlib.assertNear;
 
 test("Player updateFacing maps movement vectors", function() {
   var fixture = makeFixture();
@@ -88,6 +89,37 @@ test("Player draw does not reset walk state when velocity is momentarily zero", 
 
   assertEqual(player.phaseIndex, 1);
   assertEqual(player.stepDistance, 2);
+});
+
+test("Player advances its walk phase from distance travelled when rendered", function() {
+  var fixture = makeFixture();
+  var player = fixture.playerHome;
+  player.velocity.x = 10;
+
+  fixture.physics._updatePlayerPositions(1);
+
+  assertEqual(player.phaseIndex, 0);
+  assertEqual(player.stepDistance, 0);
+
+  var sprite = player.spriteFrame(0);
+
+  assertEqual(sprite.phaseIndex, 2);
+  assertEqual(player.phaseIndex, 2);
+  assertNear(player.stepDistance, 2, 0.0001);
+});
+
+test("Player preserves partial walk distance while stationary", function() {
+  var fixture = makeFixture();
+  var player = fixture.playerHome;
+  player.velocity.x = 3;
+  fixture.physics._updatePlayerPositions(1);
+
+  player.spriteFrame(0);
+  player.velocity.x = 0;
+  player.spriteFrame(100);
+
+  assertEqual(player.phaseIndex, 0);
+  assertNear(player.stepDistance, 3, 0.0001);
 });
 
 test("Player animation adopts its initial movement direction immediately", function() {

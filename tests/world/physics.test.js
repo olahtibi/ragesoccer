@@ -6,7 +6,7 @@ var assertTrue = testlib.assertTrue;
 var assertEqual = testlib.assertEqual;
 var assertNear = testlib.assertNear;
 
-test("Physics advances player position and walk phase by travelled distance", function() {
+test("Physics advances player position without managing walk animation", function() {
   var fixture = makeFixture();
   var startX = fixture.playerHome.position.x;
   var startY = fixture.playerHome.position.y;
@@ -17,8 +17,8 @@ test("Physics advances player position and walk phase by travelled distance", fu
 
   assertNear(fixture.playerHome.position.x, startX + 10, 0.0001);
   assertNear(fixture.playerHome.position.y, startY, 0.0001);
-  assertEqual(fixture.playerHome.phaseIndex, 2);
-  assertNear(fixture.playerHome.stepDistance, 2, 0.0001);
+  assertEqual(fixture.playerHome.phaseIndex, 0);
+  assertEqual(fixture.playerHome.stepDistance, 0);
 });
 
 test("Ball position does not mutate configured initial ball position", function() {
@@ -33,9 +33,11 @@ test("Ball position does not mutate configured initial ball position", function(
   assertNear(fixture.config.pitch.initialBallPosition.y, initialY, 0.0001);
 });
 
-test("Physics advances every player in the stadium", function() {
+test("Physics advances every player in the stadium without managing animation", function() {
   var fixture = makeFixture({ homeTeamSize: 2, awayTeamSize: 2 });
+  var startXs = [];
   for (var i = 0; i < fixture.stadium.players.length; i++) {
+    startXs.push(fixture.stadium.players[i].position.x);
     fixture.stadium.players[i].velocity.x = 10;
     fixture.stadium.players[i].velocity.y = 0;
   }
@@ -43,8 +45,9 @@ test("Physics advances every player in the stadium", function() {
   fixture.physics._updatePlayerPositions(1);
 
   for (var j = 0; j < fixture.stadium.players.length; j++) {
-    assertNear(fixture.stadium.players[j].stepDistance, 2, 0.0001);
-    assertEqual(fixture.stadium.players[j].phaseIndex, 2);
+    assertNear(fixture.stadium.players[j].position.x, startXs[j] + 10, 0.0001);
+    assertEqual(fixture.stadium.players[j].stepDistance, 0);
+    assertEqual(fixture.stadium.players[j].phaseIndex, 0);
   }
 });
 
@@ -58,7 +61,7 @@ test("Physics advances a full 22-player match", function() {
   fixture.physics._updatePlayerPositions(0.5);
 
   for (var j = 0; j < fixture.stadium.players.length; j++) {
-    assertNear(fixture.stadium.players[j].stepDistance, 1, 0.0001);
+    assertEqual(fixture.stadium.players[j].stepDistance, 0);
   }
 });
 

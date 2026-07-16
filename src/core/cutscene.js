@@ -122,7 +122,6 @@ CutsceneController.prototype._movePlayerToTarget = function(game, player, target
     player.position.y = target.y;
     player.velocity.x = 0;
     player.velocity.y = 0;
-    player.stepDistance = 0;
     return true;
   }
   player.velocity = MathLib.computeVelocityForTarget(
