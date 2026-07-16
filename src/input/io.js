@@ -16,7 +16,7 @@ BrowserInput.prototype.attach = function() {
 BrowserInput.prototype.handleTouch = function(event) {
   if ((this.game.matchFlow.simulationMode() == "playersOnly" &&
       !this.game.restartController.canResumeFromInput()) || this.game.isPaused() ||
-      this.game.isOutOfPlayPending()) return;
+      this.game.matchFlow.isOutOfPlay()) return;
   var scaleBy = this.game.config.computeScaleBy();
   var target = new Vector2d(
     -this.game.camera.position.x + event.touches[0].clientX / scaleBy,
@@ -44,7 +44,7 @@ BrowserInput.prototype.handleKey = function(event) {
 
 BrowserInput.prototype.applyHumanInput = function() {
   if (this.game.isPaused() || this.game.matchFlow.simulationMode() == "playersOnly" ||
-      this.game.isOutOfPlayPending()) return;
+      this.game.matchFlow.isOutOfPlay()) return;
   this.game.humanController.selectPlayer();
   var canMove = !this.game.matchFlow.isRestartActive() ||
     this.game.restartController.canTeamMove(this.game.teams[0]);
@@ -56,7 +56,7 @@ BrowserInput.prototype.handleCommand = function(keyCode) {
   if (keyCode == 81) this.game.config.viewport.ratio /= 1.2;
   if (keyCode == 87) this.game.config.viewport.ratio *= 1.2;
   if (keyCode == 67 && this.game.config.debug.enabled == true &&
-      !this.game.isOutOfPlayPending()) {
+      !this.game.matchFlow.isOutOfPlay()) {
     var cornerX = this.game.stadium.ball.position.x <=
       this.game.config.pitch.initialBallPosition.x ?
       this.game.config.pitch.fieldLeft : this.game.config.pitch.fieldRight;

@@ -6,13 +6,11 @@ var Game = function(options) {
   this.camera = options.camera;
   this.physics = options.physics;
   this.goalDetector = options.goalDetector;
-  this.boundaryDetector = options.boundaryDetector;
   this.humanController = options.humanController;
   this.cutscene = options.cutscene;
   this.restartController = options.restartController;
   this.matchFlow = options.matchFlow;
   this.debugLog = options.debugLog;
-  this._pendingOutOfPlay = null;
 };
 
 // Public API
@@ -42,12 +40,7 @@ Game.prototype.togglePause = function() {
 };
 
 Game.prototype.resumeFromInput = function(direction) {
-  if (this.isOutOfPlayPending()) return false;
   return this.matchFlow.resumeFromInput(this.context(), direction);
-};
-
-Game.prototype.isOutOfPlayPending = function() {
-  return this._pendingOutOfPlay != null;
 };
 
 Game.prototype.beginRestart = function(type, awardedTo, details) {
@@ -61,19 +54,12 @@ Game.prototype.beginRestart = function(type, awardedTo, details) {
 
 Game.prototype.update = function() {
   var context = this.context();
-  if (this.isOutOfPlayPending()) {
-    if (this.isPaused()) {
-      this.physics.resetClock();
-    } else {
-      this.physics.updateBallOnly();
-      this._updatePendingOutOfPlay();
-    }
-    this.debugLog.record(this);
-    return;
-  }
   var mode = this.matchFlow.simulationMode();
   if (mode == "none") {
     this.physics.resetClock();
+  } else if (mode == "ballOnly") {
+    this.physics.updateBallOnly();
+    this.matchFlow.updateAfterPhysics(context);
   } else if (mode == "playersOnly") {
     this.restartController.updateBeforePhysics(context);
     this.physics.updatePlayersOnly();
@@ -84,7 +70,7 @@ Game.prototype.update = function() {
     this.humanController.update(canMove);
     this.physics.update();
     this.matchFlow.updateAfterPhysics(context);
-    if (!this._handleGoalDetection()) this._handleBoundaryDetection();
+    if (!this._handleGoalDetection()) this.matchFlow.detectOutOfPlay(context);
   }
   this.debugLog.record(this);
 };
@@ -134,64 +120,6 @@ Game.prototype._handleGoalDetection = function() {
   return true;
 };
 
-Game.prototype._handleBoundaryDetection = function() {
-  var event = this.boundaryDetector.update();
-  if (event == null) return false;
-  if (event.lastTouchedBy == null) {
-    this.stadium.ball.position.x = event.lastInBounds.x;
-    this.stadium.ball.position.y = event.lastInBounds.y;
-    this.stadium.ball.position.z = 0;
-    this.stadium.ball.velocity.x = 0;
-    this.stadium.ball.velocity.y = 0;
-    this.stadium.ball.velocity.z = 0;
-    this.boundaryDetector.reset();
-    return false;
-  }
-
-  this._pendingOutOfPlay = { event: event, elapsed: 0 };
-  this._stopPlayersForOutOfPlay();
-  return true;
-};
-
-Game.prototype._stopPlayersForOutOfPlay = function() {
-  for (var i = 0; i < this.stadium.players.length; i++) {
-    this.stadium.players[i].velocity.x = 0;
-    this.stadium.players[i].velocity.y = 0;
-  }
-};
-
-Game.prototype._updatePendingOutOfPlay = function() {
-  if (!this.isOutOfPlayPending()) return false;
-  this._pendingOutOfPlay.elapsed += this.physics.lastDt || 0;
-  if (this._pendingOutOfPlay.elapsed < this.config.restarts.outOfPlayDelaySeconds) return false;
-  var event = this._pendingOutOfPlay.event;
-  this._pendingOutOfPlay = null;
-  return this._beginOutOfPlayRestart(event);
-};
-
-Game.prototype._beginOutOfPlayRestart = function(event) {
-  var awardedTo;
-  var type;
-  if (event.boundary == "left" || event.boundary == "right") {
-    type = "throwIn";
-    awardedTo = event.lastTouchedBy == "home" ? "away" : "home";
-  } else {
-    var defendingSide = event.boundary == "top" ? "away" : "home";
-    var attackingSide = defendingSide == "home" ? "away" : "home";
-    if (event.lastTouchedBy == attackingSide) {
-      type = "goalKick";
-      awardedTo = defendingSide;
-    } else {
-      type = "corner";
-      awardedTo = attackingSide;
-    }
-  }
-  return this.beginRestart(type, awardedTo, {
-    boundary: event.boundary,
-    position: event.position
-  });
-};
-
 Game.prototype._drawAiDebug = function(ctx) {
   for (var i = 0; i < this.teamAis.length; i++) {
     this.teamAis[i].draw(ctx);
@@ -225,7 +153,7 @@ function createGame(config) {
   registry.register("corner", new CornerRestart(config));
   registry.register("goalKick", new GoalKickRestart(config));
   var restartController = new RestartController(registry, cutscene);
-  var matchFlow = new MatchFlow(restartController);
+  var matchFlow = new MatchFlow(restartController, boundaryDetector);
   var game = new Game({
     config: config,
     stadium: stadium,
@@ -234,7 +162,6 @@ function createGame(config) {
     camera: camera,
     physics: physics,
     goalDetector: goalDetector,
-    boundaryDetector: boundaryDetector,
     humanController: humanController,
     cutscene: cutscene,
     restartController: restartController,

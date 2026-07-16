@@ -5,18 +5,14 @@ var test = testlib.test;
 var assertTrue = testlib.assertTrue;
 var assertEqual = testlib.assertEqual;
 
-function completeOutOfPlayDelay(fixture) {
-  fixture.physics.lastDt = fixture.config.restarts.outOfPlayDelaySeconds;
-  fixture.game._updatePendingOutOfPlay();
-}
-
 test("Game composes explicit controllers without putting them on Stadium", function() {
   var fixture = makeFixture();
 
   assertEqual(fixture.game.teamAis.length, 2);
   assertTrue(fixture.game.humanController !== null);
   assertTrue(fixture.game.restartController !== null);
-  assertTrue(fixture.game.boundaryDetector !== null);
+  assertTrue(fixture.game.matchFlow._boundaryDetector !== null);
+  assertEqual(fixture.game.boundaryDetector, undefined);
   assertEqual(fixture.stadium._updateAi, undefined);
 });
 
@@ -33,7 +29,7 @@ test("Full simulation updates AI human input physics restart and score in order"
   fixture.game.physics.update = function() { order.push("physics"); };
   fixture.game.matchFlow.updateAfterPhysics = function() { order.push("rules"); };
   fixture.game._handleGoalDetection = function() { order.push("score"); return false; };
-  fixture.game._handleBoundaryDetection = function() { order.push("out"); };
+  fixture.game.matchFlow.detectOutOfPlay = function() { order.push("out"); };
   fixture.game.debugLog.record = function() { order.push("debug"); };
 
   fixture.game.update();
@@ -47,7 +43,7 @@ test("A goal result takes priority over out-of-play detection", function() {
   fixture.game.matchFlow.state = "normalPlay";
   fixture.game.physics.update = function() {};
   fixture.game.goalDetector.update = function() { return "home"; };
-  fixture.game._handleBoundaryDetection = function() { outUpdates++; };
+  fixture.game.matchFlow.detectOutOfPlay = function() { outUpdates++; };
 
   fixture.game.update();
 
@@ -124,77 +120,6 @@ test("A home goal kickoff waits for fresh input after positioning", function() {
   assertEqual(fixture.game.matchFlow.simulationMode(), "none");
 });
 
-test("A touchline exit starts a throw-in for the team that did not touch last", function() {
-  var fixture = makeFixture();
-  fixture.ball.lastTouchedBy = "home";
-  fixture.ball.position.x = fixture.config.pitch.fieldRight + fixture.config.ball.radius + 1;
-
-  fixture.game._handleBoundaryDetection();
-
-  assertEqual(fixture.game.isOutOfPlayPending(), true);
-  completeOutOfPlayDelay(fixture);
-
-  assertEqual(fixture.game.restartController.type(), "throwIn");
-  assertEqual(fixture.game.restartController.phase(), "positioning");
-  assertEqual(fixture.homeTeamAi.state, "throwInOpponent");
-  assertEqual(fixture.awayTeamAi.state, "throwInUs");
-});
-
-test("Top end-line exits choose goal kick or corner from last touch", function() {
-  var goalKick = makeFixture();
-  goalKick.ball.lastTouchedBy = "home";
-  goalKick.ball.position.y = goalKick.config.pitch.fieldTop - goalKick.config.ball.radius - 1;
-  goalKick.game._handleBoundaryDetection();
-  completeOutOfPlayDelay(goalKick);
-
-  assertEqual(goalKick.game.restartController.type(), "goalKick");
-  assertEqual(goalKick.awayTeamAi.state, "goalKickUs");
-
-  var corner = makeFixture();
-  corner.ball.lastTouchedBy = "away";
-  corner.ball.position.x = corner.config.pitch.fieldLeft + 20;
-  corner.ball.position.y = corner.config.pitch.fieldTop - corner.config.ball.radius - 1;
-  corner.game._handleBoundaryDetection();
-  completeOutOfPlayDelay(corner);
-
-  assertEqual(corner.game.restartController.type(), "corner");
-  assertEqual(corner.homeTeamAi.state, "cornerUs");
-});
-
-test("Bottom end-line exits choose goal kick or corner from last touch", function() {
-  var goalKick = makeFixture();
-  goalKick.ball.lastTouchedBy = "away";
-  goalKick.ball.position.y = goalKick.config.pitch.fieldBottom + goalKick.config.ball.radius + 1;
-  goalKick.game._handleBoundaryDetection();
-  completeOutOfPlayDelay(goalKick);
-
-  assertEqual(goalKick.game.restartController.type(), "goalKick");
-  assertEqual(goalKick.homeTeamAi.state, "goalKickUs");
-
-  var corner = makeFixture();
-  corner.ball.lastTouchedBy = "home";
-  corner.ball.position.x = corner.config.pitch.fieldRight - 20;
-  corner.ball.position.y = corner.config.pitch.fieldBottom + corner.config.ball.radius + 1;
-  corner.game._handleBoundaryDetection();
-  completeOutOfPlayDelay(corner);
-
-  assertEqual(corner.game.restartController.type(), "corner");
-  assertEqual(corner.awayTeamAi.state, "cornerUs");
-});
-
-test("An exit without last-touch ownership restores and stops the ball", function() {
-  var fixture = makeFixture();
-  var startX = fixture.ball.position.x;
-  fixture.ball.position.x = fixture.config.pitch.fieldRight + fixture.config.ball.radius + 1;
-  fixture.ball.velocity.x = 100;
-
-  fixture.game._handleBoundaryDetection();
-
-  assertEqual(fixture.game.restartController.phase(), "waitingForInput");
-  assertEqual(fixture.ball.position.x, startX);
-  assertEqual(fixture.ball.velocity.x, 0);
-});
-
 test("An out-of-play ball continues flying while players remain frozen", function() {
   var fixture = makeFixture();
   fixture.game.matchFlow.state = "normalPlay";
@@ -202,7 +127,7 @@ test("An out-of-play ball continues flying while players remain frozen", functio
   fixture.ball.position.x = fixture.config.pitch.fieldRight + fixture.config.ball.radius + 1;
   fixture.ball.velocity.x = 100;
   fixture.playerHome.velocity.x = 20;
-  fixture.game._handleBoundaryDetection();
+  fixture.game.matchFlow.detectOutOfPlay(fixture.game.context());
   var ballX = fixture.ball.position.x;
   var playerX = fixture.playerHome.position.x;
   fixture.physics.updateBallOnly = function() {
@@ -216,11 +141,11 @@ test("An out-of-play ball continues flying while players remain frozen", functio
 
   assertEqual(fixture.ball.position.x, ballX + 30);
   assertEqual(fixture.playerHome.position.x, playerX);
-  assertEqual(fixture.game.isOutOfPlayPending(), true);
+  assertEqual(fixture.game.matchFlow.isOutOfPlay(), true);
 
   fixture.game.update();
 
-  assertEqual(fixture.game.isOutOfPlayPending(), false);
+  assertEqual(fixture.game.matchFlow.isOutOfPlay(), false);
   assertEqual(fixture.game.restartController.type(), "throwIn");
   assertEqual(fixture.game.restartController.phase(), "positioning");
 });

@@ -118,7 +118,7 @@ function makeFixture(options) {
     homePlayers: homeTeam.players,
     awayPlayers: awayTeam.players,
     goalDetector: goalDetector,
-    boundaryDetector: game.boundaryDetector,
+    boundaryDetector: game.matchFlow._boundaryDetector,
     stadium: stadium,
     physics: physics,
     teamAis: game.teamAis,
@@ -172,10 +172,10 @@ function applyReplayEvent(event, game, input) {
 }
 
 function advanceReplayFrame(game, dt) {
-  if (game.isOutOfPlayPending()) {
+  if (game.matchFlow.simulationMode() == "ballOnly") {
     game.physics.lastDt = dt;
     game.physics._updateBallPosition(dt);
-    game._updatePendingOutOfPlay();
+    game.matchFlow.updateAfterPhysics(game.context());
     return;
   }
   game._updateAi();
@@ -186,7 +186,7 @@ function advanceReplayFrame(game, dt) {
   game.physics._resolveBallPlayerContacts();
   game.physics._updateBallPosition(dt);
   game.matchFlow.updateAfterPhysics(game.context());
-  if (!game._handleGoalDetection()) game._handleBoundaryDetection();
+  if (!game._handleGoalDetection()) game.matchFlow.detectOutOfPlay(game.context());
 }
 
 module.exports = {
