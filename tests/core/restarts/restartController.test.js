@@ -33,12 +33,14 @@ test("RestartRegistry resolves strategies by generic type", function() {
   assertEqual(registry.get("corner"), null);
 });
 
-test("Initial kickoff waits for input without running positioning", function() {
+test("Initial kickoff positions immediately and waits for input", function() {
   var fixture = makeFixture();
 
   assertEqual(fixture.game.matchFlow.state, "restart");
   assertEqual(fixture.restartController.type(), "kickoff");
   assertEqual(fixture.restartController.phase(), "waitingForInput");
+  assertEqual(fixture.positioningController.isActive(), false);
+  assertTrue(fixture.game.humanController.player() === fixture.restartController.taker(fixture.homeTeam));
   assertEqual(fixture.game.matchFlow.simulationMode(), "none");
 });
 

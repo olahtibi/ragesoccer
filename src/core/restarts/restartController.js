@@ -10,6 +10,8 @@ var RestartController = function(registry, positioningController) {
 RestartController.prototype.begin = function(request, context, options) {
   var strategy = request == null ? null : this._registry.get(request.type);
   if (strategy == null) return false;
+  var positioningMode = options != null ? options.positioningMode : null;
+  var isImmediate = positioningMode == "immediate";
 
   this._restartSequence++;
   request.positioningSeed = this._restartSequence;
@@ -20,15 +22,18 @@ RestartController.prototype.begin = function(request, context, options) {
     request: request,
     strategy: strategy,
     opponentReadyElapsed: 0,
-    phase: options != null && options.skipPositioning ? "waitingForInput" : "positioning"
+    phase: "positioning"
   };
   this._assignTeamAiStates(context);
 
-  if (this._session.phase == "positioning") {
-    var controller = this;
-    var scene = strategy.createScene(context, request);
-    this._session.taker = scene.readyPlayer || null;
-    this._session.positioningTeams = scene.sceneTeams;
+  var controller = this;
+  var scene = strategy.createScene(context, request);
+  this._session.taker = scene.readyPlayer || null;
+  this._session.positioningTeams = scene.sceneTeams;
+  if (isImmediate) {
+    this._applySceneImmediately(context, scene);
+    this._finishPositioning(context);
+  } else {
     scene.onComplete = function() {
       controller._finishPositioning(context);
     };
@@ -36,11 +41,6 @@ RestartController.prototype.begin = function(request, context, options) {
       this._session = null;
       return false;
     }
-  } else if (options != null && options.positionImmediately == true) {
-    var immediateScene = strategy.createScene(context, request);
-    this._session.taker = immediateScene.readyPlayer || null;
-    this._session.positioningTeams = immediateScene.sceneTeams;
-    this._applySceneImmediately(context, immediateScene);
   }
   return true;
 };

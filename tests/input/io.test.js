@@ -40,6 +40,7 @@ test("Human selection keeps the current player within the hysteresis margin", fu
   fixture.homePlayers[0].position.y = fixture.homePlayers[1].position.y = 100;
   fixture.ball.position.x = 120;
   fixture.ball.position.y = 100;
+  fixture.game.humanController.selectPlayer(fixture.homePlayers[0]);
 
   fixture.game.humanController.selectPlayer();
 
@@ -53,6 +54,7 @@ test("Human selection switches and stops the old player outside hysteresis", fun
   fixture.homePlayers[0].position.x = 100;
   fixture.homePlayers[1].position.x = 140;
   fixture.homePlayers[0].position.y = fixture.homePlayers[1].position.y = 100;
+  fixture.game.humanController.selectPlayer(fixture.homePlayers[0]);
   fixture.homePlayers[0].velocity.x = 10;
   fixture.ball.position.x = 140;
   fixture.ball.position.y = 100;
