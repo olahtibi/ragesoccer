@@ -53,7 +53,7 @@ Not every state belongs at the same level. RageSoccer separates match flow,
 restart progress, team tactics, individual assignments, and command execution:
 
 ```text
-MatchFlow [normalPlay | restart | paused]
+MatchFlow [normalPlay | outOfPlay | restart | paused]
   -> RestartSession [positioning | waitingForInput | inProgress | complete]
     -> TeamAi [kickoffUs | kickoffOpponent | attack | defense]
       -> IndividualAi [inactive | attackBall | moveToPosition]
@@ -92,9 +92,9 @@ cohesive unit.
 ### Prefer synchronous results over an event bus
 
 Rule detectors return values to their caller. For example,
-`GoalDetector.update()` returns the scoring side, and `Game` applies that result
-to the appropriate team. A detected goal also begins a kickoff awarded to the
-team that conceded, using the standard restart lifecycle:
+`GoalDetector.update()` returns the scoring side, and `MatchFlow` applies that
+result to the appropriate team. A detected goal also begins a kickoff awarded
+to the team that conceded, using the standard restart lifecycle:
 
 ```text
 goal -> positioning -> waitingForInput -> inProgress -> normalPlay
@@ -135,6 +135,11 @@ boundary.
 
 ## Runtime Composition
 
+Runtime settings are exposed through nested configuration groups such as
+`pitch`, `physics`, `player`, `ball`, `teams`, `ai`, and `restarts`. Browser
+query options retain their original names but are mapped into those groups by
+`Configuration`.
+
 `createGame(config)` in `src/core/game.js` is the composition root. It constructs
 the world and controllers, connects their dependencies, registers restart
 strategies, and creates the initial kickoff session.
@@ -142,17 +147,18 @@ strategies, and creates the initial kickoff session.
 ```text
 Game
 ├── MatchFlow
+│   ├── GoalDetector
+│   ├── BoundaryDetector
 │   └── RestartController
 │       ├── RestartRegistry
-│       ├── CutsceneController
+│       ├── PositioningController
 │       └── active restart strategy
 ├── HumanController
 ├── TeamAi (home)
 ├── TeamAi (away)
 ├── Physics
-├── GoalDetector
 ├── Camera
-├── DebugLog
+├── DebugTool
 └── Stadium
     ├── Ball
     ├── Team (home)
@@ -172,7 +178,10 @@ The browser shell calls `Game.update()` and `Game.render(ctx)`, then schedules
 the next animation frame. `MatchFlow` exposes a generic simulation mode:
 
 - `none`: paused or waiting for restart input; reset the physics clock.
-- `playersOnly`: a positioning cutscene moves players while the ball is locked.
+- `ballOnly`: the ball continues beyond the boundary during the dead-ball delay.
+- `playersOnly`: `MatchFlow` prepares restart positioning, physics moves the
+  players, and `MatchFlow` completes the post-physics restart update while the
+  ball remains locked.
 - `full`: update AI, apply human input, run physics, enforce rules, and detect
   goals or balls leaving play.
 
@@ -199,12 +208,16 @@ contract.
 
 ### MatchFlow
 
-`MatchFlow` decides whether the match is in normal play, a restart, or paused.
-Pause remembers the previous state so resuming returns to the same normal-play
-or restart session.
+`MatchFlow` decides whether the match is in normal play, out of play, a restart,
+or paused. It also owns post-physics match-rule interpretation: goals take
+priority over boundary exits, update the scoring team, and start the conceding
+team's kickoff. Pause remembers the previous state so resuming returns to the
+same normal-play, out-of-play, or restart session.
 
-It does not know what a kickoff is. It only knows that a restart session can
-provide a simulation mode and eventually report completion.
+It does not implement any restart strategy. It owns the boundary-to-restart
+award policy, then delegates the resulting request to `RestartController`,
+whose active session provides a simulation mode and eventually reports
+completion.
 
 ### RestartController
 
@@ -222,7 +235,7 @@ occurrence:
 The controller owns common behavior:
 
 - Assigning the strategy's relative state to each team AI.
-- Starting and completing the positioning cutscene.
+- Starting and completing restart positioning.
 - Waiting for human input before resuming simulation.
 - Asking the strategy which teams may move.
 - Enforcing rules and checking completion after physics.
@@ -255,12 +268,13 @@ team AI with a central penalty-area target so its taker crosses instead of
 shooting directly at goal. Goal kicks explicitly select the formation's
 goalkeeper as taker so another nearby player cannot be positioned beside them.
 
-`BoundaryDetector` reports the first pitch edge crossed, its crossing position,
-and the ball's last-touch side. `Game` gives goals priority, then converts a
-touchline exit to a throw-in or an end-line exit to either a corner or goal kick.
-The detector does not own restart policy. Before positioning begins, a short
-configurable dead-ball delay freezes the players but continues ball-only physics
-so the ball visibly carries beyond the line instead of snapping back immediately.
+`BoundaryDetector` in `src/world/detectors/` reports the first pitch edge crossed,
+its crossing position, and the ball's last-touch side. `MatchFlow` owns both
+rule detectors, checks goals before boundary exits, and converts a touchline
+exit to a throw-in or an end-line exit to either a corner or goal kick. Before
+positioning begins, `MatchFlow` enters `outOfPlay`: a short configurable delay
+freezes the players but selects ball-only physics so the ball visibly carries
+beyond the line instead of snapping back immediately.
 
 The `outOfPlayRestartsEnabled` option controls the three restart types as one
 bundle. It defaults to enabled. When disabled, physics preserves the original
@@ -273,9 +287,9 @@ To add another restart:
 1. Create one strategy implementing the restart policy methods.
 2. Add any required relative team AI states and formation behavior.
 3. Register the strategy type in the composition root.
-4. Have the relevant rule detector return occurrence facts and let `Game` create
-   the restart request.
-5. Pass that request to `MatchFlow.beginRestart()` through `Game`.
+4. Have the relevant rule detector return occurrence facts and let `MatchFlow`
+   create the restart request.
+5. Start the request through `MatchFlow.beginRestart()`.
 6. Add strategy and lifecycle integration tests.
 
 Do not add restart-specific branches to `Game.update()`, `Stadium`, or
@@ -351,9 +365,10 @@ unrelated controllers.
 
 ## Debugging And Determinism
 
-`DebugLog` records the match state, active restart type and phase, team scores,
-ball and player state, and AI command snapshots. Input events are recorded by
-the browser adapter and can be replayed without rendering.
+`DebugTool` records the match state, active restart type and phase, team scores,
+ball and player state, and AI command snapshots. It also draws AI movement
+targets while the game is paused. Input events are recorded by the browser
+adapter and can be replayed without rendering.
 
 Debug code reads public snapshots rather than command internals. When new state
 affects behavior, expose it through the relevant `debugSnapshot()` method.

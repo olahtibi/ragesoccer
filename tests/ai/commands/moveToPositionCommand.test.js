@@ -14,8 +14,8 @@ test("moveToPosition sets velocity toward target", function() {
   ai.setCommand("moveToPosition", new Vector2d(10, 20));
   ai.update({ ball: fixture.ball });
 
-  var arrivalFactor = fixture.config.aiArrivalMinSpeedFactor +
-    (1 - fixture.config.aiArrivalMinSpeedFactor) * 10 / fixture.config.aiArrivalSlowRadius;
+  var arrivalFactor = fixture.config.ai.arrivalMinSpeedFactor +
+    (1 - fixture.config.ai.arrivalMinSpeedFactor) * 10 / fixture.config.ai.arrivalSlowRadius;
   assertNear(fixture.playerAway.velocity.x, 0, 0.0001);
   assertNear(
     fixture.playerAway.velocity.y,

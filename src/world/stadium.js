@@ -1,28 +1,29 @@
 var Stadium = function (imgStadium, ball, homeTeam, awayTeam) {
-  this.config = homeTeam.config;
   this.imgStadium = imgStadium;
   this.ball = ball;
   this.homeTeam = homeTeam;
   this.awayTeam = awayTeam;
   this.teams = [this.homeTeam, this.awayTeam];
-  this.homePlayers = this.homeTeam.players;
-  this.awayPlayers = this.awayTeam.players;
-  this.players = this.homePlayers.concat(this.awayPlayers);
+  this.players = homeTeam.players.concat(awayTeam.players);
 };
+
+// Public API
 
 Stadium.prototype.draw = function(ctx) {  
   ctx.drawImage(this.imgStadium, 0, 0);
   if (this.ball.heldBy == null) this.ball.draw(ctx);
   for (var i = 0; i < this.players.length; i++) {
     if (this.players[i] === this.homeTeam.humanPlayer) {
-      this.drawHumanPlayerMarker(ctx, this.players[i]);
+      this._drawHumanPlayerMarker(ctx, this.players[i]);
     }
     this.players[i].draw(ctx);
   }
   if (this.ball.heldBy != null) this.ball.draw(ctx);
 };
 
-Stadium.prototype.drawHumanPlayerMarker = function(ctx, player) {
+// Private helpers
+
+Stadium.prototype._drawHumanPlayerMarker = function(ctx, player) {
   var centerX = player.position.x - 1;
   var centerY = player.position.y - 2;
   var outerRadius = 10;

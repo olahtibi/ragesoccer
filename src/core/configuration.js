@@ -1,172 +1,260 @@
-var Configuration = function () {
-  this.boxTopLeft = new Vector2d(50, 80);
-  this.boxTopRight = new Vector2d(625, 80);
-  this.boxBottomLeft = new Vector2d(50, 785);
-  this.boxBottomRight = new Vector2d(625, 785);
-  this.goalTopTopLeft = new Vector2d(300, 90);
-  this.goalTopTopRight = new Vector2d(372, 90);
-  this.goalTopBottomLeft = new Vector2d(300, 113);
-  this.goalTopBottomRight = new Vector2d(372, 113);
-  this.goalBottomTopLeft = new Vector2d(300, 753);
-  this.goalBottomTopRight = new Vector2d(372, 753);
-  this.goalBottomBottomLeft = new Vector2d(300, 763);
-  this.goalBottomBottomRight = new Vector2d(372, 763);
-  this.fieldLeft = 81;
-  this.fieldRight = 590;
-  this.fieldTop = 113;
-  this.fieldBottom = 753;
-  this.stadiumWidth = 672;
-  this.stadiumHeight = 848;
-  this.viewportWidth = window.innerWidth;
-  this.viewportHeight = window.innerHeight;
-  this.viewportRatio = 0.7;
-  // Ball physics tuning (all in pixel units, seconds).
-  this.baseKickBoost = 120;             // Minimum outward impulse on contact.
-  this.playerMomentumTransfer = 1.8;    // How much of player's closing speed becomes ball speed.
-  this.maxKickSpeed = 520;              // Cap on horizontal ball speed.
-  this.baseLoft = 55;                   // Vertical velocity added to every kick (visible small hop).
-  this.kickLoftFactor = 0.35;           // Fraction of the outgoing kick impulse added as vertical lift.
-  this.ballPlayerRestitution = 0.35;    // Bounciness of a passive ball-on-player collision.
-  this.ballFriction = 1.6;              // Exponential rolling-friction rate on the ground.
-  this.ballAirFriction = 0.35;          // Slower decay while airborne.
-  this.gravity = 380;                   // Downward acceleration on z.
-  this.ballGroundRestitution = 0.55;    // Bounce energy retained on ground impact.
-  this.groundImpactDamping = 0.88;      // Horizontal speed retained on ground impact.
-  this.minBounceVelocity = 25;          // vz below which the ball is considered at rest.
-  this.wallRestitution = 0.7;           // Bounce off box walls and goalposts.
-  this.minVelocity = 3;                 // Horizontal speed below which the ball snaps to rest.
-  this.ballContactMaxZ = 5;             // Ball height above which players cannot touch it.
-  this.ballSpinPxPerPhase = 6;          // Pixels of travel per sprite phase change (higher = slower spin).
-  this.playerStepPxPerPhase = 4;        // Pixels of travel per walk-cycle sprite phase change.
-  this.teamAiEnabled = true;
-  this.minStrength = 1;
-  this.maxStrength = 10;
-  this.playerStrength = 6;
-  this.opponentStrength = 6;
-  this.attackDistance = 120;
-  this.attackWidth = 70;
-  this.defenderDistance = 85;
-  this.goalieDistance = 30;
-  this.formationDefenderProgress = -200;
-  this.formationMidfielderProgress = 0;
-  this.formationStrikerProgress = 130;
-  this.formationStateShift = 55;
-  this.formationDefenderDefenseShift = 25;
-  this.kickoffMidfielderProgress = -100;
-  this.aiArrivalSlowRadius = 36;
-  this.aiArrivalMinSpeedFactor = 0.35;
-  this.aiMinBallSpacing = 72;
-  this.aiMinTeammateSpacing = 36;
-  this.aiFormationPaceVariation = 0.08;
-  this.aiFormationLateralVariation = 20;
-  this.aiFormationDepthVariation = 22;
-  this.aiFormationWanderLateral = 17;
-  this.aiFormationWanderDepth = 32;
-  this.aiFormationWanderIntervalMin = 1.2;
-  this.aiFormationWanderIntervalMax = 2.8;
-  this.aiFormationBallResponseVariation = 0.30;
-  this.aiFormationTargetResponseMin = 2;
-  this.aiFormationTargetResponseMax = 5;
-  this.aiFormationDefenderBallInfluence = 0.08;
-  this.aiFormationMidfielderBallInfluence = 0.14;
-  this.aiFormationStrikerBallInfluence = 0.10;
-  this.aiFormationDefenderMaxShift = 18;
-  this.aiFormationMidfielderMaxShift = 28;
-  this.aiFormationStrikerMaxShift = 22;
-  this.aiFormationSeparationMaxShift = 12;
-  this.aiPressReleaseDistance = 90;
-  this.aiKeeperChallengeRadius = 70;
-  this.aiTargetDeadband = 2;
-  this.aiTargetResumeRadius = 4;
-  this.kickoffSide = "home";
-  this.kickoffTakerDistance = 8;
-  this.outOfPlayRestartsEnabled = true;
-  this.outOfPlayRestartDelaySeconds = 0.35;
-  this.opponentRestartDelaySeconds = 1;
-  this.restartOpponentDistance = 45;
-  this.restartPlacementClearance = 1;
-  this.restartPositionVariationX = 10;
-  this.restartPositionVariationY = 12;
-  this.goalKickDistance = 25;
-  this.goalKickTakerDistance = 20;
-  this.cornerCrossDistance = 65;
-  this.cornerBoxSpacing = 34;
-  this.cornerBoxDepth = 45;
-  this.cornerBoxDepthStep = 15;
-  this.cornerLateDepth = 115;
-  this.cornerEdgeDepth = 145;
-  this.cornerShortInset = 50;
-  this.cornerShortDepth = 35;
-  this.cornerLateRunReleaseDistance = 35;
-  this.throwInSpeed = 180;
-  this.throwInLoft = 90;
-  this.centerCircleRadiusX = 62;
-  this.centerCircleRadiusY = 40;
-  this.cutsceneArrivedRadius = 3;
-  this.cutsceneCameraArrivedRadius = 2;
-  this.cutsceneCameraLerp = 0.06;
-  this.aiTargetReachedRadius = 1;
-  this.aiAttackerSwitchHysteresisDistance = 20;
-  this.humanSwitchHysteresisDistance = 20;
-  this.ballRadius = 2;
-  this.playerRadius = 4;
-  this.aiAttackSetupDistance = this.ballRadius + this.playerRadius + 8;
-  this.aiAttackRunThroughDistance = 18;
-  this.aiAttackDetourStepRadians = Math.PI / 6;
-  this.aiAttackAimToleranceRadians = 0.15;
-  this.aiAttackAimCorrectionToleranceRadians = 0.05;
-  this.aiAttackAimReleaseToleranceRadians = 0.30;
-  this.aiAttackCorrectionReachedRadius = 0.1;
-  this.aiAttackDetourRadius = this.ballRadius + this.playerRadius + 4;
-  this.aiAttackCloseDistance = this.ballRadius + this.playerRadius + 20;
-  this.aiAttackOrbitCommitAngle = Math.PI - 0.3;
-  this.imgPitch = document.getElementById("pitch");
-  this.imgBall = document.getElementById("ball");
-  this.imgPlayerHome = document.getElementById("player-home");
-  this.imgPlayerAway = document.getElementById("player-away");
-  this.objCanvas = document.getElementById("myCanvas");
-  this.initialBallPosition = new Vector3d(334, 433, 0);
-  this.aiCenterY = this.initialBallPosition.y;
-  this.homeTeamSize = 11;
-  this.awayTeamSize = 11;
-  this.playerVelocity = 50; // Pixels per second
-  this.playerSpriteWidth = 10 //10;
-  this.playerSpriteHeight = 16 //18;
-  this.playerSpriteCenterX = 6;
-  this.playerSpriteCenterY = 13;
-  this.debug = true;
-  this.debugLogSeconds = 3;
-  this.debugLogEveryNFrames = 4;
-  this.applyQueryOptions();
+var Configuration = function() {
+  this.pitch = {
+    boxTopLeft: new Vector2d(50, 80),
+    boxTopRight: new Vector2d(625, 80),
+    boxBottomLeft: new Vector2d(50, 785),
+    boxBottomRight: new Vector2d(625, 785),
+    goalTopTopLeft: new Vector2d(300, 90),
+    goalTopTopRight: new Vector2d(372, 90),
+    goalTopBottomLeft: new Vector2d(300, 113),
+    goalTopBottomRight: new Vector2d(372, 113),
+    goalBottomTopLeft: new Vector2d(300, 753),
+    goalBottomTopRight: new Vector2d(372, 753),
+    goalBottomBottomLeft: new Vector2d(300, 763),
+    goalBottomBottomRight: new Vector2d(372, 763),
+    fieldLeft: 81,
+    fieldRight: 590,
+    fieldTop: 113,
+    fieldBottom: 753,
+    stadiumWidth: 672,
+    stadiumHeight: 848,
+    centerCircleRadiusX: 62,
+    centerCircleRadiusY: 40,
+    initialBallPosition: new Vector3d(334, 433, 0),
+    aiCenterY: 433
+  };
+
+  this.viewport = {
+    width: window.innerWidth,
+    height: window.innerHeight,
+    ratio: 0.7,
+    overlayMinRatio: 0.6,
+    overlayMaxRatio: 0.8
+  };
+
+  // Physics tuning uses pixel units and seconds.
+  this.physics = {
+    baseKickBoost: 120,
+    playerMomentumTransfer: 1.8,
+    maxKickSpeed: 520,
+    baseLoft: 55,
+    kickLoftFactor: 0.35,
+    ballPlayerRestitution: 0.35,
+    ballFriction: 1.6,
+    ballAirFriction: 0.35,
+    gravity: 380,
+    ballGroundRestitution: 0.55,
+    groundImpactDamping: 0.88,
+    minBounceVelocity: 25,
+    wallRestitution: 0.7,
+    minVelocity: 3,
+    ballContactMaxZ: 5,
+    maxDeltaSeconds: 0.1,
+    contactEpsilon: 0.01,
+    zeroDistanceEpsilon: 0.0001,
+    statsSampleFrames: 100,
+    fpsDisplayIntervalMs: 250
+  };
+
+  this.ball = {
+    radius: 2,
+    spinPxPerPhase: 6,
+    spritePhases: 4,
+    heldOffsetX: 5,
+    heldOffsetY: -8,
+    shadowFrame: 4,
+    shadowOffset: 1
+  };
+
+  this.player = {
+    radius: 4,
+    stepPxPerPhase: 4,
+    spriteWidth: 10,
+    spriteHeight: 16,
+    spriteCenterX: 6,
+    spriteCenterY: 13,
+    spriteSourceRowHeight: 18,
+    spritePhases: 3,
+    animationDirectionResponseRate: 18,
+    animationDirectionConfidenceThreshold: 0.75,
+    animationIdleGraceSeconds: 0.05,
+    animationMaxDeltaSeconds: 0.1
+  };
+
+  this.teams = {
+    minStrength: 1,
+    maxStrength: 10,
+    homeStrength: 6,
+    awayStrength: 6,
+    homeSize: 11,
+    awaySize: 11,
+    minVelocity: 35,
+    velocityRange: 30
+  };
+
+  this.ai = {
+    enabled: true,
+    goalieDistance: 30,
+    formationDefenderProgress: -200,
+    formationMidfielderProgress: 0,
+    formationStrikerProgress: 130,
+    formationStateShift: 55,
+    formationDefenderDefenseShift: 25,
+    kickoffMidfielderProgress: -100,
+    arrivalSlowRadius: 36,
+    arrivalMinSpeedFactor: 0.35,
+    minTeammateSpacing: 36,
+    formationPaceVariation: 0.08,
+    formationLateralVariation: 20,
+    formationDepthVariation: 22,
+    formationWanderLateral: 17,
+    formationWanderDepth: 32,
+    formationWanderIntervalMin: 1.2,
+    formationWanderIntervalMax: 2.8,
+    formationBallResponseVariation: 0.30,
+    formationTargetResponseMin: 2,
+    formationTargetResponseMax: 5,
+    formationDefenderBallInfluence: 0.08,
+    formationMidfielderBallInfluence: 0.14,
+    formationStrikerBallInfluence: 0.10,
+    formationDefenderMaxShift: 18,
+    formationMidfielderMaxShift: 28,
+    formationStrikerMaxShift: 22,
+    formationSeparationMaxShift: 12,
+    targetDeadband: 2,
+    targetResumeRadius: 4,
+    targetReachedRadius: 1,
+    attackerSwitchHysteresisDistance: 20,
+    formationFallbackDepth: 20,
+    fieldClampClearance: 1,
+    attackSetupDistance: 14,
+    attackRunThroughDistance: 18,
+    attackDetourStepRadians: Math.PI / 6,
+    attackAimToleranceRadians: 0.15,
+    attackAimCorrectionToleranceRadians: 0.05,
+    attackAimReleaseToleranceRadians: 0.30,
+    attackCorrectionReachedRadius: 0.1,
+    attackDetourRadius: 10,
+    attackCloseDistance: 26,
+    attackOrbitCommitAngle: Math.PI - 0.3
+  };
+
+  this.restarts = {
+    kickoffSide: "home",
+    kickoffTakerDistance: 8,
+    outOfPlayEnabled: true,
+    outOfPlayDelaySeconds: 0.35,
+    opponentDelaySeconds: 1,
+    opponentDistance: 45,
+    placementClearance: 1,
+    positionVariationX: 10,
+    positionVariationY: 12,
+    goalKickDistance: 25,
+    goalKickTakerDistance: 20,
+    cornerCrossDistance: 65,
+    cornerBoxSpacing: 34,
+    cornerBoxDepth: 45,
+    cornerBoxDepthStep: 15,
+    cornerLateDepth: 115,
+    cornerEdgeDepth: 145,
+    cornerShortInset: 50,
+    cornerShortDepth: 35,
+    cornerLateRunReleaseDistance: 35,
+    throwInSpeed: 180,
+    throwInLoft: 90,
+    takerClearance: 2
+  };
+
+  this.cutscene = {
+    arrivedRadius: 3,
+    cameraArrivedRadius: 2,
+    cameraLerp: 0.06
+  };
+
+  this.input = {
+    humanSwitchHysteresisDistance: 20
+  };
+
+  this.assets = {
+    pitch: document.getElementById("pitch"),
+    ball: document.getElementById("ball"),
+    playerHome: document.getElementById("player-home"),
+    playerAway: document.getElementById("player-away"),
+    canvas: document.getElementById("myCanvas")
+  };
+
+  this.debug = {
+    enabled: true,
+    logSeconds: 3,
+    logEveryNFrames: 4
+  };
+
+  this._applyQueryOptions();
 };
 
-Configuration.prototype.applyQueryOptions = function() {
-  var params = this.queryParams();
-  this.playerStrength = this.parseIntOption(params.playerStrength, this.playerStrength, this.minStrength, this.maxStrength);
-  this.opponentStrength = this.parseIntOption(params.opponentStrength, this.opponentStrength, this.minStrength, this.maxStrength);
-  this.homeTeamSize = this.parseIntOption(params.homeTeamSize, this.homeTeamSize, 1, 11);
-  this.awayTeamSize = this.parseIntOption(params.awayTeamSize, this.awayTeamSize, 1, 11);
-  this.kickoffSide = this.parseSideOption(params.kickoffSide, this.kickoffSide);
-  this.outOfPlayRestartsEnabled = this.parseBooleanOption(
-    params.outOfPlayRestartsEnabled,
-    this.outOfPlayRestartsEnabled
+// Public API
+
+Configuration.prototype.strengthToVelocity = function(strength) {
+  strength = this._parseIntOption(
+    strength,
+    this.teams.homeStrength,
+    this.teams.minStrength,
+    this.teams.maxStrength
   );
-  this.playerVelocity = this.teamVelocity("home");
+  return this.teams.minVelocity +
+    (strength - this.teams.minStrength) *
+    (this.teams.velocityRange / (this.teams.maxStrength - this.teams.minStrength));
 };
 
-Configuration.prototype.queryParams = function() {
+Configuration.prototype.teamVelocity = function(teamSide) {
+  var strength = teamSide == "away" ? this.teams.awayStrength : this.teams.homeStrength;
+  return this.strengthToVelocity(strength);
+};
+
+Configuration.prototype.computeScaleBy = function() {
+  var scaleBy;
+  if (this.viewport.width > this.viewport.height) {
+    scaleBy = this.viewport.width / (this.pitch.stadiumWidth * this.viewport.ratio);
+  } else {
+    scaleBy = this.viewport.height / (this.pitch.stadiumHeight * this.viewport.ratio);
+  }
+  return Math.round(scaleBy);
+};
+
+// Private helpers
+
+Configuration.prototype._applyQueryOptions = function() {
+  var params = this._queryParams();
+  this.teams.homeStrength = this._parseIntOption(
+    params.playerStrength,
+    this.teams.homeStrength,
+    this.teams.minStrength,
+    this.teams.maxStrength
+  );
+  this.teams.awayStrength = this._parseIntOption(
+    params.opponentStrength,
+    this.teams.awayStrength,
+    this.teams.minStrength,
+    this.teams.maxStrength
+  );
+  this.teams.homeSize = this._parseIntOption(params.homeTeamSize, this.teams.homeSize, 1, 11);
+  this.teams.awaySize = this._parseIntOption(params.awayTeamSize, this.teams.awaySize, 1, 11);
+  this.restarts.kickoffSide = this._parseSideOption(params.kickoffSide, this.restarts.kickoffSide);
+  this.restarts.outOfPlayEnabled = this._parseBooleanOption(
+    params.outOfPlayRestartsEnabled,
+    this.restarts.outOfPlayEnabled
+  );
+};
+
+Configuration.prototype._queryParams = function() {
   var result = {};
   if (typeof window === "undefined" || window.location == null || !window.location.search) {
     return result;
   }
 
   var search = window.location.search;
-  if (search.charAt(0) === "?") {
-    search = search.substring(1);
-  }
-  if (search.length === 0) {
-    return result;
-  }
+  if (search.charAt(0) === "?") search = search.substring(1);
+  if (search.length === 0) return result;
 
   var parts = search.split("&");
   for (var i = 0; i < parts.length; i++) {
@@ -178,46 +266,21 @@ Configuration.prototype.queryParams = function() {
   return result;
 };
 
-Configuration.prototype.parseIntOption = function(paramsValue, defaultValue, minValue, maxValue) {
+Configuration.prototype._parseIntOption = function(paramsValue, defaultValue, minValue, maxValue) {
   var value = parseInt(paramsValue, 10);
-  if (!isFinite(value)) {
-    value = defaultValue;
-  }
+  if (!isFinite(value)) value = defaultValue;
   if (value < minValue) value = minValue;
   if (value > maxValue) value = maxValue;
   return value;
 };
 
-Configuration.prototype.parseSideOption = function(paramsValue, defaultValue) {
-  if (paramsValue == "home" || paramsValue == "away") {
-    return paramsValue;
-  }
+Configuration.prototype._parseSideOption = function(paramsValue, defaultValue) {
+  if (paramsValue == "home" || paramsValue == "away") return paramsValue;
   return defaultValue;
 };
 
-Configuration.prototype.parseBooleanOption = function(paramsValue, defaultValue) {
+Configuration.prototype._parseBooleanOption = function(paramsValue, defaultValue) {
   if (paramsValue == "true") return true;
   if (paramsValue == "false") return false;
   return defaultValue;
-};
-
-Configuration.prototype.strengthToVelocity = function(strength) {
-  strength = this.parseIntOption(strength, this.playerStrength, this.minStrength, this.maxStrength);
-  return 35 + (strength - this.minStrength) * (30 / (this.maxStrength - this.minStrength));
-};
-
-Configuration.prototype.teamVelocity = function(teamSide) {
-  var strength = teamSide == "away" ? this.opponentStrength : this.playerStrength;
-  return this.strengthToVelocity(strength);
-};
-
-Configuration.prototype.computeScaleBy = function() {
-  var scaleBy;
-  if(this.viewportWidth > this.viewportHeight) {
-    scaleBy = this.viewportWidth / (this.stadiumWidth * this.viewportRatio);
-  }
-  else {
-    scaleBy = this.viewportHeight / (this.stadiumHeight * this.viewportRatio);
-  }
-  return Math.round(scaleBy);
 };

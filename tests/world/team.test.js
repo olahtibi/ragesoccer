@@ -22,7 +22,7 @@ test("Team creates relative home kickoff positions", function() {
 
   assertEqual(fixture.homePlayers[2].position.y, home[2].y);
   assertTrue(Math.abs(fixture.awayPlayers[2].position.y - away[2].y) <=
-    fixture.config.restartPositionVariationY);
+    fixture.config.restarts.positionVariationY);
 });
 
 test("Team creates relative away kickoff positions", function() {
@@ -32,7 +32,7 @@ test("Team creates relative away kickoff positions", function() {
   var away = formation.positions("kickoffUs", "away", 3);
 
   assertTrue(Math.abs(fixture.homePlayers[2].position.y - home[2].y) <=
-    fixture.config.restartPositionVariationY);
+    fixture.config.restarts.positionVariationY);
   assertEqual(fixture.awayPlayers[2].position.y, away[2].y);
 });
 

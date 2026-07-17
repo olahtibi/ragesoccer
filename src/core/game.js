@@ -5,25 +5,22 @@ var Game = function(options) {
   this.teamAis = options.teamAis;
   this.camera = options.camera;
   this.physics = options.physics;
-  this.goalDetector = options.goalDetector;
-  this.boundaryDetector = options.boundaryDetector;
   this.humanController = options.humanController;
-  this.cutscene = options.cutscene;
-  this.restartController = options.restartController;
   this.matchFlow = options.matchFlow;
-  this.debugLog = options.debugLog;
-  this.pendingOutOfPlay = null;
+  this.debugTool = options.debugTool;
 };
+
+// Public API
 
 Game.prototype.context = function() {
   return {
-    game: this,
     config: this.config,
     stadium: this.stadium,
     ball: this.stadium.ball,
     teams: this.teams,
     teamAis: this.teamAis,
-    humanController: this.humanController
+    humanController: this.humanController,
+    camera: this.camera
   };
 };
 
@@ -40,12 +37,7 @@ Game.prototype.togglePause = function() {
 };
 
 Game.prototype.resumeFromInput = function(direction) {
-  if (this.isOutOfPlayPending()) return false;
   return this.matchFlow.resumeFromInput(this.context(), direction);
-};
-
-Game.prototype.isOutOfPlayPending = function() {
-  return this.pendingOutOfPlay != null;
 };
 
 Game.prototype.beginRestart = function(type, awardedTo, details) {
@@ -57,149 +49,64 @@ Game.prototype.beginRestart = function(type, awardedTo, details) {
   return this.matchFlow.beginRestart(request, this.context());
 };
 
-Game.prototype.updateAi = function() {
+Game.prototype.update = function() {
+  var context = this.context();
+  var mode = this.matchFlow.simulationMode();
+  if (mode == "none") {
+    this.physics.resetClock();
+  } else if (mode == "ballOnly") {
+    this.physics.updateBallOnly();
+    this.matchFlow.updateAfterPhysics(context, this.physics.lastDt);
+  } else if (mode == "playersOnly") {
+    this.matchFlow.updateBeforePhysics(context);
+    this.physics.updatePlayersOnly();
+    this.matchFlow.updateAfterPhysics(context, this.physics.lastDt);
+  } else {
+    this._updateAi();
+    var canMove = this.matchFlow.canTeamMove(this.teams[0]);
+    this.humanController.update(canMove);
+    this.physics.update();
+    this.matchFlow.updateAfterPhysics(context, this.physics.lastDt);
+    this.matchFlow.detectPostPhysicsEvents(context);
+  }
+  this.debugTool.record(this);
+};
+
+Game.prototype.render = function(ctx) {
+  this.camera.windowToViewport(ctx);
+  this.stadium.draw(ctx);
+  if (this.isPaused()) this.debugTool.draw(ctx, this.teamAis);
+  this.camera.renderOverlay(ctx, this.physics.displayFps);
+};
+
+// Private helpers
+
+Game.prototype._updateAi = function() {
   this.humanController.selectPlayer();
   for (var i = 0; i < this.teamAis.length; i++) {
     var teamAi = this.teamAis[i];
     teamAi.update({
       deltaSeconds: this.physics.lastDt,
       restartActive: this.matchFlow.isRestartActive(),
-      canMove: !this.matchFlow.isRestartActive() || this.restartController.canTeamMove(teamAi.team),
-      restartTaker: this.matchFlow.isRestartActive() ?
-        this.restartController.taker(teamAi.team) : null,
-      positioningTargets: this.matchFlow.isRestartActive() ?
-        this.restartController.positioningTargets(teamAi.team) : null,
-      attackTarget: this.matchFlow.isRestartActive() ?
-        this.restartController.attackTarget(teamAi.team) : null
+      canMove: this.matchFlow.canTeamMove(teamAi.team),
+      restartTaker: this.matchFlow.restartTaker(teamAi.team),
+      positioningTargets: this.matchFlow.restartPositioningTargets(teamAi.team),
+      attackTarget: this.matchFlow.restartAttackTarget(teamAi.team)
     });
   }
 };
 
-Game.prototype.update = function() {
-  var context = this.context();
-  if (this.isOutOfPlayPending()) {
-    if (this.isPaused()) {
-      this.physics.resetClock();
-    } else {
-      this.physics.updateBallOnly();
-      this.updatePendingOutOfPlay();
-    }
-    this.debugLog.record(this);
-    return;
-  }
-  var mode = this.matchFlow.simulationMode();
-  if (mode == "none") {
-    this.physics.resetClock();
-  } else if (mode == "playersOnly") {
-    this.restartController.updateBeforePhysics(context);
-    this.physics.updatePlayersOnly();
-    this.matchFlow.updateAfterPhysics(context);
-  } else {
-    this.updateAi();
-    var canMove = !this.matchFlow.isRestartActive() || this.restartController.canTeamMove(this.teams[0]);
-    this.humanController.update(canMove);
-    this.physics.update();
-    this.matchFlow.updateAfterPhysics(context);
-    if (!this.updateScore()) this.updateOutOfPlay();
-  }
-  this.debugLog.record(this);
-};
-
-Game.prototype.updateScore = function() {
-  var scoredBy = this.goalDetector.update();
-  if (scoredBy == null) return false;
-  var scoringTeam = null;
-  var concedingTeam = null;
-  for (var i = 0; i < this.teams.length; i++) {
-    if (this.teams[i].side == scoredBy) {
-      scoringTeam = this.teams[i];
-    } else {
-      concedingTeam = this.teams[i];
-    }
-  }
-  if (scoringTeam == null || concedingTeam == null) return false;
-  scoringTeam.score++;
-  this.beginRestart("kickoff", concedingTeam.side);
-  return true;
-};
-
-Game.prototype.updateOutOfPlay = function() {
-  var event = this.boundaryDetector.update();
-  if (event == null) return false;
-  if (event.lastTouchedBy == null) {
-    this.stadium.ball.position.x = event.lastInBounds.x;
-    this.stadium.ball.position.y = event.lastInBounds.y;
-    this.stadium.ball.position.z = 0;
-    this.stadium.ball.velocity.x = 0;
-    this.stadium.ball.velocity.y = 0;
-    this.stadium.ball.velocity.z = 0;
-    this.boundaryDetector.reset();
-    return false;
-  }
-
-  this.pendingOutOfPlay = { event: event, elapsed: 0 };
-  this.stopPlayersForOutOfPlay();
-  return true;
-};
-
-Game.prototype.stopPlayersForOutOfPlay = function() {
-  for (var i = 0; i < this.stadium.players.length; i++) {
-    this.stadium.players[i].velocity.x = 0;
-    this.stadium.players[i].velocity.y = 0;
-  }
-};
-
-Game.prototype.updatePendingOutOfPlay = function() {
-  if (!this.isOutOfPlayPending()) return false;
-  this.pendingOutOfPlay.elapsed += this.physics.lastDt || 0;
-  if (this.pendingOutOfPlay.elapsed < this.config.outOfPlayRestartDelaySeconds) return false;
-  var event = this.pendingOutOfPlay.event;
-  this.pendingOutOfPlay = null;
-  return this.beginOutOfPlayRestart(event);
-};
-
-Game.prototype.beginOutOfPlayRestart = function(event) {
-  var awardedTo;
-  var type;
-  if (event.boundary == "left" || event.boundary == "right") {
-    type = "throwIn";
-    awardedTo = event.lastTouchedBy == "home" ? "away" : "home";
-  } else {
-    var defendingSide = event.boundary == "top" ? "away" : "home";
-    var attackingSide = defendingSide == "home" ? "away" : "home";
-    if (event.lastTouchedBy == attackingSide) {
-      type = "goalKick";
-      awardedTo = defendingSide;
-    } else {
-      type = "corner";
-      awardedTo = attackingSide;
-    }
-  }
-  return this.beginRestart(type, awardedTo, {
-    boundary: event.boundary,
-    position: event.position
-  });
-};
-
-Game.prototype.render = function(ctx) {
-  this.camera.windowToViewport(ctx);
-  this.stadium.draw(ctx);
-  if (this.isPaused()) this.drawAiDebug(ctx);
-  this.camera.renderOverlay(ctx, this.physics.displayFps);
-};
-
-Game.prototype.drawAiDebug = function(ctx) {
-  for (var i = 0; i < this.teamAis.length; i++) {
-    this.teamAis[i].draw(ctx);
-  }
-};
-
 function createGame(config) {
-  var ball = new Ball(config.imgBall, config.ballRadius, config.initialBallPosition);
+  var ball = new Ball(
+    config.assets.ball,
+    config.ball.radius,
+    config.pitch.initialBallPosition,
+    config.ball
+  );
   var homeTeam = new Team(config, "home");
   var awayTeam = new Team(config, "away");
   var teams = [homeTeam, awayTeam];
-  var stadium = new Stadium(config.imgPitch, ball, homeTeam, awayTeam);
+  var stadium = new Stadium(config.assets.pitch, ball, homeTeam, awayTeam);
   var teamAis = [
     new TeamAi(config, homeTeam, awayTeam, ball),
     new TeamAi(config, awayTeam, homeTeam, ball)
@@ -209,14 +116,14 @@ function createGame(config) {
   var goalDetector = new GoalDetector(config, ball);
   var boundaryDetector = new BoundaryDetector(config, ball);
   var humanController = new HumanController(config, homeTeam, ball);
-  var cutscene = new CutsceneController(config);
+  var positioningController = new PositioningController(config);
   var registry = new RestartRegistry();
   registry.register("kickoff", new KickoffRestart(config));
   registry.register("throwIn", new ThrowInRestart(config));
   registry.register("corner", new CornerRestart(config));
   registry.register("goalKick", new GoalKickRestart(config));
-  var restartController = new RestartController(registry, cutscene);
-  var matchFlow = new MatchFlow(restartController);
+  var restartController = new RestartController(registry, positioningController);
+  var matchFlow = new MatchFlow(restartController, goalDetector, boundaryDetector);
   var game = new Game({
     config: config,
     stadium: stadium,
@@ -224,18 +131,14 @@ function createGame(config) {
     teamAis: teamAis,
     camera: camera,
     physics: physics,
-    goalDetector: goalDetector,
-    boundaryDetector: boundaryDetector,
     humanController: humanController,
-    cutscene: cutscene,
-    restartController: restartController,
     matchFlow: matchFlow,
-    debugLog: new DebugLog(config)
+    debugTool: new DebugTool(config)
   });
   matchFlow.beginRestart(
-    { type: "kickoff", awardedTo: config.kickoffSide },
+    { type: "kickoff", awardedTo: config.restarts.kickoffSide },
     game.context(),
-    { skipPositioning: true, positionImmediately: true }
+    { positioningMode: "immediate" }
   );
   return game;
 }
@@ -249,9 +152,9 @@ function startLoop() {
 }
 
 function createContext(game) {
-  var canvas = game.config.objCanvas;
-  canvas.width = game.config.viewportWidth;
-  canvas.height = game.config.viewportHeight;
+  var canvas = game.config.assets.canvas;
+  canvas.width = game.config.viewport.width;
+  canvas.height = game.config.viewport.height;
   var ctx = canvas.getContext("2d");
   ctx.imageSmoothingEnabled = false;
   ctx.mozImageSmoothingEnabled = false;

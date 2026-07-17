@@ -4,6 +4,8 @@ var AttackBallCommand = function() {
   this.correctingAim = false;
 };
 
+// Public API (underscore-prefixed members are private helpers)
+
 AttackBallCommand.prototype.reset = function() {
   this.state = "stopped";
   this.attackOrbitDir = 0;
@@ -11,13 +13,13 @@ AttackBallCommand.prototype.reset = function() {
 };
 
 AttackBallCommand.prototype.update = function(ai, context) {
-  var target = this.attackBallTarget(ai, context);
+  var target = this._attackBallTarget(ai, context);
   var reachedRadius = this.correctingAim ?
-    ai.config.aiAttackCorrectionReachedRadius : null;
+    ai.config.ai.attackCorrectionReachedRadius : null;
   ai.moveTo(target, reachedRadius);
 };
 
-AttackBallCommand.prototype.attackBallTarget = function(ai, context) {
+AttackBallCommand.prototype._attackBallTarget = function(ai, context) {
   var ball = context.ball;
   var toTarget = context.attackTarget == null ? ai.toOpponentGoal(ball.position) :
     MathLib.normalizeVector(
@@ -27,40 +29,40 @@ AttackBallCommand.prototype.attackBallTarget = function(ai, context) {
       ai.team.side == "home" ? -1 : 1
     );
   var wasShooting = this.state == "shoot";
-  var aimError = this.attackAimError(ai, ball.position, toTarget);
+  var aimError = this._attackAimError(ai, ball.position, toTarget);
   var alignmentTolerance = wasShooting ?
-    ai.config.aiAttackAimReleaseToleranceRadians : ai.config.aiAttackAimToleranceRadians;
+    ai.config.ai.attackAimReleaseToleranceRadians : ai.config.ai.attackAimToleranceRadians;
   if (aimError <= alignmentTolerance) {
     this.state = "shoot";
-    if (wasShooting && aimError > ai.config.aiAttackAimToleranceRadians) {
+    if (wasShooting && aimError > ai.config.ai.attackAimToleranceRadians) {
       this.correctingAim = true;
     }
-    if (this.correctingAim && aimError > ai.config.aiAttackAimCorrectionToleranceRadians) {
-      return this.attackDetourTarget(ai, ball.position, toTarget);
+    if (this.correctingAim && aimError > ai.config.ai.attackAimCorrectionToleranceRadians) {
+      return this._attackDetourTarget(ai, ball.position, toTarget);
     }
     this.correctingAim = false;
     this.attackOrbitDir = 0;
     return new Vector2d(
-      ball.position.x + toTarget.x * ai.config.aiAttackRunThroughDistance,
-      ball.position.y + toTarget.y * ai.config.aiAttackRunThroughDistance
+      ball.position.x + toTarget.x * ai.config.ai.attackRunThroughDistance,
+      ball.position.y + toTarget.y * ai.config.ai.attackRunThroughDistance
     );
   }
 
   this.correctingAim = false;
-  if (MathLib.computeDistance(ai.player.position, ball.position) <= ai.config.aiAttackCloseDistance) {
+  if (MathLib.computeDistance(ai.player.position, ball.position) <= ai.config.ai.attackCloseDistance) {
     this.state = "detour";
-    return this.attackDetourTarget(ai, ball.position, toTarget);
+    return this._attackDetourTarget(ai, ball.position, toTarget);
   }
 
   this.attackOrbitDir = 0;
   this.state = "approach";
   return new Vector2d(
-    ball.position.x - toTarget.x * ai.config.aiAttackSetupDistance,
-    ball.position.y - toTarget.y * ai.config.aiAttackSetupDistance
+    ball.position.x - toTarget.x * ai.config.ai.attackSetupDistance,
+    ball.position.y - toTarget.y * ai.config.ai.attackSetupDistance
   );
 };
 
-AttackBallCommand.prototype.attackAimError = function(ai, ballPosition, toTarget) {
+AttackBallCommand.prototype._attackAimError = function(ai, ballPosition, toTarget) {
   var dx = ai.player.position.x - ballPosition.x;
   var dy = ai.player.position.y - ballPosition.y;
   if (dx * dx + dy * dy < 0.0001) {
@@ -71,7 +73,7 @@ AttackBallCommand.prototype.attackAimError = function(ai, ballPosition, toTarget
   return Math.abs(MathLib.angleDeltaRadians(angleBehind, anglePlayer));
 };
 
-AttackBallCommand.prototype.attackDetourTarget = function(ai, ballPosition, toGoal) {
+AttackBallCommand.prototype._attackDetourTarget = function(ai, ballPosition, toGoal) {
   var dx = ai.player.position.x - ballPosition.x;
   var dy = ai.player.position.y - ballPosition.y;
   var anglePlayer = MathLib.computeAngleRadians(dx, dy);
@@ -81,16 +83,16 @@ AttackBallCommand.prototype.attackDetourTarget = function(ai, ballPosition, toGo
 
   if (this.attackOrbitDir === 0) {
     this.attackOrbitDir = delta >= 0 ? 1 : -1;
-  } else if (absDelta < ai.config.aiAttackOrbitCommitAngle) {
+  } else if (absDelta < ai.config.ai.attackOrbitCommitAngle) {
     var wanted = delta >= 0 ? 1 : -1;
     if (wanted !== this.attackOrbitDir) {
       this.attackOrbitDir = wanted;
     }
   }
 
-  var step = Math.min(ai.config.aiAttackDetourStepRadians, absDelta);
+  var step = Math.min(ai.config.ai.attackDetourStepRadians, absDelta);
   var angle = anglePlayer + this.attackOrbitDir * step;
-  var radius = ai.config.aiAttackDetourRadius;
+  var radius = ai.config.ai.attackDetourRadius;
   var offset = MathLib.vectorFromAngleRadians(angle, radius);
   return new Vector2d(ballPosition.x + offset.x, ballPosition.y + offset.y);
 };

@@ -2,6 +2,8 @@ var MoveToPositionCommand = function() {
   this.state = "stopped";
 };
 
+// Public API (underscore-prefixed members are private helpers)
+
 MoveToPositionCommand.prototype.reset = function() {
   this.state = "stopped";
 };

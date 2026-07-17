@@ -1,4 +1,6 @@
-var Player = function (imgPlayer, position, playerSpriteWidth, playerSpriteHeight, playerSpriteCenterX, playerSpriteCenterY) {
+var Player = function(imgPlayer, position, playerSpriteWidth, playerSpriteHeight,
+    playerSpriteCenterX, playerSpriteCenterY, animationConfig) {
+    animationConfig = animationConfig || {};
     this.imgPlayer = imgPlayer;
     this.position = position;
     this.playerSpriteWidth = playerSpriteWidth;
@@ -17,14 +19,22 @@ var Player = function (imgPlayer, position, playerSpriteWidth, playerSpriteHeigh
     this.animationMoving = false;
     this.animationIdleSeconds = 0;
     this.animationLastTimeMs = null;
-    this.animationDirectionResponseRate = 18;
-    this.animationIdleGraceSeconds = 0.05;
-    // Walk-cycle state advanced by Physics.updatePlayerPosition in step with
-    // distance actually travelled (not wall-clock time), so the animation
-    // naturally freezes when nothing is moving — including during pause.
+    this.animationDirectionResponseRate = animationConfig.animationDirectionResponseRate || 18;
+    this.animationDirectionConfidenceThreshold =
+      animationConfig.animationDirectionConfidenceThreshold || 0.75;
+    this.animationIdleGraceSeconds = animationConfig.animationIdleGraceSeconds || 0.05;
+    this.animationMaxDeltaSeconds = animationConfig.animationMaxDeltaSeconds || 0.1;
+    this.spriteSourceRowHeight = animationConfig.spriteSourceRowHeight || 18;
+    this._stepPxPerPhase = animationConfig.stepPxPerPhase;
+    this._spritePhases = animationConfig.spritePhases;
+    this._lastAnimationPosition = new Vector2d(this.position.x, this.position.y);
+    // Walk-cycle state advances with rendered travel rather than wall-clock
+    // time, so the animation naturally freezes when the player does.
     this.phaseIndex = 0;
     this.stepDistance = 0;
 };
+
+// Public API (underscore-prefixed members are private helpers)
 
 Player.prototype.updateFacing = function() {
     if(this.velocity.x == 0 && this.velocity.y == 0) {
@@ -83,12 +93,13 @@ Player.prototype.animationElapsedSeconds = function(nowMs) {
     }
     var elapsed = (nowMs - this.animationLastTimeMs) / 1000;
     this.animationLastTimeMs = nowMs;
-    return Math.max(0, Math.min(0.1, elapsed));
+    return Math.max(0, Math.min(this.animationMaxDeltaSeconds, elapsed));
 };
 
 Player.prototype.updateAnimation = function(nowMs) {
     nowMs = nowMs == null ? this.animationNowMs() : nowMs;
     var elapsed = this.animationElapsedSeconds(nowMs);
+    this._updateWalkAnimation();
     var moving = this.velocity.x != 0 || this.velocity.y != 0;
     this.updateFacing();
 
@@ -122,7 +133,11 @@ Player.prototype.updateAnimation = function(nowMs) {
         this.animationDirectionY += (direction.y - this.animationDirectionY) * blend;
     }
 
-    if(MathLib.vectorLength(this.animationDirectionX, this.animationDirectionY) > 0.0001) {
+    var directionConfidence = MathLib.vectorLength(
+        this.animationDirectionX,
+        this.animationDirectionY
+    );
+    if(directionConfidence >= this.animationDirectionConfidenceThreshold) {
         var animationFacing = this.facingForDirection(
             this.animationDirectionX,
             this.animationDirectionY
@@ -130,6 +145,21 @@ Player.prototype.updateAnimation = function(nowMs) {
         this.animationFacingX = animationFacing.x;
         this.animationFacingY = animationFacing.y;
     }
+};
+
+Player.prototype._updateWalkAnimation = function() {
+    var dx = this.position.x - this._lastAnimationPosition.x;
+    var dy = this.position.y - this._lastAnimationPosition.y;
+    var distance = MathLib.vectorLength(dx, dy);
+    if(distance > 0) {
+        this.stepDistance += distance;
+        while(this.stepDistance >= this._stepPxPerPhase) {
+            this.phaseIndex = (this.phaseIndex + 1) % this._spritePhases;
+            this.stepDistance -= this._stepPxPerPhase;
+        }
+    }
+    this._lastAnimationPosition.x = this.position.x;
+    this._lastAnimationPosition.y = this.position.y;
 };
 
 Player.prototype.draw = function(ctx) {
@@ -152,35 +182,35 @@ Player.prototype.spriteFrame = function(animationTimeMs) {
     var topLeftY = 0;
     if(this.animationFacingY == -1 && this.animationFacingX == 0) {
         // NORTH
-        topLeftY = (6 * 3 + phaseIndex) * 18;
+        topLeftY = (6 * 3 + phaseIndex) * this.spriteSourceRowHeight;
     }
     else if(this.animationFacingY == 1 && this.animationFacingX == 0) {
         // SOUTH
-        topLeftY = (7 * 3 + phaseIndex) * 18;
+        topLeftY = (7 * 3 + phaseIndex) * this.spriteSourceRowHeight;
     }
     else if(this.animationFacingY == 0 && this.animationFacingX == -1) {
         // WEST
-        topLeftY = (1 * 3 + phaseIndex) * 18;
+        topLeftY = (1 * 3 + phaseIndex) * this.spriteSourceRowHeight;
     }
     else if(this.animationFacingY == 0 && this.animationFacingX == 1) {
         // EAST
-        topLeftY = (0 * 3 + phaseIndex) * 18;
+        topLeftY = (0 * 3 + phaseIndex) * this.spriteSourceRowHeight;
     }
     else if(this.animationFacingY == -1 && this.animationFacingX == 1) {
         // NE
-        topLeftY = (5 * 3 + phaseIndex) * 18;
+        topLeftY = (5 * 3 + phaseIndex) * this.spriteSourceRowHeight;
     }
     else if(this.animationFacingY == -1 && this.animationFacingX == -1) {
         // NW
-        topLeftY = (4 * 3 + phaseIndex) * 18;
+        topLeftY = (4 * 3 + phaseIndex) * this.spriteSourceRowHeight;
     }
     else if(this.animationFacingY == 1 && this.animationFacingX == 1) {
         // SE
-        topLeftY = (3 * 3 + phaseIndex) * 18;
+        topLeftY = (3 * 3 + phaseIndex) * this.spriteSourceRowHeight;
     }
     else if(this.animationFacingY == 1 && this.animationFacingX == -1) {
         // SW
-        topLeftY = (2 * 3 + phaseIndex) * 18;
+        topLeftY = (2 * 3 + phaseIndex) * this.spriteSourceRowHeight;
     }
     return {
         phaseIndex: phaseIndex,

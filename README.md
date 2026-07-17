@@ -24,6 +24,8 @@ node tests/run.js
 Structure:
 - Runtime code: `src/`
 - AI commands: `src/ai/commands/`
+- Restart lifecycle and strategies: `src/core/restarts/`
+- Rule detectors: `src/world/detectors/`
 - Tests: `tests/`
 - Images: `assets/images/`
 - Styles: `styles/`

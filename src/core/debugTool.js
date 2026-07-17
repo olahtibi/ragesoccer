@@ -1,4 +1,4 @@
-var DebugLog = function(config) {
+var DebugTool = function(config) {
   this.config = config;
   this.snapshots = [];
   this.events = [];
@@ -6,12 +6,14 @@ var DebugLog = function(config) {
   this.startTimeMs = null;
 };
 
-DebugLog.prototype.record = function(game) {
-  if (!this.config.debug) {
+// Public API (underscore-prefixed members are private helpers)
+
+DebugTool.prototype.record = function(game) {
+  if (!this.config.debug.enabled) {
     return;
   }
 
-  var everyNFrames = this.config.debugLogEveryNFrames || 1;
+  var everyNFrames = this.config.debug.logEveryNFrames || 1;
   var frame = this.frame;
   this.frame++;
 
@@ -24,8 +26,8 @@ DebugLog.prototype.record = function(game) {
   this.trim(snapshot.time);
 };
 
-DebugLog.prototype.recordKeyEvent = function(e) {
-  if (!this.config.debug) {
+DebugTool.prototype.recordKeyEvent = function(e) {
+  if (!this.config.debug.enabled) {
     return;
   }
 
@@ -39,8 +41,8 @@ DebugLog.prototype.recordKeyEvent = function(e) {
   this.trim(event.time);
 };
 
-DebugLog.prototype.recordTouchEvent = function(target) {
-  if (!this.config.debug) {
+DebugTool.prototype.recordTouchEvent = function(target) {
+  if (!this.config.debug.enabled) {
     return;
   }
 
@@ -54,8 +56,8 @@ DebugLog.prototype.recordTouchEvent = function(target) {
   this.trim(event.time);
 };
 
-DebugLog.prototype.dump = function() {
-  if (!this.config.debug) {
+DebugTool.prototype.dump = function() {
+  if (!this.config.debug.enabled) {
     return;
   }
 
@@ -66,8 +68,8 @@ DebugLog.prototype.dump = function() {
   }));
 };
 
-DebugLog.prototype.trim = function(currentTime) {
-  var seconds = this.config.debugLogSeconds;
+DebugTool.prototype.trim = function(currentTime) {
+  var seconds = this.config.debug.logSeconds;
   if (seconds == null || seconds < 0) {
     return;
   }
@@ -81,15 +83,15 @@ DebugLog.prototype.trim = function(currentTime) {
   }
 };
 
-DebugLog.prototype.snapshot = function(game, frame, time) {
+DebugTool.prototype.snapshot = function(game, frame, time) {
   return {
     frame: frame,
     time: this.round(time),
     dt: this.round(game.physics && game.physics.lastDt != null ? game.physics.lastDt : 0),
     matchState: game.matchFlow.state,
     restart: {
-      type: game.restartController.type(),
-      phase: game.restartController.phase()
+      type: game.matchFlow.restartType(),
+      phase: game.matchFlow.restartPhase()
     },
     scores: {
       home: game.teams[0].score,
@@ -101,7 +103,7 @@ DebugLog.prototype.snapshot = function(game, frame, time) {
   };
 };
 
-DebugLog.prototype.ballSnapshot = function(ball) {
+DebugTool.prototype.ballSnapshot = function(ball) {
   return {
     pos: this.vectorSnapshot(ball.position),
     vel: this.vectorSnapshot(ball.velocity),
@@ -109,7 +111,7 @@ DebugLog.prototype.ballSnapshot = function(ball) {
   };
 };
 
-DebugLog.prototype.playersSnapshot = function(stadium) {
+DebugTool.prototype.playersSnapshot = function(stadium) {
   var result = [];
   for (var t = 0; t < stadium.teams.length; t++) {
     var team = stadium.teams[t];
@@ -130,7 +132,7 @@ DebugLog.prototype.playersSnapshot = function(stadium) {
   return result;
 };
 
-DebugLog.prototype.aiSnapshot = function(teamAis) {
+DebugTool.prototype.aiSnapshot = function(teamAis) {
   var result = [];
   for (var t = 0; t < teamAis.length; t++) {
     var teamAi = teamAis[t];
@@ -151,7 +153,25 @@ DebugLog.prototype.aiSnapshot = function(teamAis) {
   return result;
 };
 
-DebugLog.prototype.vectorSnapshot = function(vector) {
+DebugTool.prototype.draw = function(ctx, teamAis) {
+  for (var t = 0; t < teamAis.length; t++) {
+    var teamAi = teamAis[t];
+    var snapshots = teamAi.debugSnapshot();
+    for (var i = 0; i < snapshots.length; i++) {
+      var target = snapshots[i].target;
+      if (target == null) continue;
+      var position = teamAi.team.players[i].position;
+      ctx.beginPath();
+      ctx.moveTo(position.x, position.y);
+      ctx.lineTo(target.x, target.y);
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = "blue";
+      ctx.stroke();
+    }
+  }
+};
+
+DebugTool.prototype.vectorSnapshot = function(vector) {
   if (vector == null) {
     return null;
   }
@@ -166,21 +186,21 @@ DebugLog.prototype.vectorSnapshot = function(vector) {
   return result;
 };
 
-DebugLog.prototype.round = function(value) {
+DebugTool.prototype.round = function(value) {
   if (typeof value !== "number") {
     return value;
   }
   return Math.round(value * 100) / 100;
 };
 
-DebugLog.prototype.nowMs = function() {
+DebugTool.prototype.nowMs = function() {
   if (typeof performance !== "undefined" && performance.now) {
     return performance.now();
   }
   return Date.now();
 };
 
-DebugLog.prototype.currentTimeSeconds = function() {
+DebugTool.prototype.currentTimeSeconds = function() {
   var now = this.nowMs();
   if (this.startTimeMs == null) {
     this.startTimeMs = now;

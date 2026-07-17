@@ -1,5 +1,5 @@
-var testlib = require("../testlib");
-var makeFixture = require("../helpers").makeFixture;
+var testlib = require("../../testlib");
+var makeFixture = require("../../helpers").makeFixture;
 
 var test = testlib.test;
 var assertEqual = testlib.assertEqual;
@@ -12,7 +12,6 @@ test("GoalDetector scores home when ball enters top goal", function() {
   var scoredBy = fixture.goalDetector.update();
 
   assertEqual(scoredBy, "home");
-  assertEqual(fixture.goalDetector.state, "goal");
 });
 
 test("GoalDetector scores away when ball enters bottom goal", function() {
@@ -23,7 +22,6 @@ test("GoalDetector scores away when ball enters bottom goal", function() {
   var scoredBy = fixture.goalDetector.update();
 
   assertEqual(scoredBy, "away");
-  assertEqual(fixture.goalDetector.state, "goal");
 });
 
 test("GoalDetector does not double-count a ball that remains inside a goal", function() {
@@ -48,5 +46,6 @@ test("GoalDetector resets after the ball exits the goals", function() {
   fixture.ball.position.y = 433;
   fixture.goalDetector.update();
 
-  assertEqual(fixture.goalDetector.state, "start");
+  fixture.ball.position.y = 100;
+  assertEqual(fixture.goalDetector.update(), "home");
 });

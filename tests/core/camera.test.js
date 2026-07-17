@@ -10,9 +10,9 @@ test("Camera snaps viewport translation to device pixels", function() {
   var originalDevicePixelRatio = window.devicePixelRatio;
   window.devicePixelRatio = 2;
   var fixture = makeFixture();
-  fixture.config.viewportWidth = 501;
-  fixture.config.viewportHeight = 300;
-  fixture.config.viewportRatio = 0.7;
+  fixture.config.viewport.width = 501;
+  fixture.config.viewport.height = 300;
+  fixture.config.viewport.ratio = 0.7;
   fixture.ball.position.x = 200;
   fixture.ball.position.y = 300;
   var camera = new Camera(fixture.config, fixture.stadium);
@@ -41,11 +41,11 @@ test("Camera snaps viewport translation to device pixels", function() {
 
 test("Camera lerps toward focus target and reports arrival", function() {
   var fixture = makeFixture();
-  fixture.config.viewportWidth = 400;
-  fixture.config.viewportHeight = 300;
-  fixture.config.viewportRatio = 0.7;
-  fixture.config.cutsceneCameraLerp = 0.5;
-  fixture.config.cutsceneCameraArrivedRadius = 0.001;
+  fixture.config.viewport.width = 400;
+  fixture.config.viewport.height = 300;
+  fixture.config.viewport.ratio = 0.7;
+  fixture.config.cutscene.cameraLerp = 0.5;
+  fixture.config.cutscene.cameraArrivedRadius = 0.001;
   var camera = new Camera(fixture.config, fixture.stadium);
   camera.position.x = 0;
   camera.position.y = 0;
@@ -61,7 +61,7 @@ test("Camera lerps toward focus target and reports arrival", function() {
 
   camera.windowToViewport(ctx);
 
-  var desired = camera.viewportPositionForTarget(camera.focusTarget, fixture.config.computeScaleBy());
+  var desired = camera._viewportPositionForTarget(camera.focusTarget, fixture.config.computeScaleBy());
   assertNear(translateArgs.x, desired.x * 0.5, 0.0001);
   assertNear(translateArgs.y, desired.y * 0.5, 0.0001);
   assertTrue(!camera.hasArrivedAtFocus());

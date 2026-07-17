@@ -3,6 +3,7 @@ var makeFixture = require("../helpers").makeFixture;
 
 var test = testlib.test;
 var assertEqual = testlib.assertEqual;
+var assertNear = testlib.assertNear;
 
 test("Player updateFacing maps movement vectors", function() {
   var fixture = makeFixture();
@@ -90,6 +91,37 @@ test("Player draw does not reset walk state when velocity is momentarily zero", 
   assertEqual(player.stepDistance, 2);
 });
 
+test("Player advances its walk phase from distance travelled when rendered", function() {
+  var fixture = makeFixture();
+  var player = fixture.playerHome;
+  player.velocity.x = 10;
+
+  fixture.physics._updatePlayerPositions(1);
+
+  assertEqual(player.phaseIndex, 0);
+  assertEqual(player.stepDistance, 0);
+
+  var sprite = player.spriteFrame(0);
+
+  assertEqual(sprite.phaseIndex, 2);
+  assertEqual(player.phaseIndex, 2);
+  assertNear(player.stepDistance, 2, 0.0001);
+});
+
+test("Player preserves partial walk distance while stationary", function() {
+  var fixture = makeFixture();
+  var player = fixture.playerHome;
+  player.velocity.x = 3;
+  fixture.physics._updatePlayerPositions(1);
+
+  player.spriteFrame(0);
+  player.velocity.x = 0;
+  player.spriteFrame(100);
+
+  assertEqual(player.phaseIndex, 0);
+  assertNear(player.stepDistance, 3, 0.0001);
+});
+
 test("Player animation adopts its initial movement direction immediately", function() {
   var fixture = makeFixture();
   var player = fixture.playerHome;
@@ -135,9 +167,49 @@ test("Player animation settles on a sustained turn", function() {
 
   player.spriteFrame(32);
   player.spriteFrame(48);
+  assertEqual(player.animationFacingX, 1);
+
+  for (var time = 64; time <= 144; time += 16) {
+    player.spriteFrame(time);
+  }
 
   assertEqual(player.animationFacingX, -1);
   assertEqual(player.animationFacingY, 0);
+});
+
+test("Player animation holds a stable row through the captured pre-kick corrections", function() {
+  var fixture = makeFixture();
+  var player = fixture.playerAway;
+  var velocities = [
+    [-38.15, -3.72],
+    [12.39, 36.28],
+    [-22.23, -31.23],
+    [13.38, 35.92],
+    [13.38, 35.92]
+  ];
+  var expectedGameplayFacing = [
+    [-1, 0],
+    [0, 1],
+    [-1, -1],
+    [0, 1],
+    [0, 1]
+  ];
+
+  for (var i = 0; i < velocities.length; i++) {
+    player.velocity.x = velocities[i][0];
+    player.velocity.y = velocities[i][1];
+    player.spriteFrame(i * 67);
+
+    assertEqual(player.facingX, expectedGameplayFacing[i][0]);
+    assertEqual(player.facingY, expectedGameplayFacing[i][1]);
+    if(i < velocities.length - 1) {
+      assertEqual(player.animationFacingX, -1);
+      assertEqual(player.animationFacingY, 0);
+    }
+  }
+
+  assertEqual(player.animationFacingX, 0);
+  assertEqual(player.animationFacingY, 1);
 });
 
 test("Player animation smooths a quarter turn through a diagonal row", function() {

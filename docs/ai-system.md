@@ -24,14 +24,14 @@ This order matters: team AI marks the selected home player as `inactive` and
 zeros AI velocity before human control applies the final velocity.
 
 During restart positioning, `MatchFlow` selects player-only simulation. The
-cutscene moves players toward explicit targets and locks the ball while AI,
-human input, and ball physics remain inactive. Corners, goal kicks, and
+positioning controller moves players toward explicit targets and locks the ball
+while AI, human input, and ball physics remain inactive. Corners, goal kicks, and
 throw-ins become available when their taker arrives; unfinished players keep
 moving until the restart is taken. AI-owned corners, goal kicks, and throw-ins
 resume automatically when the taker is ready after
 `opponentRestartDelaySeconds` (one second by default). AI-owned kickoffs use
 the same delay, but start counting only after every player is positioned. The
-restart strategy creates the scene; the cutscene does not
+restart strategy creates the scene; the positioning controller does not
 understand formation or restart semantics.
 
 Restart scenes add a small deterministic offset to every non-taker target.
@@ -99,7 +99,7 @@ assigns that player `inactive`; human input writes movement later in the frame.
 - current command name
 - current target
 - active command object
-- shared movement/debug helpers
+- shared movement and debug-snapshot helpers
 
 Shared helpers include:
 
@@ -109,7 +109,6 @@ Shared helpers include:
 - `stop()`: zeros player velocity and returns `stopped`.
 - `toOpponentGoal(ballPosition)`: returns a normalized vector from the ball toward the opponent goal.
 - `isAlignedBehindBall(ballPosition, toGoal)`: checks attack alignment using radians.
-- `draw(ctx)`: draws the current movement debug line when `sPos` and `tPos` are set.
 - `debugSnapshot()`: returns the public AI debug shape.
 
 `IndividualAi` should not store command-local state such as `commandState`, orbit direction, timers, or tactical sub-states. Put those on the command object.
@@ -175,7 +174,9 @@ Debug logging depends on `debugSnapshot()`, not direct internal fields. Keep thi
 }
 ```
 
-`TeamAi.debugSnapshot()` appends `teamState` to each `IndividualAi` snapshot. `src/core/debugLog.js` records these snapshots in debug frames.
+`TeamAi.debugSnapshot()` appends `teamState` to each `IndividualAi` snapshot.
+`src/core/debugTool.js` records these snapshots in debug frames and draws their
+movement targets while the game is paused.
 
 When adding a command, expose only useful public/debug data from `debugSnapshot()`. Do not require callers to inspect command internals directly.
 
@@ -283,7 +284,7 @@ When changing AI:
 - Add command-level tests for command state, target, velocity, reset behavior, and debug snapshot fields.
 - Add `TeamAi` tests when command assignment or player selection changes.
 - Add `Formation` tests when target positions change.
-- Add `DebugLog` tests if the snapshot shape changes.
+- Add `DebugTool` tests if the snapshot shape changes.
 - Run:
 
 ```sh

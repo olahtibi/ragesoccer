@@ -2,7 +2,7 @@ var RestartPositioning = {
   createScene: function(config, context, request, ballPosition, takerPosition, takerIndex, awardedState,
       awardedPositions) {
     var formation = new Formation(config);
-    var teams = [];
+    var sceneTeams = [];
     var readyPlayer = null;
     for (var i = 0; i < context.teams.length; i++) {
       var team = context.teams[i];
@@ -32,15 +32,15 @@ var RestartPositioning = {
       } else {
         positions = this.applyOpponentDistance(config, formation, positions, ballPosition);
       }
-      teams.push({ side: team.side, players: team.players, positions: positions });
+      sceneTeams.push({ side: team.side, players: team.players, positions: positions });
     }
-    return { ballPosition: ballPosition, teams: teams, readyPlayer: readyPlayer };
+    return { ballPosition: ballPosition, sceneTeams: sceneTeams, readyPlayer: readyPlayer };
   },
 
   randomizePositions: function(config, formation, positions, request, teamSide, protectedIndex) {
     var result = [];
-    var variationX = config.restartPositionVariationX || 0;
-    var variationY = config.restartPositionVariationY || 0;
+    var variationX = config.restarts.positionVariationX || 0;
+    var variationY = config.restarts.positionVariationY || 0;
     for (var i = 0; i < positions.length; i++) {
       if (i == protectedIndex) {
         result.push(positions[i]);
@@ -81,16 +81,16 @@ var RestartPositioning = {
 
   applyOpponentDistance: function(config, formation, positions, ballPosition) {
     var result = [];
-    var minimum = config.restartOpponentDistance || 0;
+    var minimum = config.restarts.opponentDistance || 0;
     for (var i = 0; i < positions.length; i++) {
       var target = positions[i];
       var dx = target.x - ballPosition.x;
       var dy = target.y - ballPosition.y;
       var distance = MathLib.vectorLength(dx, dy);
       if (distance < minimum) {
-        if (distance < 0.0001) {
-          dx = config.initialBallPosition.x - ballPosition.x;
-          dy = config.aiCenterY - ballPosition.y;
+        if (distance < config.physics.zeroDistanceEpsilon) {
+          dx = config.pitch.initialBallPosition.x - ballPosition.x;
+          dy = config.pitch.aiCenterY - ballPosition.y;
           distance = MathLib.vectorLength(dx, dy);
         }
         target = new Vector2d(
@@ -105,8 +105,8 @@ var RestartPositioning = {
 
   clampToPlayingField: function(config, position) {
     return new Vector2d(
-      Math.max(config.fieldLeft, Math.min(config.fieldRight, position.x)),
-      Math.max(config.fieldTop, Math.min(config.fieldBottom, position.y))
+      Math.max(config.pitch.fieldLeft, Math.min(config.pitch.fieldRight, position.x)),
+      Math.max(config.pitch.fieldTop, Math.min(config.pitch.fieldBottom, position.y))
     );
   },
 
